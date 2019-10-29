@@ -1,0 +1,5 @@
+src/*.o
+win64/duskfall.exe
+win64/log.txt
+win64/screenshots/
+win64/src/
