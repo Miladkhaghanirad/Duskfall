@@ -374,7 +374,7 @@ void keybinds_window()
 		}
 
 		if (selected == key_id.size()) line_str = "{5F}["; else line_str = "{5F} ";
-		line_str += "^061^ Back";
+		line_str += "^325^ Back";
 		if (selected == key_id.size()) line_str += "{5F}]"; else line_str += " ";
 		iocore->ansi_print(line_str, midcol - (strx::ansi_strlen(line_str) / 2), midrow + 18);
 
@@ -477,9 +477,9 @@ void prefs_window()
 		iocore->box(midcol - 27, midrow - 18, 55, 38, UI_COLOUR_BOX);
 
 		iocore->alagard_print("GRAPHICS", (cols * 4) - (8 * 12), (midrow - 12) * 8, (selected == 0 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
-		iocore->alagard_print("GAMEPLAY", (cols * 4) - (8 * 12), (midrow ) * 8, (selected == 2 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
-		iocore->alagard_print("KEYBINDS", (cols * 4) - (8 * 12), (midrow + 6) * 8, (selected == 3 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
-		iocore->alagard_print("BACK", (cols * 4) - (4 * 12), (midrow + 12) * 8, (selected == 4 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
+		iocore->alagard_print("GAMEPLAY", (cols * 4) - (8 * 12), (midrow - 6) * 8, (selected == 1 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
+		iocore->alagard_print("KEYBINDS", (cols * 4) - (8 * 12), midrow * 8, (selected == 2 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
+		iocore->alagard_print("BACK", (cols * 4) - (4 * 12), (midrow + 12) * 8, (selected == 3 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
 
 		iocore->flip();
 		unsigned int key = iocore->wait_for_key();
@@ -488,20 +488,20 @@ void prefs_window()
 		else if (key == LMB_KEY)
 		{
 			if (iocore->did_mouse_click(midcol - 12, midrow - 12, 24, 3)) { selected = 0; prefs_window_graphics(); }
-			else if (iocore->did_mouse_click(midcol - 12, midrow, 24, 3)) { selected = 2; prefs_window_gameplay(); }
-			else if (iocore->did_mouse_click(midcol - 12, midrow + 6, 24, 3)) { selected = 3; keybinds_window(); }
+			else if (iocore->did_mouse_click(midcol - 12, midrow - 6, 24, 3)) { selected = 1; prefs_window_gameplay(); }
+			else if (iocore->did_mouse_click(midcol - 12, midrow, 24, 3)) { selected = 2; keybinds_window(); }
 			else if (iocore->did_mouse_click(midcol - 6, midrow + 12, 12, 3)) done = true;
 		}
 		if ((key == SDLK_UP || key == SDLK_KP_8) && selected > 0) selected--;
-		else if ((key == SDLK_DOWN || key == SDLK_KP_2) && selected < 4) selected++;
+		else if ((key == SDLK_DOWN || key == SDLK_KP_2) && selected < 3) selected++;
 		else if (iocore->is_select(key))
 		{
 			switch(selected)
 			{
 				case 0: prefs_window_graphics(); break;
-				case 2: prefs_window_gameplay(); break;
-				case 3: keybinds_window(); break;
-				case 4: done = true; break;
+				case 1: prefs_window_gameplay(); break;
+				case 2: keybinds_window(); break;
+				case 3: done = true; break;
 			}
 		}
 		else if (key == prefs::keybind(Keys::MENU_CANCEL)) done = true;
@@ -764,7 +764,7 @@ void ui_add_keybind(string name, unsigned int id)
 void ui_init_keybinds()
 {
 	STACK_TRACE();
-	ui_add_keybind("{5F}^001^^118^^117^^116^ MOVEMENT ^116^^117^^118^^001^", UINT_MAX);
+	ui_add_keybind("{5F}^219^^178^^177^^176^ MOVEMENT ^176^^177^^178^^219^", UINT_MAX);
 	ui_add_keybind("", UINT_MAX);
 	ui_add_keybind("Travel North", Keys::NORTH);
 	ui_add_keybind("Travel South", Keys::SOUTH);
@@ -777,7 +777,7 @@ void ui_init_keybinds()
 	ui_add_keybind("", UINT_MAX);
 
 	ui_add_keybind("", UINT_MAX);
-	ui_add_keybind("{5F}^001^^118^^117^^116^ MISCELLANEOUS ^116^^117^^118^^001^", UINT_MAX);
+	ui_add_keybind("{5F}^219^^178^^177^^176^ MISCELLANEOUS ^176^^177^^178^^219^", UINT_MAX);
 	ui_add_keybind("", UINT_MAX);
 	ui_add_keybind("Menu: OK", Keys::MENU_OK);
 	ui_add_keybind("Menu: OK", Keys::MENU_OK_2);
