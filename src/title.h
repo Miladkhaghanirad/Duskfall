@@ -11,6 +11,7 @@ namespace title
 
 void	animate_fire(bool render = true);	// Animates the flames. This can also be used to 'pre-ignite' the fire prior to rendering.
 void	copyright_window();		// Display the copyright window.
+void	glitch_warning();		// Displays the first-time glitch warning screen.
 void	redraw_animated_logo();	// Redraws the animated logo every frame.
 void	redraw_background();	// Redraws the background when needed.
 void	redraw_menu();			// Redraws the title menu.

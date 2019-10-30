@@ -19,6 +19,16 @@ namespace title
 
 unsigned char	menu_pos = 0;	// The current menu position.
 
+static const string static_title[8] = {
+		"^219^^219^^219^^219^^287^^222^^219^  ^286^  ^315^^219^^219^^219^^219^  ^285^ ^315^^286^  ^285^^219^^219^^219^^221^ ^315^^219^^219^^219^^219^ ^285^    ^285^",
+		"^219^^221^ ^284^^219^^222^^219^  ^219^^221^ ^219^^221^ ^222^^219^ ^222^^219^^315^^219^^283^ ^222^^219^  ^219^^221^ ^219^^221^ ^222^^219^^222^^219^   ^222^^219^",
+		"^219^^221^ ^222^^219^^222^^219^  ^219^^221^ ^219^^221^ ^222^^316^ ^222^^219^^222^^283^  ^222^^219^  ^283^  ^219^^221^ ^222^^219^^222^^219^   ^222^^219^",
+		"^219^^221^ ^222^^219^^222^^219^  ^219^^221^ ^219^^221^    ^285^^219^^219^^316^  ^285^^219^^220^^287^   ^219^^221^ ^222^^219^^222^^219^   ^222^^219^",
+		"^219^^221^ ^222^^219^^222^^219^  ^219^^221^^284^^219^^219^^219^^219^^219^^317^^284^^219^^219^^287^ ^317^^284^^219^^223^^316^  ^284^^219^^219^^219^^219^^219^^222^^219^   ^222^^219^",
+		"^219^^221^ ^222^^219^^222^^219^  ^219^^221^    ^222^^219^ ^222^^219^^222^^286^  ^222^^219^     ^219^^221^ ^222^^219^^222^^219^   ^222^^219^",
+		"^219^^221^ ^285^^219^^222^^219^  ^219^^221^ ^315^^221^ ^222^^219^ ^222^^219^^317^^219^^286^ ^222^^219^     ^219^^221^ ^222^^219^^222^^219^^221^ ^315^^222^^219^^221^ ^315^",
+		"^219^^219^^219^^219^^316^^222^^219^^219^^219^^283^ ^315^^219^^219^^219^^219^^316^ ^222^^219^ ^317^^283^ ^222^^219^     ^219^^221^ ^222^^316^^222^^219^^219^^219^^219^^222^^219^^219^^219^^219^" };
+
 // Animated flames effect.
 #define ANIMATED_FLAMES_W	106
 #define ANIMATED_FLAMES_H	24
@@ -118,6 +128,54 @@ void copyright_window()
 
 		if (copyright_line >= copyright.size()) break;
 	} while(true);
+}
+
+// Displays the first-time glitch warning screen.
+void glitch_warning()
+{
+	STACK_TRACE();
+	while(true)
+	{
+		const int midrow = iocore->midrow(), midcol = iocore->midcol();
+		iocore->box(midcol - 27, midrow - 18, 55, 37, UI_COLOUR_BOX);
+		vector<string> message = strx::ansi_vector_split("Duskfall is a text-based game and with the following exception, does not include flashing colours or images. However: {nl} "
+				"The game by default uses a 'glitching' screen effect, which causes the display to sometimes flicker and distort, to imitate an unreliable old computer screen. {nl} "
+				"{5F}This can occasionally result in flickering or flashing colours which may affect players who have epilepsy. Some players may also simply dislike this effect. {nl} "
+				"{5F}This message will only be shown once. Please decide now if you would like to enable or disable visual glitches, by {5F}pressing the {5A}Y {5F}key to enable glitches, or the "
+				"{5C}N {5F}key to disable glitches. {nl} {57}This option can be changed again later at any time via the in-game preferences menu.", 53);
+		for (unsigned int i = 0; i < 8; i++)
+		{
+			string line_colour;
+			switch(i)
+			{
+				case 0: case 7: line_colour = "{41}"; break;
+				case 1: case 6: line_colour = "{02}"; break;
+				case 4: line_colour = "{22}"; break;
+				default: line_colour = "{12}"; break;
+			}
+			iocore->ansi_print("^000^   " + line_colour + static_title[i], midcol - 26, midrow - 17 + i, PRINT_FLAG_PLUS_EIGHT_X);
+		}
+		iocore->ansi_print("       {5B}* * * {5A}IMPORTANT EPILEPSY WARNING {5B}* * *", midcol - 26, midrow - 6);
+		for (unsigned int i = 0; i < message.size(); i++)
+			iocore->ansi_print(message.at(i), midcol - 26, midrow - 4 + i);
+		iocore->flip();
+		const unsigned int key = iocore->wait_for_key();
+		if (key == RESIZE_KEY) glitch_warning();
+		if (key == 'Y' || key == 'y')
+		{
+			prefs::visual_glitches = 2;
+			prefs::glitch_warn = true;
+			prefs::save();
+			return;
+		}
+		else if (key == 'N' || key == 'n')
+		{
+			prefs::visual_glitches = 0;
+			prefs::glitch_warn = true;
+			prefs::save();
+			return;
+		}
+	}
 }
 
 // Redraws the animated logo every frame.
@@ -229,15 +287,6 @@ void redraw_menu()
 void redraw_static_logo(int offset)
 {
 	STACK_TRACE();
-	static const string static_title[8] = {
-			"^219^^219^^219^^219^^287^^222^^219^  ^286^  ^315^^219^^219^^219^^219^  ^285^ ^315^^286^  ^285^^219^^219^^219^^221^ ^315^^219^^219^^219^^219^ ^285^    ^285^",
-			"^219^^221^ ^284^^219^^222^^219^  ^219^^221^ ^219^^221^ ^222^^219^ ^222^^219^^315^^219^^283^ ^222^^219^  ^219^^221^ ^219^^221^ ^222^^219^^222^^219^   ^222^^219^",
-			"^219^^221^ ^222^^219^^222^^219^  ^219^^221^ ^219^^221^ ^222^^316^ ^222^^219^^222^^283^  ^222^^219^  ^283^  ^219^^221^ ^222^^219^^222^^219^   ^222^^219^",
-			"^219^^221^ ^222^^219^^222^^219^  ^219^^221^ ^219^^221^    ^285^^219^^219^^316^  ^285^^219^^220^^287^   ^219^^221^ ^222^^219^^222^^219^   ^222^^219^",
-			"^219^^221^ ^222^^219^^222^^219^  ^219^^221^^284^^219^^219^^219^^219^^219^^317^^284^^219^^219^^287^ ^317^^284^^219^^223^^316^  ^284^^219^^219^^219^^219^^219^^222^^219^   ^222^^219^",
-			"^219^^221^ ^222^^219^^222^^219^  ^219^^221^    ^222^^219^ ^222^^219^^222^^286^  ^222^^219^     ^219^^221^ ^222^^219^^222^^219^   ^222^^219^",
-			"^219^^221^ ^285^^219^^222^^219^  ^219^^221^ ^315^^221^ ^222^^219^ ^222^^219^^317^^219^^286^ ^222^^219^     ^219^^221^ ^222^^219^^222^^219^^221^ ^315^^222^^219^^221^ ^315^",
-			"^219^^219^^219^^219^^316^^222^^219^^219^^219^^283^ ^315^^219^^219^^219^^219^^316^ ^222^^219^ ^317^^283^ ^222^^219^     ^219^^221^ ^222^^316^^222^^219^^219^^219^^219^^222^^219^^219^^219^^219^" };
 	const int midrow = iocore->midrow(), midcol = iocore->midcol();
 	for (int i = 3; i <= 4; i++)
 	{
@@ -344,6 +393,9 @@ void render_floppy(int x, int y, Colour colour, bool front)
 void title_screen()
 {
 	STACK_TRACE();
+
+	// Glitch warning screen.
+	if (!prefs::glitch_warn) glitch_warning();
 
 	// Set up the animated flames.
 	heat = new unsigned char[ANIMATED_FLAMES_W * ANIMATED_FLAMES_H];
