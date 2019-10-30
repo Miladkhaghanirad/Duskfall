@@ -584,8 +584,7 @@ void IOCore::glitch_square()
 bool IOCore::is_cancel(unsigned int key)
 {
 	STACK_TRACE();
-	//if (key == prefs::keybind(MENU_CANCEL) || key == prefs::keybind(JOY_CANCEL) || key == SDLK_ESCAPE) return true;
-	if (key == SDLK_ESCAPE) return true;
+	if (key == prefs::keybind(MENU_CANCEL) || key == SDLK_ESCAPE) return true;
 	return false;
 }
 
@@ -593,8 +592,7 @@ bool IOCore::is_cancel(unsigned int key)
 bool IOCore::is_down(unsigned int key)
 {
 	STACK_TRACE();
-	//if (key == SDLK_DOWN || key == SDLK_KP_2 || key == prefs::keybind(JOY_DOWN) || key == prefs::keybind(SCROLL_DOWN) || key == prefs::keybind(SOUTH)) return true;
-	if (key == SDLK_DOWN || key == SDLK_KP_2) return true;
+	if (key == SDLK_DOWN || key == SDLK_KP_2 || key == prefs::keybind(SOUTH)) return true;
 	return false;
 }
 
@@ -602,8 +600,7 @@ bool IOCore::is_down(unsigned int key)
 bool IOCore::is_left(unsigned int key)
 {
 	STACK_TRACE();
-	//if (key == SDLK_LEFT || key == SDLK_KP_4 || key == prefs::keybind(JOY_LEFT) || key == prefs::keybind(SCROLL_LEFT) || key == prefs::keybind(WEST)) return true;
-	if (key == SDLK_LEFT || key == SDLK_KP_4) return true;
+	if (key == SDLK_LEFT || key == SDLK_KP_4 || key == prefs::keybind(WEST)) return true;
 	return false;
 }
 
@@ -611,8 +608,7 @@ bool IOCore::is_left(unsigned int key)
 bool IOCore::is_right(unsigned int key)
 {
 	STACK_TRACE();
-	//if (key == SDLK_RIGHT || key == SDLK_KP_6 || key == prefs::keybind(JOY_RIGHT) || key == prefs::keybind(SCROLL_RIGHT) || key == prefs::keybind(EAST)) return true;
-	if (key == SDLK_RIGHT || key == SDLK_KP_6) return true;
+	if (key == SDLK_RIGHT || key == SDLK_KP_6 || key == prefs::keybind(EAST)) return true;
 	return false;
 }
 
@@ -620,8 +616,7 @@ bool IOCore::is_right(unsigned int key)
 bool IOCore::is_select(unsigned int key)
 {
 	STACK_TRACE();
-	if (key == SDLK_KP_ENTER || key == SDLK_RETURN || key == SDLK_RETURN2 || key == SDLK_SPACE || key == SDLK_KP_SPACE) return true;	// These are all default select keys.
-	//if (key == prefs::keybind(Keys::MENU_OK) || key == prefs::keybind(Keys::MENU_OK_2) || key == prefs::keybind(JOY_OK)) return true;	// These are user-defined select keys.
+	if (key == prefs::keybind(Keys::MENU_OK) || key == prefs::keybind(Keys::MENU_OK_2)) return true;
 	return false;
 }
 
@@ -629,8 +624,7 @@ bool IOCore::is_select(unsigned int key)
 bool IOCore::is_up(unsigned int key)
 {
 	STACK_TRACE();
-	//if (key == SDLK_UP || key == SDLK_KP_8 || key == prefs::keybind(JOY_UP) || key == prefs::keybind(SCROLL_UP) || key == prefs::keybind(NORTH)) return true;
-	if (key == SDLK_UP || key == SDLK_KP_8) return true;
+	if (key == SDLK_UP || key == SDLK_KP_8 || key == prefs::keybind(NORTH)) return true;
 	return false;
 }
 

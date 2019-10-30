@@ -154,8 +154,8 @@ void Prefs::render()
 
 	changed = false;
 	unsigned int key = iocore->wait_for_key();
-	if ((key == SDLK_UP || key == SDLK_KP_8) && selected > 0) selected--;
-	else if ((key == SDLK_DOWN || key == SDLK_KP_2) && selected < entries.size()) selected++;
+	if (iocore->is_up(key) && selected > 0) selected--;
+	else if (iocore->is_down(key) && selected < entries.size()) selected++;
 	else if (key == LMB_KEY || key == RMB_KEY)
 	{
 		for (unsigned int i = 0; i < entries.size(); i++)
@@ -167,23 +167,23 @@ void Prefs::render()
 				break;
 			}
 		}
-		if (iocore->did_mouse_click(iocore->midcol() - 4, iocore->midrow() + entries.at(entries.size() -1).y_pos + 2, 8, 1))
+		if (iocore->did_mouse_click(iocore->midcol() - 4, iocore->midrow() + entries.at(entries.size() - 1).y_pos + 2, 8, 1))
 		{
 			if (selected != entries.size()) selected = entries.size();
 			else done = true;
 		}
 	}
-	else if (key == SDLK_RIGHT || key == SDLK_KP_6 || iocore->is_select(key))
+	else if (iocore->is_right(key) || iocore->is_select(key))
 	{
 		if (selected == entries.size()) done = true;
 		else adjust_option(1);
 	}
-	else if (key == SDLK_LEFT || key == SDLK_KP_4)
+	else if (iocore->is_left(key))
 	{
 		if (selected == entries.size()) done = true;
 		else adjust_option(-1);
 	}
-	else if (key == prefs::keybind(Keys::MENU_CANCEL)) done = true;
+	else if (iocore->is_cancel(key)) done = true;
 }
 
 // Returns the ID of the currently selected preference.
@@ -242,7 +242,6 @@ void default_keybind(Keys key)
 void init()
 {
 	STACK_TRACE();
-	ui_init_keybinds();
 	guru->log("Attempting to load prefs.dat file, if it exists.", GURU_INFO);
 
 	// Set some defaults for the keybinds, since they're not set above like with the other prefs.
@@ -307,6 +306,7 @@ void init()
 	{
 		guru->halt(e.what());
 	}
+	ui_init_keybinds();
 }
 
 // Returns the specified bound key.
@@ -395,12 +395,22 @@ void keybinds_window()
 		}
 		else
 		{
-			if ((key == SDLK_UP || key == SDLK_KP_8) && selected > 2)
+			if (key == 'd' && selected < key_longname.size())
+			{
+				prefs::default_keybind(static_cast<Keys>(key_id.at(selected)));
+				update_key = true;
+			}
+			else if (key == SDLK_ESCAPE && selected < key_longname.size())
+			{
+				prefs::set_keybind(static_cast<Keys>(key_id.at(selected)), 0);
+				update_key = true;
+			}
+			else if (iocore->is_up(key) && selected > 2)
 			{
 				selected--;
 				while (key_id.at(selected) == UINT_MAX) selected--;
 			}
-			else if ((key == SDLK_DOWN || key == SDLK_KP_2) && selected < key_id.size())
+			else if (iocore->is_down(key) && selected < key_id.size())
 			{
 				selected++;
 				if (selected < key_id.size())
@@ -410,16 +420,6 @@ void keybinds_window()
 			{
 				if (selected == key_id.size()) break;
 				else waiting_for_new_key = true;
-			}
-			else if (key == 'd' && selected < key_longname.size())
-			{
-				prefs::default_keybind(static_cast<Keys>(key_id.at(selected)));
-				update_key = true;
-			}
-			else if (key == SDLK_ESCAPE && selected < key_longname.size())
-			{
-				prefs::set_keybind(static_cast<Keys>(key_id.at(selected)), 0);
-				update_key = true;
 			}
 			else if ((key == LMB_KEY && iocore->did_mouse_click(0, iocore->midrow() + 18, iocore->get_cols())) || key == RMB_KEY) return;
 		}
@@ -492,8 +492,8 @@ void prefs_window()
 			else if (iocore->did_mouse_click(midcol - 12, midrow, 24, 3)) { selected = 2; keybinds_window(); }
 			else if (iocore->did_mouse_click(midcol - 6, midrow + 12, 12, 3)) done = true;
 		}
-		if ((key == SDLK_UP || key == SDLK_KP_8) && selected > 0) selected--;
-		else if ((key == SDLK_DOWN || key == SDLK_KP_2) && selected < 3) selected++;
+		if (iocore->is_up(key) && selected > 0) selected--;
+		else if (iocore->is_down(key) && selected < 3) selected++;
 		else if (iocore->is_select(key))
 		{
 			switch(selected)
@@ -504,7 +504,7 @@ void prefs_window()
 				case 3: done = true; break;
 			}
 		}
-		else if (key == prefs::keybind(Keys::MENU_CANCEL)) done = true;
+		else if (iocore->is_cancel(key)) done = true;
 	}
 }
 
