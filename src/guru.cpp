@@ -1,12 +1,13 @@
 // guru.cpp -- Guru error-handling and reporting system.
 // Copyright (c) 2016-2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
+#include "filex.h"
 #include "guru.h"
 #include "iocore.h"
 #include "strx.h"
 #include <ctime>
 
-#define FILENAME_LOG	"log.txt"
+#define FILENAME_LOG	"userdata/log.txt"
 
 Guru*	guru = nullptr;	// The main Guru object.
 
@@ -36,6 +37,7 @@ void intercept_signal(int sig)
 Guru::Guru() : dead_already(false), fully_active(false), redraw_cycle(250), flash_state(true)
 {
 	STACK_TRACE();
+	filex::make_dir("userdata");
 	remove(FILENAME_LOG);
 	syslog.open(FILENAME_LOG);
 	log("Guru error-handling system is online. Hooking signals...");

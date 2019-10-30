@@ -28,7 +28,7 @@
 #define NTSC_RESET_CHANCE	50		// The lower this number, the faster NTSC glitches go back to normal.
 #define EXTRA_NES_COLOURS			53	// How many extra colours are added from the NES palette.
 #define EXTRA_COLOURBLIND_COLOURS	32	// How many extra colours are added from the colourblind palettes.
-#define FOLDER_SCREENS		"screenshots"
+#define FOLDER_SCREENS		"userdata/screenshots"
 
 
 /****************************

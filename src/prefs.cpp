@@ -18,7 +18,7 @@ PrefsEntry::PrefsEntry() : id(0), is_boolean(false), is_slider(false), must_rest
 namespace prefs
 {
 
-#define FILENAME_PREFS	"save/prefs.dat"
+#define FILENAME_PREFS	"userdata/prefs.dat"
 #define PREFS_KEYBINDS	14
 
 // Shift			letter
@@ -254,7 +254,6 @@ void init()
 	if (!file_exists)
 	{
 		guru->log("Can't find prefs.dat, rebuilding default prefs file.", GURU_WARN);
-		if (!filex::directory_exists("save")) filex::make_dir("save");
 		SQLite::Database(FILENAME_PREFS, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
 	}
 

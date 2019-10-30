@@ -1,6 +1,5 @@
 src/*.o
 win64/duskfall.exe
 win64/log.txt
-win64/save/
-win64/screenshots/
+win64/userdata/
 win64/src/
