@@ -1,6 +1,7 @@
 // duskfall.cpp -- Program entry point and stack trace macro.
 // Copyright (c) 2016-2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
+#include "dungeon.h"
 #include "duskfall.h"
 #include "guru.h"
 #include "iocore.h"
@@ -16,7 +17,11 @@ int main(int argc, char* argv[])
 	guru = new Guru();
 	prefs::init();
 	iocore = new IOCore();
-	title::title_screen();
+	//title::title_screen();
+	Dungeon *test = new Dungeon(50, 30);
+	test->render();
+	iocore->wait_for_key();
+	delete test;
 	delete iocore;
 	delete guru;
 	return 0;
