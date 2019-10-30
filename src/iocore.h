@@ -112,8 +112,8 @@ public:
 
 private:
 	SDL_Surface		*font;					// The bitmap font texture.
-	unsigned short	font_sheet_size;		// The size of the font texture sheet, in glyphs.
 	SDL_Surface		*alagard;				// The texture for the large bitmap font.
+	unsigned short	font_sheet_size;		// The size of the font texture sheet, in glyphs.
 	SDL_Window		*main_window;			// The main (and only) SDL window.
 	SDL_Surface		*main_surface;			// The main render surface.
 	SDL_Surface 	*glitched_main_surface;	// A glitched version of the main render surface.

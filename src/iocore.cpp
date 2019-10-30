@@ -159,6 +159,7 @@ IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), exit_func_level(1), hold
 	font = SDL_ConvertSurface(font_temp, main_surface->format, 0);
 	if (!font) guru->halt(SDL_GetError());
 	SDL_FreeSurface(font_temp);
+	font_sheet_size = (font->w * font->h) / 8;
 	font_temp = IMG_Load("data/alagard.png");
 	if (!font_temp) guru->halt(IMG_GetError());
 	alagard = SDL_ConvertSurface(font_temp, main_surface->format, 0);
@@ -851,7 +852,7 @@ void IOCore::print_at(Glyph letter, int x, int y, unsigned char r, unsigned char
 	const unsigned int sdl_col = SDL_MapRGB(main_surface->format, r, g, b);
 
 	// Determine the location of the character in the grid.
-	if (static_cast<unsigned short>(letter) >= font_sheet_size) letter = static_cast<Glyph>(95);
+	if (static_cast<unsigned short>(letter) >= font_sheet_size) letter = static_cast<Glyph>('?');
 	unsigned short loc_x = static_cast<unsigned short>(letter) * 8, loc_y = 0;
 	while (loc_x >= font->w) { loc_y += 8; loc_x -= font->w; }
 	SDL_Rect font_rect = {loc_x, loc_y, 8, 8};
