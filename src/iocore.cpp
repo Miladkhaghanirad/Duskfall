@@ -8,11 +8,15 @@
 #include "prefs.h"
 #include "strx.h"
 #include "version.h"
+
+#include "lodepng/bmp2png.h"
 #include "sdl_savejpeg/SDL_savejpeg.h"
 #include "SDL2/SDL_image.h"
+
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <thread>
 
 #define	SCREEN_MIN_X		1024	// Minimum X-resolution of the screen. Should not be lower than 1024.
 #define SCREEN_MIN_Y		600		// Minimum Y-resolution of the screen. Should not be lower than 600.
@@ -424,6 +428,23 @@ void IOCore::exit_functions()
 		guru->deactivate();
 
 		if (exit_func_level >= 4) SDL_FreeSurface(font);
+
+		if (filex::directory_exists(FOLDER_SCREENS))
+		{
+			vector<string> files = filex::files_in_dir(FOLDER_SCREENS);
+			int converted = 0;
+			for (auto file : files)
+			{
+				const string filename = (string)FOLDER_SCREENS + "/" + file.substr(0, file.length() - 4);
+				const string ext = file.substr(file.length() - 3);
+				if (ext == "tmp")
+				{
+					converted++;
+					rename((filename + ".tmp").c_str(), (filename + ".bmp").c_str());
+				}
+			}
+			if (converted) guru->log("Rescued " + strx::itos(converted) + " unconverted screenshots as BMP format.", GURU_INFO);
+		}
 	}
 
 	if (exit_func_level >= 2)
@@ -1083,7 +1104,7 @@ unsigned int IOCore::wait_for_key(unsigned short max_ms)
 	else if ((key == SDLK_RIGHT || key == SDLK_KP_6) && shift) key = SHIFT_RIGHT;
 	else if ((key == SDLK_UP || key == SDLK_KP_8) && shift) key = SHIFT_UP;
 	else if ((key == SDLK_DOWN || key == SDLK_KP_2) && shift) key = SHIFT_DOWN;
-	if (key == SDLK_PRINTSCREEN)
+	if (key == prefs::keybind(Keys::SCREENSHOT))
 	{
 		// Create screenshot folder if needed.
 		filex::make_dir(FOLDER_SCREENS);
@@ -1097,7 +1118,9 @@ unsigned int IOCore::wait_for_key(unsigned short max_ms)
 			if (!(filex::file_exists(filename + ".png") || filex::file_exists(filename + ".bmp") || filex::file_exists(filename + ".jpg") || filex::file_exists(filename + ".tmp"))) break;
 			if (sshot > 1000000) return key;	// Just give up if we have an absurd amount of files.
 		}
-		SDL_SaveJPG(snes_surface, (filename + ".jpg").c_str(), -1);
+		if (prefs::screenshot_type == 2) SDL_SaveJPG(snes_surface, (filename + ".jpg").c_str(), -1);
+		else SDL_SaveBMP(snes_surface, (filename + (prefs::screenshot_type > 0 ? ".tmp" : ".bmp")).c_str());
+		if (prefs::screenshot_type == 1) std::thread(convert_png, filename).detach();
 	}
 
 	return key;

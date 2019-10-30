@@ -79,7 +79,7 @@ void copyright_window()
 	string line;
 	while (getline(copyright_file, line))
 	{
-		if (!line.size()) copyright.push_back(" ");
+		if (!line.size()) copyright.push_back("");
 		else if (line == "-") copyright.push_back("{{PB}}");
 		else
 		{
