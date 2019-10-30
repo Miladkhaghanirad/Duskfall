@@ -9,6 +9,7 @@
 #include "version.h"
 #include "sdl_savejpeg/SDL_savejpeg.h"
 #include "SDL2/SDL_image.h"
+#include <cmath>
 #include <cstdlib>
 #include <ctime>
 
@@ -339,6 +340,17 @@ void IOCore::delay(unsigned int ms)
 	}
 }
 
+// Checks if the player clicked in a specified area.
+bool IOCore::did_mouse_click(unsigned short x, unsigned short y, unsigned short w, unsigned short h)
+{
+	if (mouse_clicked_x >= x && mouse_clicked_y >= y && mouse_clicked_x <= x + w - 1 && mouse_clicked_y <= y + h - 1)
+	{
+		mouse_clicked_x = mouse_clicked_y = 0;
+		return true;
+	}
+	return false;
+}
+
 // This is where we clean up our shit.
 void IOCore::exit_functions()
 {
@@ -520,6 +532,112 @@ void IOCore::glitch_square()
 	glitch_vec.push_back(square_glitch);
 }
 
+// Returns true if the key is a chosen 'cancel' key.
+bool IOCore::is_cancel(unsigned int key)
+{
+	STACK_TRACE();
+	//if (key == prefs::keybind(MENU_CANCEL) || key == prefs::keybind(JOY_CANCEL) || key == SDLK_ESCAPE) return true;
+	if (key == SDLK_ESCAPE) return true;
+	return false;
+}
+
+// Returns true if the key is a chosen 'down' key.
+bool IOCore::is_down(unsigned int key)
+{
+	STACK_TRACE();
+	//if (key == SDLK_DOWN || key == SDLK_KP_2 || key == prefs::keybind(JOY_DOWN) || key == prefs::keybind(SCROLL_DOWN) || key == prefs::keybind(SOUTH)) return true;
+	if (key == SDLK_DOWN || key == SDLK_KP_2) return true;
+	return false;
+}
+
+// Returns true if the key is a chosen 'left' key.
+bool IOCore::is_left(unsigned int key)
+{
+	STACK_TRACE();
+	//if (key == SDLK_LEFT || key == SDLK_KP_4 || key == prefs::keybind(JOY_LEFT) || key == prefs::keybind(SCROLL_LEFT) || key == prefs::keybind(WEST)) return true;
+	if (key == SDLK_LEFT || key == SDLK_KP_4) return true;
+	return false;
+}
+
+// Returns true if the key is a chosen 'right' key.
+bool IOCore::is_right(unsigned int key)
+{
+	STACK_TRACE();
+	//if (key == SDLK_RIGHT || key == SDLK_KP_6 || key == prefs::keybind(JOY_RIGHT) || key == prefs::keybind(SCROLL_RIGHT) || key == prefs::keybind(EAST)) return true;
+	if (key == SDLK_RIGHT || key == SDLK_KP_6) return true;
+	return false;
+}
+
+// Returns true if the key is a chosen 'select' key.
+bool IOCore::is_select(unsigned int key)
+{
+	STACK_TRACE();
+	if (key == SDLK_KP_ENTER || key == SDLK_RETURN || key == SDLK_RETURN2 || key == SDLK_SPACE || key == SDLK_KP_SPACE) return true;	// These are all default select keys.
+	//if (key == prefs::keybind(Keys::MENU_OK) || key == prefs::keybind(Keys::MENU_OK_2) || key == prefs::keybind(JOY_OK)) return true;	// These are user-defined select keys.
+	return false;
+}
+
+// Returns true if the key is a chosen 'up' key.
+bool IOCore::is_up(unsigned int key)
+{
+	STACK_TRACE();
+	//if (key == SDLK_UP || key == SDLK_KP_8 || key == prefs::keybind(JOY_UP) || key == prefs::keybind(SCROLL_UP) || key == prefs::keybind(NORTH)) return true;
+	if (key == SDLK_UP || key == SDLK_KP_8) return true;
+	return false;
+}
+
+// Determines the colour of a specific point in a nebula, based on X,Y coordinates.
+s_rgb IOCore::nebula(int x, int y)
+{
+	STACK_TRACE();
+	const string coord = strx::itos(x) + "," + strx::itos(y);
+	if (nebula_cache.find(coord) != nebula_cache.end()) return nebula_cache.at(coord);
+
+	const unsigned char value = mathx::perlin_rgb(x + mathx::prand_seed, y + mathx::prand_seed, 32.0, 0.5, 8);
+
+	// Save a copy of the PRNG seed.
+	const long prand_copy = mathx::prand_seed;
+
+	s_rgb colour;
+	colour.r = nebula_rgb(value, mathx::prand(4)) / 2;
+	colour.g = nebula_rgb(value, mathx::prand(4)) / 2;
+	colour.b = nebula_rgb(value, mathx::prand(4)) / 2;
+
+	// Set the PRNG seed back again.
+	mathx::prand_seed = prand_copy;
+
+	nebula_cache.insert(std::pair<string, s_rgb>(coord, colour));
+	return colour;
+}
+
+// Modifies an RGB value in the specified manner, used for rendering nebulae.
+unsigned char IOCore::nebula_rgb(unsigned char value, int modifier)
+{
+	STACK_TRACE();
+	switch(modifier)
+	{
+		case 1: value /= 2; break;
+		case 2: value = pow(value, 3) / 65025; break;
+		case 3: value = pow(value, 2) / 255; break;
+		case 4: value /= 5; break;
+	}
+	return value;
+}
+
+// Renders an OK box on a pop-up window.
+void IOCore::ok_box(int offset, Colour colour)
+{
+	STACK_TRACE();
+	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
+
+	box(mid_col - 1, mid_row + offset - 1, 3, 3, colour);
+	print_at(static_cast<Glyph>(' '), mid_col, mid_row + offset - 1, colour);
+	print_at(static_cast<Glyph>(' '), mid_col, mid_row + offset + 1, colour);
+	print_at(Glyph::RETURN, mid_col, mid_row + offset, Colour::CGA_LGREEN);
+	print_at(Glyph::LINE_VL, mid_col - 1, mid_row + offset, colour);
+	print_at(Glyph::LINE_VR, mid_col + 1, mid_row + offset, colour);
+}
+
 void IOCore::parse_colour(Colour colour, unsigned char &r, unsigned char &g, unsigned char &b)
 {
 	STACK_TRACE();
@@ -573,8 +691,8 @@ int IOCore::print(string message, int x, int y, Colour colour, unsigned int prin
 			{
 				if (message.at(i + 4) == '^')
 				{
-					const Glyph code = static_cast<Glyph>(atoi(message.substr(i + 1, 3).c_str()) + 127);
-					if (static_cast<int>(code) - 127)	// Do not print ^000^ code.
+					const Glyph code = static_cast<Glyph>(atoi(message.substr(i + 1, 3).c_str()));
+					if (static_cast<int>(code))	// Do not print ^000^ code.
 					{
 						print_at(code, x + i + offset, y, colour, print_flags);
 						offset -= 4;
@@ -714,6 +832,27 @@ void IOCore::render_glitches()
 	STACK_TRACE();
 	for (auto g : glitch_vec)
 		glitch(g.x, g.y, g.w, g.h, g.off_x, g.off_y, g.black, g.surf);
+}
+
+// Renders a nebula on the screen.
+void IOCore::render_nebula(unsigned short seed, int off_x, int off_y)
+{
+	STACK_TRACE();
+	// If the currently-cached nebula is different from the one being requested, rebuild it.
+	if (seed != nebula_cache_seed)
+	{
+		nebula_cache_seed = seed;
+		nebula_cache.clear();
+	}
+	mathx::prand_seed = seed;
+	for (int x = 0; x < cols + 1; x++)
+	{
+		for (int y = 0; y < rows + 1; y++)
+		{
+			s_rgb rgb = nebula(x + off_x, y + off_y);
+			print_at(Glyph::BLOCK_SOLID, x, y, rgb.r, rgb.g, rgb.b);
+		}
+	}
 }
 
 // Unlocks the mutexes, if they're locked. Only for use by the Guru system.

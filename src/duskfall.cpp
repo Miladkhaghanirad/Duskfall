@@ -4,6 +4,7 @@
 #include "duskfall.h"
 #include "guru.h"
 #include "iocore.h"
+#include "title.h"
 
 // Program main entry point.
 int main(int argc, char* argv[])
@@ -13,16 +14,7 @@ int main(int argc, char* argv[])
 
 	guru = new Guru();
 	iocore = new IOCore();
-
-	// Attempt to cause a segfault.
-	char *a;
-	*a = 'b';
-
-	iocore->print("Hello, world!", 1, 1, Colour::CGA_LGREEN);
-	iocore->print("Alternate font test!", 1, 3, Colour::CGA_LYELLOW, PRINT_FLAG_ALT_FONT);
-	iocore->flip();
-	iocore->wait_for_key();
-
+	title::title_screen();
 	delete iocore;
 	delete guru;
 	return 0;

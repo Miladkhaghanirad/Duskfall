@@ -21,6 +21,9 @@ enum class Colour : unsigned char { GRAY = 0x00, AQUA, BLUE, PURPLE, MAGENTA, PI
 	CGA_BLACK = 0x50, CGA_BLUE, CGA_GREEN, CGA_CYAN, CGA_RED, CGA_MAGENTA, CGA_YELLOW, CGA_LGRAY, CGA_GRAY, CGA_LBLUE, CGA_LGREEN, CGA_LCYAN, CGA_LRED, CGA_LMAGENTA, CGA_LYELLOW, CGA_WHITE };
 #define MAX_COLOUR	0x5F	// The highest palette colour available.
 
+#define UI_COLOUR_BOX	Colour::CGA_LGRAY
+#define UI_COLOUR_LABEL	Colour::CGA_WHITE
+
 // Codes for the high-ASCII characters.
 enum class Glyph : unsigned short { FACE_BLACK = 1, FACE_WHITE, HEART, DIAMOND, CLUB, SPADE, BULLET, BULLET_INVERT, CIRCLE, CIRCLE_INVERT, MALE, FEMALE, MUSIC, MUSIC_DOUBLE, SUN, TRIANGLE_RIGHT, TRIANGLE_LEFT, ARROW_UD, DOUBLE_EXCLAIM,
 	PILCROW, SECTION, GEOM_A, ARROW_UD_B, ARROW_UP, ARROW_DOWN, ARROW_RIGHT, ARROW_LEFT, BRACKET, ARROW_LR, TRIANGLE_UP, TRIANGLE_DOWN, HOUSE = 127, C_CEDILLA_CAPS, U_DIAERESIS, E_ACUTE, A_CIRCUMFLEX, A_DIAERESIS, A_GRAVE, A_OVERRING,
@@ -29,7 +32,8 @@ enum class Glyph : unsigned short { FACE_BLACK = 1, FACE_WHITE, HEART, DIAMOND, 
 	GUILLEMET_OPEN, GUILLEMET_CLOSE, SHADE_LIGHT, SHADE_MEDIUM, SHADE_HEAVY, LINE_V, LINE_VL, LINE_VLL, LINE_VVL, LINE_DDL, LINE_DLL, LINE_VVLL, LINE_VV, LINE_DDLL, LINE_UULL, LINE_UUL, LINE_ULL, LINE_DL, LINE_UR, LINE_UH, LINE_DH,
 	LINE_VR, LINE_H, LINE_VH, LINE_VRR, LINE_VVR, LINE_UURR, LINE_DDRR, LINE_UUHH, LINE_DDHH, LINE_VVRR, LINE_HH, LINE_VVHH, LINE_UHH, LINE_UUH, LINE_DHH, LINE_DDH, LINE_UUR, LINE_URR, LINE_DRR, LINE_DDR, LINE_VVH, LINE_VHH, LINE_UL,
 	LINE_DR, BLOCK_SOLID, BLOCK_D, BLOCK_L, BLOCK_R, BLOCK_U, ALPHA, BETA, GAMMA_CAPS, PI_CAPS, SIGMA_CAPS, SIGMA, MU, TAU, PHI_CAPS, THETA_CAPS, OMEGA_CAPS, DELTA, INFINITY, PHI, EPSILON, INTERSECTION, TRIPLE_BAR, PLUS_MINUS, GEQ,
-	LEQ, INTEGRAL, INTEGRAL_INVERTED, DIVISION, APPROXIMATION, DEGREE, BULLET_SMALL, INTERPUNCT, SQUARE_ROOT, N_SUPER, SQUARE, MIDBLOCK };
+	LEQ, INTEGRAL, INTEGRAL_INVERTED, DIVISION, APPROXIMATION, DEGREE, BULLET_SMALL, INTERPUNCT, SQUARE_ROOT, N_SUPER, SQUARE, MIDBLOCK, COPYRIGHT = 256, BLOCKS_7 = 283, BLOCKS_11, BLOCKS_14, BLOCKS_13, BLOCKS_4, UPSIDE_DOWN_HD,
+	BLOCKS_8 = 315, BLOCKS_1, BLOCKS_2, CORNER_CLIP_DL, CORNER_CLIP_DR, CURVE_DL, CURVE_UR, CURVE_UL, CURVE_DR, FLOPPY_DISK_METAL_HOLE, RETURN };
 
 // print() flags
 #define PRINT_FLAG_NO_NBSP		(1 << 0)
@@ -79,16 +83,26 @@ public:
 	void	clear_shade() { shade_mode = 0; }	// Clears 'shade mode' entirely.
 	void	cls();					// Clears the screen.
 	void	delay(unsigned int ms);	// Calls SDL_Delay but also handles visual glitches.
+	bool	did_mouse_click(unsigned short x, unsigned short y, unsigned short w = 1, unsigned short h = 1);	// Checks if the player clicked in a specified area.
 	void	flip();					// Redraws the display.
 	unsigned short	get_cols() { return cols; }		// Returns the number of columns on the screen.
 	unsigned short	get_rows() { return rows; }		// Returns the number of rows on the screen.
 	void	glitch_intensity(unsigned char value) { glitch_multi = value; }	// Sets the glitch intensity level.
+	bool	is_cancel(unsigned int key);	// Returns true if the key is a chosen 'cancel' key.
+	bool	is_down(unsigned int key);		// Returns true if the key is a chosen 'down' key.
+	bool	is_left(unsigned int key);		// Returns true if the key is a chosen 'left' key.
+	bool	is_right(unsigned int key);		// Returns true if the key is a chosen 'right' key.
+	bool	is_select(unsigned int key);	// Returns true if the key is a chosen 'select' key.
+	bool	is_up(unsigned int key);		// Returns true if the key is a chosen 'up' key.
 	unsigned short	midcol() { return mid_col; }	// Retrieves the middle column on the screen.
 	unsigned short	midrow() { return mid_row; }	// Retrieves the middle row on the screen.
+	void	ok_box(int offset, Colour colour);	// Renders an OK box on a pop-up window.
 	int		print(string message, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a message at the specified coordinates.
 	void	print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen.
 	void	rect(int x, int y, int w, int h, Colour colour);		// Draws a coloured rectangle
 	void	rect_fine(int x, int y, int w, int h, Colour colour);	// Draws a rectangle at very specific coords.
+	void	rect_fine(int x, int y, int w, int h, s_rgb colour);	// As above, but with direct RGB input.
+	void	render_nebula(unsigned short seed, int off_x, int off_y);	// Renders a nebula on the screen.
 	void	unlock_surfaces();		// Unlocks the mutexes, if they're locked. Only for use by the Guru system.
 	void	update_ntsc_mode(int force = -1);	// Updates the NTSC filter.
 	unsigned int	wait_for_key(unsigned short max_ms = 0);	// Polls SDL until a key is pressed. If a time is specified, it will abort after this time.
@@ -133,10 +147,11 @@ private:
 	void	glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf);	// Offsets part of the display.
 	void	glitch_horizontal();	// Horizontal displacement visual glitch.
 	void	glitch_square();		// Square displacement glitch.
+	s_rgb	nebula(int x, int y);	// Determines the colour of a specific point in a nebula, based on X,Y coordinates.
+	unsigned char	nebula_rgb(unsigned char value, int modifier);	// Modifies an RGB value in the specified manner, used for rendering nebulae.
 	void	parse_colour(Colour colour, unsigned char &r, unsigned char &g, unsigned char &b);	// Parses a colour code into RGB.
 	void	print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen, in RGB colours.
 	void	render_glitches();		// Renders pre-calculated glitches.
-	void	rect_fine(int x, int y, int w, int h, s_rgb colour);	// As above, but with direct RGB input.
 };
 
 extern IOCore*	iocore;	// External access to the IOCore object.

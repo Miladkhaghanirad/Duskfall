@@ -25,6 +25,116 @@ unsigned int ansi_strlen(string input)
 	return len;
 }
 
+// Splits an ANSI string into a vector of strings, to a given line length.
+vector<string> ansi_vector_split(string source, unsigned int line_len)
+{
+	STACK_TRACE();
+	vector<string> output;
+
+	// Check to see if the line of text has the no-split tag at the start.
+	if (source.size() >= 5)
+	{
+		if (!source.substr(0, 5).compare("^000^"))
+		{
+			output.push_back(source);
+			return output;
+		}
+	}
+
+	// Check to see if the line is too short to be worth splitting.
+	if (source.size() <= line_len)
+	{
+		output.push_back(source);
+		return output;
+	}
+
+	// Split the string into individual words.
+	vector<string> words = string_explode(source, " ");
+
+	// Keep track of the current line and our position on it.
+	unsigned int current_line = 0, line_pos = 0;
+	string last_ansi = "{57}";	// The last ANSI tag we encountered; white by default.
+
+	// Start with an empty string.
+	output.push_back("");
+
+	for (auto word : words)
+	{
+		if (word == "{nl}")	// Check for new-line marker.
+		{
+			if (line_pos > 0)
+			{
+				line_pos = 0; current_line += 2; output.push_back(" "); output.push_back(last_ansi);
+			}
+		}
+		else if (word == "{lb}")
+		{
+			if (line_pos > 0)
+			{
+				line_pos = 0; current_line += 1; output.push_back(last_ansi);
+			}
+		}
+		else
+		{
+			unsigned int length = word.length();		// Find the length of the word.
+
+			// If the word includes high-ASCII tags, adjust the length.
+			size_t htag_pos = word.find("^");
+			bool high_ascii = false;
+			if (htag_pos != string::npos)
+			{
+				if (word.size() > htag_pos + 4)
+				{
+					if (word.at(htag_pos + 4) == '^')
+					{
+						length -= word_count(word, "^") * 2;
+						high_ascii = true;
+					}
+				}
+			}
+
+			const int ansi_count = word_count(word, "{");	// Count the ANSI tags.
+			if (ansi_count) length -= (ansi_count * 4);	// Reduce the length if one or more ANSI tags are found.
+			if (length + line_pos >= line_len)	// Is the word too long for the current line?
+			{
+				line_pos = 0; current_line++;	// CR;LF
+				output.push_back(last_ansi);	// Start the line with the last ANSI tag we saw.
+			}
+			if (ansi_count)
+			{
+				// Duplicate the last-used ANSI tag.
+				const string::size_type flo = word.find_last_of("{");
+				if (flo != string::npos)
+				{
+					if (word.size() >= flo + 4)
+					{
+						const string last_test = word.substr(flo, 4);
+						if (last_test.compare("{nl}") || last_test.compare("{lb}")) last_ansi = last_test;
+					}
+				}
+			}
+			if (line_pos != 0)	// NOT the start of a new line?
+			{
+				length++; output.at(current_line) += " ";
+			}
+			// Is the word STILL too long to fit over a single line?
+			// Don't attempt this on high-ASCII words.
+			while (length > line_len && !high_ascii)
+			{
+				const string trunc = word.substr(0, line_len);
+				word = word.substr(line_len);
+				output.at(current_line) += trunc;
+				line_pos = 0; current_line++;
+				output.push_back(last_ansi);	// Start the line with the last ANSI tag we saw.
+				length = word.size();	// Adjusts the length for what we have left over.
+			}
+			output.at(current_line) += word; line_pos += length;
+		}
+	}
+
+	return output;
+}
+
 // Converts a vector to a comma-separated list.
 string comma_list(vector<string> vec, bool use_and)
 {
@@ -84,6 +194,44 @@ string itos(long long num)
 	std::stringstream ss;
 	ss << num;
 	return ss.str();
+}
+
+// String split/explode function.
+vector<string> string_explode(string str, string separator)
+{
+	STACK_TRACE();
+	vector<string> results;
+
+	string::size_type pos = str.find(separator, 0);
+	const int pit = separator.length();
+
+	while(pos != string::npos)
+	{
+		if (pos == 0) results.push_back("");
+		else results.push_back(str.substr(0, pos));
+        str.erase(0, pos + pit);
+        pos = str.find(separator, 0);
+    }
+    results.push_back(str);
+
+    return results;
+}
+
+int word_count(string str, string word)
+{
+	STACK_TRACE();
+	int count = 0;
+	string::size_type word_pos = 0;
+	while(word_pos != string::npos)
+	{
+		word_pos = str.find(word, word_pos);
+		if (word_pos != string::npos)
+		{
+			count++;
+			word_pos += word.length();
+		}
+	}
+	return count;
 }
 
 }	// namespace strx

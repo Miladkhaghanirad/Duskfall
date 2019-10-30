@@ -8,8 +8,17 @@
 namespace mathx
 {
 
+extern unsigned int	prand_seed;		// Pseudorandom number seed.
+
 bool			check_flag(unsigned int flags, unsigned int flag_to_check);	// Checks to see if a flag is set.
-void			init();					// Sets up PCG pseudorandom number generator.
-unsigned int	rnd(unsigned int max);	// Returns a random number between 1 and max.
+void			init();						// Sets up PCG pseudorandom number generator.
+bool			is_odd(unsigned int num);	// Checks if a number is odd.
+double			perlin(double x, double y, double zoom, double p, int octaves);	// Simple perlin noise generation.
+double			perlin_findnoise2(double x, double y);	// Pseudo-random number generator for Perlin noise generation.
+double			perlin_interpolate(double a, double b, double x);	// Cosine interpolation.
+double			perlin_noise(double x, double y);	// Generate noise for a given coordinate.
+unsigned char	perlin_rgb(double x, double y, double zoom, double p, int octaves);	// Wrapper to generate a 0-255 RGB value for the given coord.
+unsigned int	prand(unsigned int lim);	// Simpler, easily-seedable pseudorandom number generator.
+unsigned int	rnd(unsigned int max);		// Returns a random number between 1 and max.
 
 }	// namespace mathx
