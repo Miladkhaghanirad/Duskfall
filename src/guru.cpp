@@ -72,7 +72,7 @@ void Guru::halt(string error)
 			iocore->flip();
 			flash_state = !flash_state;
 		}
-		iocore->delay(10);
+		iocore->wait_for_key(10);
 	}
 }
 
@@ -105,7 +105,7 @@ void Guru::redraw()
 	STACK_TRACE();
 	iocore->cls();
 	if (flash_state) iocore->box(iocore->midcol() - 20, iocore->midrow() - 3, 41, 7, Colour::TERM_LRED);
-	//iocore->print("Software Failure, Halting Execution", iocore->midcol() - 17, iocore->midrow() - 1, Colour::TERM_LRED);
-	//iocore->print(message, iocore->midcol() - (message.size() / 2), iocore->midrow() + 1, Colour::TERM_LRED);
+	iocore->print("Software Failure, Halting Execution", iocore->midcol() - 17, iocore->midrow() - 1, Colour::TERM_LRED);
+	iocore->print(message, iocore->midcol() - (message.size() / 2), iocore->midrow() + 1, Colour::TERM_LRED);
 	iocore->flip();
 }

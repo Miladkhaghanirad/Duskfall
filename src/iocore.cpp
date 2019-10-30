@@ -154,6 +154,7 @@ IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), screen_x(1024), screen_y
 	exit_func_level = 4;
 
 	// Now that the font is loaded and SDL is initialized, we can activate Guru's error screen.
+	guru->activate();
 }
 
 IOCore::~IOCore()
@@ -360,6 +361,7 @@ void IOCore::exit_functions()
 		free(ntsc);
 		main_surface = window_surface = snes_surface = temp_surface = glitch_hz_surface = glitch_sq_surface = glitched_main_surface = nullptr;
 		ntsc = nullptr;
+		guru->deactivate();
 
 		if (exit_func_level >= 4) SDL_FreeSurface(font);
 	}
