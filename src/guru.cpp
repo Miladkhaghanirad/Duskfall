@@ -10,6 +10,27 @@
 
 Guru*	guru = nullptr;	// The main Guru object.
 
+// Catches a segfault or other fatal signal.
+void intercept_signal(int sig)
+{
+	STACK_TRACE();
+	string sig_type;
+	switch(sig)
+	{
+		case SIGABRT: sig_type = "Software requested abort."; break;
+		case SIGFPE: sig_type = "Floating-point exception."; break;
+		case SIGILL: sig_type = "Illegal instruction."; break;
+		case SIGSEGV: sig_type = "Segmentation fault."; break;
+		default: sig_type = "Intercepted unknown signal."; break;
+	}
+
+	// Disable the signals for now, to stop a cascade.
+	signal(SIGABRT, SIG_IGN);
+	signal(SIGSEGV, SIG_IGN);
+	signal(SIGILL, SIG_IGN);
+	signal(SIGFPE, SIG_IGN);
+	guru->halt(sig_type);
+}
 
 // Constructor, opens the log file and hooks signals.
 Guru::Guru() : dead_already(false), fully_active(false), redraw_cycle(250), flash_state(true)
@@ -17,7 +38,11 @@ Guru::Guru() : dead_already(false), fully_active(false), redraw_cycle(250), flas
 	STACK_TRACE();
 	remove(FILENAME_LOG);
 	syslog.open(FILENAME_LOG);
-	log("Guru error-handling system is online.");
+	log("Guru error-handling system is online. Hooking signals...");
+	if (signal(SIGABRT, intercept_signal) == SIG_ERR) halt("Failed to hook abort signal.");
+	if (signal(SIGSEGV, intercept_signal) == SIG_ERR) halt("Failed to hook segfault signal.");
+	if (signal(SIGILL, intercept_signal) == SIG_ERR) halt("Failed to hook illegal instruction signal.");
+	if (signal(SIGFPE, intercept_signal) == SIG_ERR) halt("Failed to hook floating-point exception signal.");
 }
 
 // Destructor, closes the system log file and releases signal hooks.

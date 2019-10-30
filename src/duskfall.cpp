@@ -14,7 +14,9 @@ int main(int argc, char* argv[])
 	guru = new Guru();
 	iocore = new IOCore();
 
-	guru->halt("this is a test error");
+	// Attempt to cause a segfault.
+	char *a;
+	*a = 'b';
 
 	iocore->print("Hello, world!", 1, 1, Colour::CGA_LGREEN);
 	iocore->print("Alternate font test!", 1, 3, Colour::CGA_LYELLOW, PRINT_FLAG_ALT_FONT);
