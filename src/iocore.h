@@ -25,15 +25,15 @@ enum class Colour : unsigned char { GRAY = 0x00, AQUA, BLUE, PURPLE, MAGENTA, PI
 #define UI_COLOUR_LABEL	Colour::CGA_WHITE
 
 // Codes for the high-ASCII characters.
-enum class Glyph : unsigned short { FACE_BLACK = 1, FACE_WHITE, HEART, DIAMOND, CLUB, SPADE, BULLET, BULLET_INVERT, CIRCLE, CIRCLE_INVERT, MALE, FEMALE, MUSIC, MUSIC_DOUBLE, SUN, TRIANGLE_RIGHT, TRIANGLE_LEFT, ARROW_UD, DOUBLE_EXCLAIM,
-	PILCROW, SECTION, GEOM_A, ARROW_UD_B, ARROW_UP, ARROW_DOWN, ARROW_RIGHT, ARROW_LEFT, BRACKET, ARROW_LR, TRIANGLE_UP, TRIANGLE_DOWN, HOUSE = 127, C_CEDILLA_CAPS, U_DIAERESIS, E_ACUTE, A_CIRCUMFLEX, A_DIAERESIS, A_GRAVE, A_OVERRING,
-	C_CEDILLA, E_CIRCUMFLEX, E_DIAERESIS, E_GRAVE, I_DIAERESIS, I_CIRCUMFLEX, I_GRAVE, A_DIAERESIS_CAPS, A_OVERRING_CAPS, E_ACUTE_CAPS, AE, AE_CAPS, O_CIRCUMFLEX, O_DIAERESIS, O_GRAVE, U_CIRCUMFLEX, U_GRAVE, Y_DIAERESIS,
-	O_DIAERESIS_CAPS, U_DIAERESIS_CAPS, CENT, POUND, YEN, PESETA, F_HOOK, A_ACUTE, I_ACUTE, O_ACUTE, U_ACUTE, N_TILDE, N_TILDE_CAPS, ORDINAL_F, ORDINAL_M, QUESTION_INVERTED, NOT_REVERSE, NOT, HALF, QUARTER, EXCLAIM_INVERTED,
-	GUILLEMET_OPEN, GUILLEMET_CLOSE, SHADE_LIGHT, SHADE_MEDIUM, SHADE_HEAVY, LINE_V, LINE_VL, LINE_VLL, LINE_VVL, LINE_DDL, LINE_DLL, LINE_VVLL, LINE_VV, LINE_DDLL, LINE_UULL, LINE_UUL, LINE_ULL, LINE_DL, LINE_UR, LINE_UH, LINE_DH,
-	LINE_VR, LINE_H, LINE_VH, LINE_VRR, LINE_VVR, LINE_UURR, LINE_DDRR, LINE_UUHH, LINE_DDHH, LINE_VVRR, LINE_HH, LINE_VVHH, LINE_UHH, LINE_UUH, LINE_DHH, LINE_DDH, LINE_UUR, LINE_URR, LINE_DRR, LINE_DDR, LINE_VVH, LINE_VHH, LINE_UL,
-	LINE_DR, BLOCK_SOLID, BLOCK_D, BLOCK_L, BLOCK_R, BLOCK_U, ALPHA, BETA, GAMMA_CAPS, PI_CAPS, SIGMA_CAPS, SIGMA, MU, TAU, PHI_CAPS, THETA_CAPS, OMEGA_CAPS, DELTA, INFINITY, PHI, EPSILON, INTERSECTION, TRIPLE_BAR, PLUS_MINUS, GEQ,
-	LEQ, INTEGRAL, INTEGRAL_INVERTED, DIVISION, APPROXIMATION, DEGREE, BULLET_SMALL, INTERPUNCT, SQUARE_ROOT, N_SUPER, SQUARE, MIDBLOCK, COPYRIGHT = 256, BLOCKS_7 = 283, BLOCKS_11, BLOCKS_14, BLOCKS_13, BLOCKS_4, UPSIDE_DOWN_HD,
-	BLOCKS_8 = 315, BLOCKS_1, BLOCKS_2, CORNER_CLIP_DL, CORNER_CLIP_DR, CURVE_DL, CURVE_UR, CURVE_UL, CURVE_DR, FLOPPY_DISK_METAL_HOLE, RETURN };
+enum class Glyph : unsigned short { FACE_BLACK = 1, FACE_WHITE, HEART, DIAMOND, CLUB, SPADE, BULLET, BULLET_INVERT, CIRCLE, CIRCLE_INVERT, MALE, FEMALE, MUSIC, MUSIC_DOUBLE, SUN, TRIANGLE_RIGHT, TRIANGLE_LEFT, ARROW_UD,
+	DOUBLE_EXCLAIM, PILCROW, SECTION, GEOM_A, ARROW_UD_B, ARROW_UP, ARROW_DOWN, ARROW_RIGHT, ARROW_LEFT, BRACKET, ARROW_LR, TRIANGLE_UP, TRIANGLE_DOWN, HOUSE = 127, C_CEDILLA_CAPS, U_DIAERESIS, E_ACUTE, A_CIRCUMFLEX, A_DIAERESIS,
+	A_GRAVE, A_OVERRING, C_CEDILLA, E_CIRCUMFLEX, E_DIAERESIS, E_GRAVE, I_DIAERESIS, I_CIRCUMFLEX, I_GRAVE, A_DIAERESIS_CAPS, A_OVERRING_CAPS, E_ACUTE_CAPS, AE, AE_CAPS, O_CIRCUMFLEX, O_DIAERESIS, O_GRAVE, U_CIRCUMFLEX, U_GRAVE,
+	Y_DIAERESIS, O_DIAERESIS_CAPS, U_DIAERESIS_CAPS, CENT, POUND, YEN, PESETA, F_HOOK, A_ACUTE, I_ACUTE, O_ACUTE, U_ACUTE, N_TILDE, N_TILDE_CAPS, ORDINAL_F, ORDINAL_M, QUESTION_INVERTED, NOT_REVERSE, NOT, HALF, QUARTER,
+	EXCLAIM_INVERTED, GUILLEMET_OPEN, GUILLEMET_CLOSE, SHADE_LIGHT, SHADE_MEDIUM, SHADE_HEAVY, LINE_V, LINE_VL, LINE_VLL, LINE_VVL, LINE_DDL, LINE_DLL, LINE_VVLL, LINE_VV, LINE_DDLL, LINE_UULL, LINE_UUL, LINE_ULL, LINE_DL, LINE_UR,
+	LINE_UH, LINE_DH, LINE_VR, LINE_H, LINE_VH, LINE_VRR, LINE_VVR, LINE_UURR, LINE_DDRR, LINE_UUHH, LINE_DDHH, LINE_VVRR, LINE_HH, LINE_VVHH, LINE_UHH, LINE_UUH, LINE_DHH, LINE_DDH, LINE_UUR, LINE_URR, LINE_DRR, LINE_DDR, LINE_VVH,
+	LINE_VHH, LINE_UL, LINE_DR, BLOCK_SOLID, BLOCK_D, BLOCK_L, BLOCK_R, BLOCK_U, ALPHA, BETA, GAMMA_CAPS, PI_CAPS, SIGMA_CAPS, SIGMA, MU, TAU, PHI_CAPS, THETA_CAPS, OMEGA_CAPS, DELTA, INFINITY, PHI, EPSILON, INTERSECTION,
+	TRIPLE_BAR, PLUS_MINUS, GEQ, LEQ, INTEGRAL, INTEGRAL_INVERTED, DIVISION, APPROXIMATION, DEGREE, BULLET_SMALL, INTERPUNCT, SQUARE_ROOT, N_SUPER, SQUARE, MIDBLOCK, COPYRIGHT = 256, BLOCKS_7 = 283, BLOCKS_11, BLOCKS_14, BLOCKS_13,
+	BLOCKS_4, UPSIDE_DOWN_HD, BLOCKS_8 = 315, BLOCKS_1, BLOCKS_2, CORNER_CLIP_DL, CORNER_CLIP_DR, CURVE_DL, CURVE_UR, CURVE_UL, CURVE_DR, FLOPPY_DISK_METAL_HOLE, RETURN, TICK, MIDDOT, MIDCOMMA };
 
 // print() flags
 #define PRINT_FLAG_NO_NBSP		(1 << 0)
@@ -78,6 +78,8 @@ class IOCore
 public:
 			IOCore();
 			~IOCore();				// This is where we clean up our shit.
+	void	alagard_print(string message, int x, int y, Colour colour = Colour::CGA_WHITE);	// Prints a string in the Alagard font at the specified coordinates.
+	void	alagard_print_at(char letter, int x, int y, Colour colour = Colour::CGA_WHITE);	// Prints an Alagard font character at the specified coordinates.
 	void	ansi_print(string msg, int x, int y, unsigned int print_flags = 0);	// Prints an ANSI string at the specified position.
 	void	box(int x, int y, int w, int h, Colour colour, unsigned char flags = 0, string title = "");	// Renders an ASCII box at the given coordinates.
 	void	clear_shade() { shade_mode = 0; }	// Clears 'shade mode' entirely.
@@ -94,6 +96,7 @@ public:
 	bool	is_right(unsigned int key);		// Returns true if the key is a chosen 'right' key.
 	bool	is_select(unsigned int key);	// Returns true if the key is a chosen 'select' key.
 	bool	is_up(unsigned int key);		// Returns true if the key is a chosen 'up' key.
+	string	key_to_name(unsigned int key);	// Returns the name of a key.
 	unsigned short	midcol() { return mid_col; }	// Retrieves the middle column on the screen.
 	unsigned short	midrow() { return mid_row; }	// Retrieves the middle row on the screen.
 	void	ok_box(int offset, Colour colour);	// Renders an OK box on a pop-up window.
@@ -110,6 +113,7 @@ public:
 private:
 	SDL_Surface		*font;					// The bitmap font texture.
 	unsigned short	font_sheet_size;		// The size of the font texture sheet, in glyphs.
+	SDL_Surface		*alagard;				// The texture for the large bitmap font.
 	SDL_Window		*main_window;			// The main (and only) SDL window.
 	SDL_Surface		*main_surface;			// The main render surface.
 	SDL_Surface 	*glitched_main_surface;	// A glitched version of the main render surface.
@@ -124,22 +128,18 @@ private:
 	int				shade_mode;				// Are we rendering in shade mode?
 	int				screen_x, screen_y;		// Chosen screen resolution.
 	int				unscaled_x, unscaled_y;	// The unscaled resolution.
-	bool			fullscreen;				// Fullscreen mode?
 	snes_ntsc_t		*ntsc;					// Used by the NTSC filter.
 	unsigned char	exit_func_level;		// Keep track of what to clean up at exit.
 	bool			hold_glyph_glitches;	// Hold off on glyph glitching right now.
 	unsigned char	glitch_multi;			// Glitch intensity multiplier.
 	unsigned char	surface_scale;			// The surface scale modifier.
 	unsigned short	mouse_clicked_x, mouse_clicked_y;	// Last clicked location for a mouse event.
-	unsigned char	visual_glitches;		// Do we have visual glitches enabled? At what level?
 	std::vector<s_glitch>	glitch_vec;
 	unsigned int 	glitch_clear_countdown;
 	unsigned char	glitches_queued;
 	bool			ntsc_glitched;
-	unsigned char	ntsc_mode;				// The currently selected NTSC filter mode.
 	vector<unsigned int>	queued_keys;	// Keypresses waiting to be processed.
 	bool			cleaned_up;				// Have we run the exit functions already?
-	unsigned char	colour_palette;			// The currently-selected colour palette.
 
 	Colour	adjust_palette(Colour colour);	// Adjusts the colour palette, if needed.
 	void	calc_glitches();		// Calculates glitch positions.

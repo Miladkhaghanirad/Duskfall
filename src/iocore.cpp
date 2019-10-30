@@ -5,6 +5,7 @@
 #include "guru.h"
 #include "iocore.h"
 #include "mathx.h"
+#include "prefs.h"
 #include "strx.h"
 #include "version.h"
 #include "sdl_savejpeg/SDL_savejpeg.h"
@@ -82,8 +83,8 @@ unsigned int build_version() { return atoi(cc_date); }
 
 IOCore*	iocore = nullptr;	// The main IOCore object.
 
-IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), screen_x(1024), screen_y(600), unscaled_x(1024), unscaled_y(600), fullscreen(false), exit_func_level(1), hold_glyph_glitches(false), glitch_multi(1), surface_scale(0),
-		mouse_clicked_x(0), mouse_clicked_y(0), visual_glitches(2), glitch_clear_countdown(0), glitches_queued(0), ntsc_glitched(false), ntsc_mode(2), cleaned_up(false), colour_palette(0)
+IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), exit_func_level(1), hold_glyph_glitches(false), glitch_multi(1), mouse_clicked_x(0), mouse_clicked_y(0), glitch_clear_countdown(0), glitches_queued(0), ntsc_glitched(false),
+		cleaned_up(false)
 {
 	STACK_TRACE();
 	guru->log("Duskfall v" + DUSKFALL_VERSION_STRING + " [build " + strx::itos(build_version()) + "]", GURU_STACK);
@@ -108,6 +109,10 @@ IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), screen_x(1024), screen_y
 
 	// This is messy. Set up all the surfaces we'll be using for rendering, and exit out if anything goes wrong.
 	guru->log("Initializing SDL window and surfaces.", GURU_INFO);
+	screen_x = unscaled_x = prefs::screen_x;
+	screen_y = unscaled_y = prefs::screen_y;
+	const bool fullscreen = prefs::fullscreen;
+	surface_scale = prefs::scale_mod;
 	if (surface_scale == 1) screen_y = static_cast<int>(screen_y * 1.3333) + 1;
 	else if (surface_scale == 2) { screen_x *= 2; screen_y *= 2; }
 	if (screen_x < SCREEN_MIN_X) screen_x = SCREEN_MIN_X;
@@ -144,14 +149,20 @@ IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), screen_x(1024), screen_y
 	flip();
 
 	// Load the CP437 font into memory.
-	guru->log("Attempting to load bitmap font.", GURU_INFO);
+	guru->log("Attempting to load bitmap fonts.", GURU_INFO);
 	SDL_Surface *font_temp = IMG_Load("data/cp437.png");
 	if (!font_temp) guru->halt(IMG_GetError());
 	font = SDL_ConvertSurface(font_temp, main_surface->format, 0);
 	if (!font) guru->halt(SDL_GetError());
 	SDL_FreeSurface(font_temp);
+	font_temp = IMG_Load("data/alagard.png");
+	if (!font_temp) guru->halt(IMG_GetError());
+	alagard = SDL_ConvertSurface(font_temp, main_surface->format, 0);
+	if (!alagard) guru->halt(SDL_GetError());
+	SDL_FreeSurface(font_temp);
 	IMG_Quit();	// We don't need SDL_image any more after this point.
 	if (SDL_SetColorKey(font, SDL_TRUE, SDL_MapRGB(font->format, 255, 255, 255)) < 0) guru->halt(SDL_GetError());
+	if (SDL_SetColorKey(alagard, SDL_TRUE, SDL_MapRGB(font->format, 255, 255, 255)) < 0) guru->halt(SDL_GetError());
 	exit_func_level = 4;
 
 	// Now that the font is loaded and SDL is initialized, we can activate Guru's error screen.
@@ -201,7 +212,7 @@ Colour IOCore::adjust_palette(Colour colour)
 			0x0D, 0xAD, 0xB0, 0xB1, 0xA7, 0xA6, 0xA7, 0x57, 0x58, 0xAF, 0xB3, 0xB4, 0xA8, 0xA9, 0xAC, 0x30
 	};
 
-	switch(colour_palette)
+	switch(prefs::palette)
 	{
 		case 0: return colour;
 		case 1: return static_cast<Colour>(colour_table_cga[static_cast<unsigned int>(colour)]);
@@ -210,6 +221,43 @@ Colour IOCore::adjust_palette(Colour colour)
 		case 4: return static_cast<Colour>(colour_table_cblindb[static_cast<unsigned int>(colour)]);
 		default: return Colour::ERROR_COLOUR;
 	}
+}
+
+// Prints a string in the Alagard font at the specified coordinates.
+void IOCore::alagard_print(string message, int x, int y, Colour colour)
+{
+	STACK_TRACE();
+	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
+
+	for (unsigned int i = 0; i < message.size(); i++)
+		alagard_print_at(message.at(i), x + (i * 24), y, colour);
+}
+
+// Prints an Alagard font character at the specified coordinates.
+void IOCore::alagard_print_at(char letter, int x, int y, Colour colour)
+{
+	STACK_TRACE();
+	if (letter == ' ' || letter == '_') return;
+	if (letter >= 'A' && letter <= 'Z') letter -= 65;
+	else if (letter == '/') letter = 27;
+	else if (letter == '.') letter = 28;
+	else letter = 26;
+	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
+
+	unsigned char r, g, b;
+	parse_colour(colour, r, g, b);
+
+	// Parse the colour into SDL's native format.
+	const unsigned int sdl_col = SDL_MapRGB(main_surface->format, r, g, b);
+
+	// Determine the location of the character.
+	const unsigned short loc_x = static_cast<unsigned short>(letter) * 24;
+	SDL_Rect font_rect = { loc_x, 0, 24, 26 };
+
+	// Draw a coloured square, then 'stamp' it with the font.
+	SDL_Rect scr_rect = { x, y, 24, 26 };
+	if (SDL_FillRect(main_surface, &scr_rect, sdl_col) < 0) guru->halt(SDL_GetError());
+	if (SDL_BlitSurface(alagard, &font_rect, main_surface, &scr_rect) < 0) guru->halt(SDL_GetError());
 }
 
 // Prints an ANSI string at the specified position.
@@ -312,7 +360,7 @@ void IOCore::delay(unsigned int ms)
 	}
 
 	// If glitches are disabled, then just exit quietly now. It's okay to leave the code above, as that counts down to *removing* glitches.
-	if (!visual_glitches || !glitch_multi) return;
+	if (!prefs::visual_glitches || !glitch_multi) return;
 
 	// If we're due for more glitches, get 'em started.
 	if (glitches_queued)
@@ -327,7 +375,7 @@ void IOCore::delay(unsigned int ms)
 	// See if any new glitches are due to start.
 	int glitch_chance = 0;
 	if (glitch_multi) glitch_chance = GLITCH_CHANCE / glitch_multi;
-	if (visual_glitches == 1) glitch_chance *= 3;
+	if (prefs::visual_glitches == 1) glitch_chance *= 3;
 	if (mathx::rnd(glitch_chance) == 1)
 	{
 		glitches_queued = 1;
@@ -391,9 +439,9 @@ void IOCore::exit_functions()
 void IOCore::flip()
 {
 	STACK_TRACE();
-	bool glitching = (visual_glitches && glitch_multi > 0);
+	bool glitching = (prefs::visual_glitches && glitch_multi > 0);
 
-	if (glitching && mathx::rnd(NTSC_GLITCH_CHANCE * glitch_multi) == 1 && ntsc_mode != 3 && visual_glitches >= 3 && !ntsc_glitched)
+	if (glitching && mathx::rnd(NTSC_GLITCH_CHANCE * glitch_multi) == 1 && prefs::ntsc_mode != 3 && prefs::visual_glitches >= 3 && !ntsc_glitched)
 	{
 		update_ntsc_mode(mathx::rnd(3));	// Don't do shader mode 0, it's too 'clean' for a glitch.
 		ntsc_glitched = true;
@@ -405,7 +453,7 @@ void IOCore::flip()
 	}
 
 	SDL_Surface *render_surf = main_surface;
-	if (visual_glitches && glitch_clear_countdown)
+	if (prefs::visual_glitches && glitch_clear_countdown)
 	{
 		render_surf = glitched_main_surface;
 		SDL_BlitSurface(main_surface, nullptr, glitched_main_surface, nullptr);
@@ -584,6 +632,32 @@ bool IOCore::is_up(unsigned int key)
 	//if (key == SDLK_UP || key == SDLK_KP_8 || key == prefs::keybind(JOY_UP) || key == prefs::keybind(SCROLL_UP) || key == prefs::keybind(NORTH)) return true;
 	if (key == SDLK_UP || key == SDLK_KP_8) return true;
 	return false;
+}
+
+// Returns the name of a key.
+string IOCore::key_to_name(unsigned int key)
+{
+	STACK_TRACE();
+	if (!key) return "{5C}[unbound]";
+	else if (key == 8) return "Backspace";
+	else if (key == 9) return "Tab";
+	else if (key == 13) return "Enter";
+	else if ((key >= '!' && key <= '@') || key == '`') return string(1, static_cast<char>(key));
+	else if (key >= 'a' && key <= 'z') return string(1, static_cast<char>(key - 32));
+	else if (key >= 'A' && key <= 'Z') return "Shift-" +string(1, static_cast<char>(key));
+	else if (key >= 1 && key <= 26) return "Ctrl-" + string(1, static_cast<char>(key + 64));
+	else if (key >= ((1 << 17) + 'a') && key <= ((1 << 17) + 'z')) return "Alt-" + string(1, static_cast<char>(key - (1 << 17) - 32));
+	else if (key >= ((1 << 15) + 'A') && key <= ((1 << 15) + 'Z')) return "Shift-Ctrl-Alt-" + string(1, static_cast<char>(key - (1 << 15)));
+	else if (key >= ((1 << 15) + 'a') && key <= ((1 << 15) + 'z')) return "Ctrl-Alt-" + string(1, static_cast<char>(key - (1 << 15) - 32));
+	else if (key >= ((1 << 16) + 'A') && key <= ((1 << 16) + 'Z')) return "Shift-Ctrl-" + string(1, static_cast<char>(key - (1 << 16)));
+	else if (key >= ((1 << 17) + 'A') && key <= ((1 << 17) + 'Z')) return "Shift-Alt-" + string(1, static_cast<char>(key - (1 << 17)));
+	else if (key == MOUSEWHEEL_UP_KEY) return "Mousewheel Up";
+	else if (key == MOUSEWHEEL_DOWN_KEY) return "Mousewheel Up";
+	else if (key == LMB_KEY) return "Left Mouse Button";
+	else if (key == RMB_KEY) return "Right Mouse Button";
+
+	if ((key > 0x7F && key < 0x40000039) || key > 0x4000011A) return "{5C}[unknown]";
+	return SDL_GetKeyName(key);
 }
 
 // Determines the colour of a specific point in a nebula, based on X,Y coordinates.
@@ -869,9 +943,9 @@ void IOCore::update_ntsc_mode(int force)
 	snes_ntsc_setup_t setup = snes_ntsc_composite;
 	if (force == -1)
 	{
-		if (ntsc_mode == 1) setup = snes_ntsc_svideo;
-		else if (ntsc_mode == 0) setup = snes_ntsc_rgb;
-		else if (ntsc_mode == 3) setup = snes_ntsc_monochrome;
+		if (prefs::ntsc_mode == 1) setup = snes_ntsc_svideo;
+		else if (prefs::ntsc_mode == 0) setup = snes_ntsc_rgb;
+		else if (prefs::ntsc_mode == 3) setup = snes_ntsc_monochrome;
 	}
 	else
 	{

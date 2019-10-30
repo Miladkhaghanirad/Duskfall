@@ -4,6 +4,7 @@
 #include "guru.h"
 #include "iocore.h"
 #include "mathx.h"
+#include "prefs.h"
 #include "strx.h"
 #include "title.h"
 #include "version.h"
@@ -72,6 +73,7 @@ void copyright_window()
 		else if (line == "-") copyright.push_back("{{PB}}");
 		else
 		{
+			strx::find_and_replace(line, "é", "^130^");
 			vector<string> line_vec = strx::ansi_vector_split(line, 53);
 			copyright.insert(copyright.end(), line_vec.begin(), line_vec.end());
 		}
@@ -382,7 +384,7 @@ void title_screen()
 			}
 			else if (menu_pos == 2)	// Prefs
 			{
-				//prefs::prefs_window();
+				prefs::prefs_window();
 				redraw_background();
 				redraw_menu();
 			}
@@ -416,7 +418,7 @@ void title_screen()
 			{
 				menu_pos = 2;
 				redraw_menu();
-				//prefs::prefs_window();
+				prefs::prefs_window();
 				redraw_background();
 				redraw_menu();
 			}

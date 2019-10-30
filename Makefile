@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -std=c++1y -Wall -Wextra -pedantic -O3 -I../src -g
-LIBFLAGS = -Llib -lmingw32 -lSDL2main -lSDL2.dll -lSDL2_image.dll -ljpeg -mwindows -s
+LIBFLAGS = -Llib -lmingw32 -lSDL2main -lSDL2.dll -lSDL2_image.dll -ljpeg -lsqlite3.dll -mwindows -s
 
 SOURCES=$(wildcard src/*.cpp)
 OBJS=$(SOURCES:.cpp=.o)

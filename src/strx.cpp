@@ -196,6 +196,14 @@ string itos(long long num)
 	return ss.str();
 }
 
+// Converts a string to lower-case.
+string str_tolower(string str)
+{
+	STACK_TRACE();
+	std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+	return str;
+}
+
 // String split/explode function.
 vector<string> string_explode(string str, string separator)
 {

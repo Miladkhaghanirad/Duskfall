@@ -4,6 +4,7 @@
 #include "duskfall.h"
 #include "guru.h"
 #include "iocore.h"
+#include "prefs.h"
 #include "title.h"
 
 // Program main entry point.
@@ -13,6 +14,7 @@ int main(int argc, char* argv[])
 	vector<string> parameters(argv, argv + argc);
 
 	guru = new Guru();
+	prefs::init();
 	iocore = new IOCore();
 	title::title_screen();
 	delete iocore;
