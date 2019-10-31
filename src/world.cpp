@@ -17,7 +17,7 @@
 
 World*	the_world = nullptr;	// The main World object.
 
-World::World(unsigned int new_slot, bool new_save) : the_dungeon(nullptr), save_slot(new_slot), level(0)
+World::World(unsigned int new_slot, bool new_save) : recalc_lighting(true), redraw_full(true), the_dungeon(nullptr), save_slot(new_slot), level(0)
 {
 	STACK_TRACE();
 	try
@@ -70,21 +70,18 @@ void World::load()
 void World::main_loop()
 {
 	STACK_TRACE();
-	bool redraw_full = true;
 	while(true)
 	{
+		if (recalc_lighting)
+		{
+			the_dungeon->recalc_lighting();
+			recalc_lighting = false;
+		}
 		if (redraw_full)
 		{
-			tiles_to_redraw.clear();
 			iocore->cls();
 			the_dungeon->render();
 			redraw_full = false;
-		}
-		else while (tiles_to_redraw.size())
-		{
-			auto xy = tiles_to_redraw.begin();
-			the_dungeon->render_tile(xy->first, xy->second);
-			tiles_to_redraw.erase(xy);
 		}
 		iocore->flip();
 
@@ -111,14 +108,6 @@ void World::new_game()
 	the_dungeon = new Dungeon(1, 50, 30);
 	the_dungeon->generate();
 	save();
-}
-
-// Marks a tile to be redrawn.
-void World::redraw_tile(unsigned short x, unsigned short y)
-{
-	STACK_TRACE();
-	std::pair<unsigned short, unsigned short> xy = {x, y};
-	if (tiles_to_redraw.find(xy) == tiles_to_redraw.end()) tiles_to_redraw.insert(xy);
 }
 
 // Saves the game to disk.

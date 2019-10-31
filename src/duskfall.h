@@ -45,3 +45,5 @@ public:
 using std::shared_ptr;
 using std::string;
 using std::vector;
+
+struct s_rgb { unsigned char r, g, b; };	// RGB colour values.

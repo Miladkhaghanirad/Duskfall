@@ -3,7 +3,6 @@
 
 #pragma once
 #include "duskfall.h"
-#include <set>
 
 namespace SQLite { class Database; }	// defined in SQLiteCpp/SQLiteCpp.h
 class Dungeon;	// defined in dungeon.h
@@ -20,18 +19,20 @@ public:
 	void			load();			// Loads the game from disk.
 	void			main_loop();	// The main game loop!
 	void			new_game();		// Sets up a new game.
-	void			redraw_tile(unsigned short x, unsigned short y);	// Marks a tile to be redrawn.
+	void			queue_recalc_lighting() { recalc_lighting = true; }	// Queues up a recalculation of the game's dynamic lighting.
+	void			queue_redraw() { redraw_full = true; }				// Queues up a full redraw of the game world.
 	void			save();			// Saves the game to disk.
 	SQLite::Database*	save_db() { return save_db_ptr; }	// Returns a pointer to the save file handle.
 	unsigned short	slot() { return save_slot; }	// Read-only access to the save slot currently in use.
 
 private:
+	bool				recalc_lighting;	// Recalculate the dynamic lighting at the start of the next turn.
+	bool				redraw_full;	// Redraw the dungeon entirely at the start of the next turn.
 	SQLite::Database	*save_db_ptr;	// SQLite handle for the save game file.
 	Hero				*the_hero;		// The main Hero object.
 	Dungeon				*the_dungeon;	// The current dungeon level.
 	unsigned short		save_slot;		// The save file slot.
 	unsigned short		level;			// The current dungeon level depth.
-	std::set<std::pair<unsigned short, unsigned short>>	tiles_to_redraw;	// Tiles that have been marked for redrawing.
 };
 
 void	new_world(unsigned short slot, bool new_save);	// Creates a new World in the specified save slot.

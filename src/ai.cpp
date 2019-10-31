@@ -13,9 +13,9 @@ bool AI::travel(short x_dir, short y_dir)
 	Dungeon *dungeon = world()->dungeon();
 	Tile *target_tile = dungeon->tile(owner->x + x_dir, owner->y + y_dir);
 	if (target_tile->impassible()) return false;
-	world()->redraw_tile(owner->x, owner->y);
 	owner->x += x_dir;
 	owner->y += y_dir;
-	world()->redraw_tile(owner->x, owner->y);
+	world()->queue_redraw();
+	world()->queue_recalc_lighting();
 	return true;
 }

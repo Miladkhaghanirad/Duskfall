@@ -74,7 +74,6 @@ enum { SHIFT_LEFT = 27, SHIFT_RIGHT, SHIFT_UP, SHIFT_DOWN };
 #define MOUSEWHEEL_DOWN_KEY	(UINT_MAX - 4)
 
 // Struct definitions
-struct s_rgb { unsigned char r, g, b; };	// RGB colour values.
 struct s_glitch
 {
 	unsigned int x, y, w, h;
@@ -113,6 +112,8 @@ public:
 	int		print(string message, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a message at the specified coordinates.
 	void	print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen.
 	void	print_at(char letter, int x, int y, Colour colour, unsigned int print_flags = 0) { print_at(static_cast<Glyph>(letter), x, y, colour, print_flags); }
+	void	print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen, in RGB colours.
+	void	print_at(char letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0) { print_at(static_cast<Glyph>(letter), x, y, r, g, b, print_flags); }
 	void	rect(int x, int y, int w, int h, Colour colour);		// Draws a coloured rectangle
 	void	rect_fine(int x, int y, int w, int h, Colour colour);	// Draws a rectangle at very specific coords.
 	void	rect_fine(int x, int y, int w, int h, s_rgb colour);	// As above, but with direct RGB input.
@@ -165,7 +166,6 @@ private:
 	s_rgb	nebula(int x, int y);	// Determines the colour of a specific point in a nebula, based on X,Y coordinates.
 	unsigned char	nebula_rgb(unsigned char value, int modifier);	// Modifies an RGB value in the specified manner, used for rendering nebulae.
 	void	parse_colour(Colour colour, unsigned char &r, unsigned char &g, unsigned char &b);	// Parses a colour code into RGB.
-	void	print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen, in RGB colours.
 	void	render_glitches();		// Renders pre-calculated glitches.
 };
 

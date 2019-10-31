@@ -18,6 +18,15 @@ bool check_flag(unsigned int flags, unsigned int flag_to_check)
 	return ((flags & flag_to_check) == flag_to_check);
 }
 
+// Determines the difference between two points on a grid.
+float grid_dist(long long x1, long long y1, long long x2, long long y2)
+{
+	STACK_TRACE();
+	const long long dist_x = x2 - x1, dist_y = y2 - y1;
+	const float dist = (sqrt((dist_x * dist_x) + (dist_y * dist_y)));
+	return round_to_two(dist);
+}
+
 // Sets up PCG pseudorandom number generator.
 void init()
 {
@@ -119,6 +128,13 @@ unsigned int rnd(unsigned int max)
 	STACK_TRACE();
 	if (max <= 1) return max;
 	return pcg32_boundedrand(max) + 1;
+}
+
+// Rounds a float to two decimal places.
+float round_to_two(float num)
+{
+	STACK_TRACE();
+	return floorf(num * 100 + 0.5) / 100;
 }
 
 }	// namespace mathx
