@@ -112,6 +112,7 @@ public:
 	void	ok_box(int offset, Colour colour);	// Renders an OK box on a pop-up window.
 	int		print(string message, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a message at the specified coordinates.
 	void	print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen.
+	void	print_at(char letter, int x, int y, Colour colour, unsigned int print_flags = 0) { print_at(static_cast<Glyph>(letter), x, y, colour, print_flags); }
 	void	rect(int x, int y, int w, int h, Colour colour);		// Draws a coloured rectangle
 	void	rect_fine(int x, int y, int w, int h, Colour colour);	// Draws a rectangle at very specific coords.
 	void	rect_fine(int x, int y, int w, int h, s_rgb colour);	// As above, but with direct RGB input.

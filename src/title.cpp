@@ -3,6 +3,7 @@
 
 #include "filex.h"
 #include "guru.h"
+#include "hero.h"
 #include "iocore.h"
 #include "mathx.h"
 #include "prefs.h"
@@ -139,6 +140,7 @@ void choose_difficulty()
 		}
 		else if (iocore->is_select(key))
 		{
+			hero->difficulty = selected;
 			return;
 		}
 		else if (key == LMB_KEY)
@@ -146,14 +148,17 @@ void choose_difficulty()
 			bool done = false;
 			if (iocore->did_mouse_click(midcol - 8, midrow - 2, 4, 4))
 			{
+				hero->difficulty = 0;
 				done = true;
 			}
 			else if (iocore->did_mouse_click(midcol - 2, midrow - 2, 4, 4))
 			{
+				hero->difficulty = 1;
 				done = true;
 			}
 			else if (iocore->did_mouse_click(midcol + 4, midrow - 2, 4, 4))
 			{
+				hero->difficulty = 2;
 				done = true;
 			}
 			if (done) return;
@@ -202,10 +207,7 @@ void choose_name()
 		{
 			done = true;
 			name = strx::trim_excess_spaces(name);
-			if (name.size())
-			{
-				// set name
-			}
+			if (name.size()) hero->name = name;
 			else
 			{
 				string new_name;
@@ -220,8 +222,8 @@ void choose_name()
 				const int pos = (iocore->get_cols() * 4) - (new_name.size() * 12);
 				iocore->alagard_print(new_name, pos, iocore->midrow() * 8, Colour::CGA_LCYAN);
 				iocore->flip();
-				iocore->sleep_for(3000);
-				// set name
+				iocore->sleep_for(1000);
+				hero->name = new_name;
 			}
 		}
 	} while(!done);
@@ -290,7 +292,7 @@ void choose_style()
 		}
 		else if (iocore->is_select(key))
 		{
-			// apply style
+			hero->style = chosen_style;
 			return;
 		}
 		else if (key == LMB_KEY || key == RMB_KEY)
@@ -300,7 +302,7 @@ void choose_style()
 			{
 				if (key == LMB_KEY)
 				{
-					// apply style (feminine)
+					hero->style = 0;
 					return;
 				}
 				else redraw = true;
@@ -309,7 +311,7 @@ void choose_style()
 			{
 				if (key == LMB_KEY)
 				{
-					// apply style (neutral)
+					hero->style = 1;
 					return;
 				}
 				else redraw = true;
@@ -318,7 +320,7 @@ void choose_style()
 			{
 				if (key == LMB_KEY)
 				{
-					// apply style (masculine)
+					hero->style = 2;
 					return;
 				}
 			}
@@ -442,13 +444,12 @@ void load_game(int slot)
 	STACK_TRACE();
 	const string save_dir = "userdata/save/" + strx::itos(slot);
 	const string save_file = save_dir + "/" + "save.dat";
-	save_db = new SQLite::Database(save_file, SQLite::OPEN_READWRITE);
-	Dungeon *temp = new Dungeon();
-	temp->load();
-	temp->render();
+	hero = new Hero(slot);
+	hero->save_db = new SQLite::Database(save_file, SQLite::OPEN_READWRITE);
+	hero->load();
+	hero->dungeon->render();
 	iocore->wait_for_key();
-	delete temp;
-	delete save_db;
+	delete hero;
 }
 
 // Starts a new game!
@@ -467,21 +468,23 @@ bool new_game(int slot, bool start_over)
 	filex::make_dir("userdata/save");
 	filex::make_dir(save_dir.c_str());
 
+	// Create the Hero object!
+	hero = new Hero(slot);
+	hero->save_db = new SQLite::Database(save_file, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+
 	// Character creation.
 	choose_difficulty();
 	choose_style();
 	choose_name();
 
-	// Create a new save file.
-	save_db = new SQLite::Database(save_file, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
-
-	Dungeon *temp = new Dungeon(50, 30);
-	temp->generate();
-	temp->render();
-	temp->save();
+	hero->level = 1;
+	hero->x = hero->y = 5;
+	hero->dungeon = new Dungeon(1, 50, 30);
+	hero->dungeon->generate();
+	hero->dungeon->render();
+	hero->save();
 	iocore->wait_for_key();
-	delete temp;
-	delete save_db;
+	delete hero;
 
 	// Clean up memory used by the animated flames.
 	//delete[] heat; heat = nullptr;
