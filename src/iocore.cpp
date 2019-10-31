@@ -154,20 +154,19 @@ IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), exit_func_level(1), hold
 
 	// Load the CP437 font into memory.
 	guru->log("Attempting to load bitmap fonts.", GURU_INFO);
-	SDL_Surface *font_temp = IMG_Load("data/cp437.png");
-	if (!font_temp) guru->halt(IMG_GetError());
-	font = SDL_ConvertSurface(font_temp, main_surface->format, 0);
-	if (!font) guru->halt(SDL_GetError());
-	SDL_FreeSurface(font_temp);
+	auto load_and_optimize_png = [] (string filename, SDL_Surface **dest, SDL_Surface *main_surface)
+	{
+		SDL_Surface *surf_temp = IMG_Load(("data/png/" + filename).c_str());
+		if (!surf_temp) guru->halt(IMG_GetError());
+		*dest = SDL_ConvertSurface(surf_temp, main_surface->format, 0);
+		if (!dest) guru->halt(SDL_GetError());
+		SDL_FreeSurface(surf_temp);
+		if (SDL_SetColorKey(*dest, SDL_TRUE, SDL_MapRGB((*dest)->format, 255, 255, 255)) < 0) guru->halt(SDL_GetError());
+	};
+
+	load_and_optimize_png("cp437.png", &font, main_surface);
+	load_and_optimize_png("alagard.png", &alagard, main_surface);
 	font_sheet_size = (font->w * font->h) / 8;
-	font_temp = IMG_Load("data/alagard.png");
-	if (!font_temp) guru->halt(IMG_GetError());
-	alagard = SDL_ConvertSurface(font_temp, main_surface->format, 0);
-	if (!alagard) guru->halt(SDL_GetError());
-	SDL_FreeSurface(font_temp);
-	IMG_Quit();	// We don't need SDL_image any more after this point.
-	if (SDL_SetColorKey(font, SDL_TRUE, SDL_MapRGB(font->format, 255, 255, 255)) < 0) guru->halt(SDL_GetError());
-	if (SDL_SetColorKey(alagard, SDL_TRUE, SDL_MapRGB(font->format, 255, 255, 255)) < 0) guru->halt(SDL_GetError());
 	exit_func_level = 4;
 
 	// Now that the font is loaded and SDL is initialized, we can activate Guru's error screen.
