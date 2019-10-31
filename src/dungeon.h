@@ -10,6 +10,12 @@ enum class Colour : unsigned char;	// defined in iocore.h
 #define TILE_FLAG_OPAQUE		(1 << 1)
 
 
+// TEMPORARY CODE: REPLACE THIS when a proper player class is created!
+namespace SQLite { class Database; class Statement; }	// defined in SQLiteCpp/SQLiteCpp.h
+extern SQLite::Database*	save_db;
+// END OF TEMPORARY CODE
+
+
 struct Tile
 {
 	unsigned short	glyph;	// The symbol used to represent this tile.
@@ -25,9 +31,12 @@ struct Tile
 class Dungeon
 {
 public:
-			Dungeon(unsigned short new_width, unsigned short new_height);
+			Dungeon(unsigned short new_width = 0, unsigned short new_height = 0);
 			~Dungeon();
+	void	generate();	// Generates a new dungeon level.
+	void	load();		// Loadds this dungeon from disk.
 	void	render();	// Renders the dungeon on the screen.
+	void	save();		// Saves this dungeon to disk.
 	void	set_tile(unsigned short x, unsigned short y, Tile &tile);	// Sets a specified tile, with error checking.
 
 private:

@@ -5,12 +5,31 @@
 #include "guru.h"
 #include "iocore.h"
 
+#include "SQLiteCpp/SQLiteCpp.h"
+
+SQLite::Database*	save_db;	// TEMPORARY CODE: REPLACE THIS when a proper player class is created!
+
+// TEMPORARY CODE
+#include <fstream>
+// END OF TEMPORARY CODE
+
 
 Dungeon::Dungeon(unsigned short new_width, unsigned short new_height) : width(new_width), height(new_height)
 {
 	STACK_TRACE();
+	if (!new_width || !new_height) return;
 	tiles = new Tile[width * height]();
+}
 
+Dungeon::~Dungeon()
+{
+	STACK_TRACE();
+	delete[] tiles;
+}
+
+// Generates a new dungeon level.
+void Dungeon::generate()
+{
 	// Set a default layout with basic floor tiles and an impassible wall.
 	Tile indestructible_wall;
 	indestructible_wall.name = 1;
@@ -40,16 +59,33 @@ Dungeon::Dungeon(unsigned short new_width, unsigned short new_height) : width(ne
 	}
 }
 
-Dungeon::~Dungeon()
+// Loads this dungeon from disk.
+void Dungeon::load()
 {
 	STACK_TRACE();
-	delete[] tiles;
+	try
+	{
+		SQLite::Statement query(*save_db, "SELECT width,height,tiles FROM dungeon WHERE level = 0");
+		while (query.executeStep())
+		{
+			width = query.getColumn("width").getUInt();
+			height = query.getColumn("height").getUInt();
+			tiles = new Tile[width * height]();
+			const void* blob = query.getColumn("tiles").getBlob();
+			memcpy(tiles, blob, sizeof(Tile) * width * height);
+		}
+	}
+	catch(std::exception &e)
+	{
+		guru->halt(e.what());
+	}
 }
 
 // Renders the dungeon on the screen.
 void Dungeon::render()
 {
 	STACK_TRACE();
+	iocore->cls();
 	for (unsigned int x = 0; x < width; x++)
 	{
 		for (unsigned int y = 0; y < height; y++)
@@ -59,6 +95,32 @@ void Dungeon::render()
 		}
 	}
 	iocore->flip();
+}
+
+// Saves this dungeon to disk.
+void Dungeon::save()
+{
+	STACK_TRACE();
+	try
+	{
+		SQLite::Transaction transaction(*save_db);
+		save_db->exec("CREATE TABLE IF NOT EXISTS dungeon ( level INTEGER PRIMARY KEY UNIQUE NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, tiles BLOB NOT NULL );");
+		save_db->exec("DELETE FROM dungeon WHERE level = 0");
+		SQLite::Statement sql_tiles(*save_db, "INSERT INTO dungeon (level,width,height,tiles) VALUES (0,?,?,?)");
+		sql_tiles.bind(1, width);
+		sql_tiles.bind(2, height);
+		sql_tiles.bind(3, (void*)tiles, sizeof(Tile) * width * height);
+		sql_tiles.exec();
+		transaction.commit();
+	}
+	catch(std::exception &e)
+	{
+		guru->halt(e.what());
+	}
+
+	std::ofstream tag_file("userdata/save/0/tag.dat");
+	tag_file << "TEST\n01:02:03\nZ Novice\n1\n20\n0\n1\n";
+	tag_file.close();
 }
 
 // Sets a specified tile, with error checking.

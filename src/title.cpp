@@ -9,9 +9,14 @@
 #include "strx.h"
 #include "title.h"
 #include "version.h"
+
+#include "SQLiteCpp/SQLiteCpp.h"
+
 #include <chrono>
 #include <cmath>
 #include <fstream>
+
+#include "dungeon.h"	// temp
 
 namespace title
 {
@@ -431,11 +436,27 @@ void glitch_warning()
 	}
 }
 
+// Loads a saved game.
+void load_game(int slot)
+{
+	STACK_TRACE();
+	const string save_dir = "userdata/save/" + strx::itos(slot);
+	const string save_file = save_dir + "/" + "save.dat";
+	save_db = new SQLite::Database(save_file, SQLite::OPEN_READWRITE);
+	Dungeon *temp = new Dungeon();
+	temp->load();
+	temp->render();
+	iocore->wait_for_key();
+	delete temp;
+	delete save_db;
+}
+
 // Starts a new game!
 bool new_game(int slot, bool start_over)
 {
 	STACK_TRACE();
-	if (start_over && !iocore->yes_no_query("YES_NO_NG_WARN", "WARNING", Colour::CGA_LRED, YES_NO_FLAG_ANSI)) return false;
+	if (start_over && !iocore->yes_no_query("{5F}Choosing this option will {35}permanently|{35}erase your existing save file {5F}and any|{5F}progress you may have made. "
+			"Are you|{5F}sure this is what you want to do?", "WARNING", Colour::CGA_LRED, YES_NO_FLAG_ANSI)) return false;
 
 	const string save_dir = "userdata/save/" + strx::itos(slot);
 	const string save_file = save_dir + "/" + "save.dat";
@@ -450,6 +471,17 @@ bool new_game(int slot, bool start_over)
 	choose_difficulty();
 	choose_style();
 	choose_name();
+
+	// Create a new save file.
+	save_db = new SQLite::Database(save_file, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+
+	Dungeon *temp = new Dungeon(50, 30);
+	temp->generate();
+	temp->render();
+	temp->save();
+	iocore->wait_for_key();
+	delete temp;
+	delete save_db;
 
 	// Clean up memory used by the animated flames.
 	//delete[] heat; heat = nullptr;
@@ -691,7 +723,7 @@ void select_save_slot()
 	vector<int> slot_hearts, slot_poisoned, slot_respawns, slot_dead, slot_difficulty;
 	for (int i = 0; i < MAX_SAVE_SLOTS; i++)
 	{
-		string tag_file = "userdata/" + strx::itos(i) + "/tag.dat";
+		string tag_file = "userdata/save/" + strx::itos(i) + "/tag.dat";
 		if (filex::file_exists(tag_file))
 		{
 			std::ifstream file_tag(tag_file);
@@ -746,7 +778,7 @@ void select_save_slot()
 				}
 
 				if (slot_respawns.at(i))
-					death_str = (i == slot_pos ? " {5F}^042^x" : " {57}^042^x") + strx::itos(slot_respawns.at(i));
+					death_str = (i == slot_pos ? " {5F}^329^x" : " {57}^329^x") + strx::itos(slot_respawns.at(i));
 				iocore->ansi_print(tier_colour + "Rank " + slot_tiers.at(i) + death_str, midcol - 20, y_pos + 5);
 				if (slot_difficulty.at(i) < 3) iocore->sprite_print(diff_sprite, midcol - 25, y_pos + 5, diff_col, SPRITE_FLAG_QUAD);
 
@@ -870,7 +902,7 @@ void select_save_slot()
 									if (dead) done = false;
 									else
 									{
-										//load_game(slot_pos, always_prune);
+										load_game(slot_pos);
 										return;
 									}
 								}
