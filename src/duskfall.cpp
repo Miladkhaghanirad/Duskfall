@@ -17,11 +17,7 @@ int main(int argc, char* argv[])
 	guru = new Guru();
 	prefs::init();
 	iocore = new IOCore();
-	//title::title_screen();
-	Dungeon *test = new Dungeon(50, 30);
-	test->render();
-	iocore->wait_for_key();
-	delete test;
+	title::title_screen();
 	delete iocore;
 	delete guru;
 	return 0;

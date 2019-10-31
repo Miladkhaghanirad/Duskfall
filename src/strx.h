@@ -14,7 +14,9 @@ bool			find_and_replace(string &input, string to_find, string to_replace);	// Fi
 unsigned int	htoi(string hex_str);	// Converts a hex string back to an integer.
 string			itos(long long num);	// Converts an integer to a string.
 string			str_tolower(string str);	// Converts a string to lower-case.
+string			str_toupper(string str);	// Converts a string to upper-case.
 vector<string>	string_explode(string str, string separator);	// String split/explode function.
+string			trim_excess_spaces(string source);	// Trims out leading, trailing, and excess (more than one at a time) spaces from a string.
 int				word_count(string str, string word);	// Returns a count of the amount of times a string is found in a parent string.
 
 }	// namespace strx

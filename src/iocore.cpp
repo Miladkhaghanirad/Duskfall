@@ -152,7 +152,7 @@ IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), exit_func_level(1), hold
 	cls();
 	flip();
 
-	// Load the CP437 font into memory.
+	// Load the bitmap fonts and other PNGs into memory.
 	guru->log("Attempting to load bitmap fonts.", GURU_INFO);
 	auto load_and_optimize_png = [] (string filename, SDL_Surface **dest, SDL_Surface *main_surface)
 	{
@@ -164,8 +164,9 @@ IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), exit_func_level(1), hold
 		if (SDL_SetColorKey(*dest, SDL_TRUE, SDL_MapRGB((*dest)->format, 255, 255, 255)) < 0) guru->halt(SDL_GetError());
 	};
 
-	load_and_optimize_png("cp437.png", &font, main_surface);
+	load_and_optimize_png("fonts.png", &font, main_surface);
 	load_and_optimize_png("alagard.png", &alagard, main_surface);
+	load_and_optimize_png("sprites.png", &sprites, main_surface);
 	font_sheet_size = (font->w * font->h) / 8;
 	exit_func_level = 4;
 
@@ -944,6 +945,58 @@ void IOCore::render_nebula(unsigned short seed, int off_x, int off_y)
 	}
 }
 
+// Do absolutely nothing for a little while.
+void IOCore::sleep_for(unsigned int amount)
+{
+	STACK_TRACE();
+	if (!amount) return;
+	const int cycles = amount / 10;
+	for (int i = 0; i < cycles; i++)
+	{
+		const unsigned int key = wait_for_key(10);
+		if (key && cycles < 100) queued_keys.push_back(key);
+	}
+}
+
+// Prints a sprite at the given location.
+void IOCore::sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
+{
+	STACK_TRACE();
+	const bool plus_four = ((flags & SPRITE_FLAG_PLUS_FOUR) == SPRITE_FLAG_PLUS_FOUR);
+	const bool quad = ((flags & SPRITE_FLAG_QUAD) == SPRITE_FLAG_QUAD);
+	if (quad)
+	{
+		for (unsigned int i = 0; i < 2; i++)
+		{
+			for (unsigned int j = 0; j < 2; j++)
+			{
+				Sprite new_id = id;
+				if (i == 1) new_id = static_cast<Sprite>(static_cast<int>(new_id) + 1);
+				if (j == 1) new_id = static_cast<Sprite>(static_cast<int>(new_id) + 24);
+				sprite_print(new_id, x + (i * 2), y + (j * 2), colour, flags ^ SPRITE_FLAG_QUAD);
+			}
+		}
+		return;
+
+	}
+	unsigned short loc_x = static_cast<unsigned short>(id) * 16, loc_y = 0;
+	while (loc_x >= sprites->w) { loc_y += 16; loc_x -= sprites->w; }
+	SDL_Rect sprite_rect = {loc_x, loc_y, 16, 16};
+
+	// Parse the colour into SDL's native format.
+	unsigned char r, g, b;
+	parse_colour(colour, r, g, b);
+	const unsigned int sdl_col = SDL_MapRGB(main_surface->format, r, g, b);
+
+	// Draw a coloured square, then 'stamp' it with the sprite.
+	SDL_Rect scr_rect = { (x * 8) + (plus_four ? 4 : 0), y * 8, 16, 16 };
+	SDL_Rect temp_rect = {0, 0, 32, 32};
+	if (SDL_FillRect(temp_surface, &temp_rect, sdl_col) < 0) guru->halt(SDL_GetError());
+	if (SDL_BlitSurface(sprites, &sprite_rect, temp_surface, &temp_rect) < 0) guru->halt(SDL_GetError());
+	if (SDL_SetColorKey(temp_surface, SDL_TRUE, SDL_MapRGB(temp_surface->format, 0, 0, 0)) < 0) guru->halt(SDL_GetError());
+	if (SDL_BlitSurface(temp_surface, &temp_rect, main_surface, &scr_rect) < 0) guru->halt(SDL_GetError());
+}
+
 // Unlocks the mutexes, if they're locked. Only for use by the Guru system.
 void IOCore::unlock_surfaces()
 {
@@ -1124,4 +1177,67 @@ unsigned int IOCore::wait_for_key(unsigned short max_ms)
 	}
 
 	return key;
+}
+
+// Renders a yes/no popup box and returns the result.
+bool IOCore::yes_no_query(string yn_strings, string title, Colour title_colour, unsigned int flags)
+{
+	STACK_TRACE();
+	if (static_cast<int>(title_colour) > MAX_COLOUR) title_colour = Colour::ERROR_COLOUR;
+	const bool ansi = ((flags & YES_NO_FLAG_ANSI) == YES_NO_FLAG_ANSI);
+	vector<string> message = strx::string_explode(yn_strings, "|");
+	unsigned int width = 0, height = 4 + message.size();
+	for (auto str : message)
+	{
+		const unsigned int len = strx::ansi_strlen(str);
+		if (len > width) width = len;
+	}
+	width += 4;
+	const unsigned int box_start_x = mid_col - (width / 2);
+	const unsigned int box_start_y = mid_row - (height / 2);
+	iocore->box(box_start_x, box_start_y, width, height, UI_COLOUR_BOX);
+
+	title = " " + title + " ";
+	const unsigned int title_start = mid_col - (title.size() / 2);
+	iocore->print(title, title_start, box_start_y, title_colour);
+	iocore->print_at(Glyph::LINE_VL, title_start - 1, box_start_y, UI_COLOUR_BOX);
+	iocore->print_at(Glyph::LINE_VR, title_start + title.size(), box_start_y, UI_COLOUR_BOX);
+
+	for (unsigned int i = 0; i < message.size(); i++)
+	{
+		const string line = message.at(i);
+		if (ansi) iocore->ansi_print(line, mid_col - (strx::ansi_strlen(line) / 2), box_start_y + 2 + i);
+		else iocore->print(line, mid_col - (strx::ansi_strlen(line) / 2), box_start_y + 2 + i, Colour::CGA_WHITE, PRINT_FLAG_ALT_FONT);
+	}
+
+	const unsigned int bottom_row = box_start_y + height - 1;
+
+	box(mid_col - 4, bottom_row - 1, 3, 3, UI_COLOUR_BOX);
+
+	print_at(static_cast<Glyph>(' '), mid_col - 3, bottom_row - 1, UI_COLOUR_BOX);
+	print_at(static_cast<Glyph>(' '), mid_col - 3, bottom_row + 1, UI_COLOUR_BOX);
+	print_at(static_cast<Glyph>('Y'), mid_col - 3, bottom_row, Colour::CGA_LGREEN);
+	print_at(Glyph::LINE_VL, mid_col - 4, bottom_row, UI_COLOUR_BOX);
+	print_at(Glyph::LINE_VR, mid_col - 2, bottom_row, UI_COLOUR_BOX);
+
+	box(mid_col + 2, bottom_row - 1, 3, 3, UI_COLOUR_BOX);
+	print_at(static_cast<Glyph>(' '), mid_col + 3, bottom_row - 1, UI_COLOUR_BOX);
+	print_at(static_cast<Glyph>('N'), mid_col + 3, bottom_row, Colour::CGA_LRED);
+	print_at(static_cast<Glyph>(' '), mid_col + 3, bottom_row + 1, UI_COLOUR_BOX);
+	print_at(Glyph::LINE_VL, mid_col + 2, bottom_row, UI_COLOUR_BOX);
+	print_at(Glyph::LINE_VR, mid_col + 4, bottom_row, UI_COLOUR_BOX);
+
+	do
+	{
+		iocore->flip();
+		unsigned int key = iocore->wait_for_key();
+		if (key == RESIZE_KEY) return false;
+		if (key == LMB_KEY)
+		{
+			if (iocore->did_mouse_click(mid_col - 3, bottom_row)) return true;
+			if (iocore->did_mouse_click(mid_col + 3, bottom_row)) return false;
+		}
+		if (key == 'Y' || key == 'y' || iocore->is_select(key)) return true;
+		else if (key != LMB_KEY) return false;
+	} while(true);
 }

@@ -1,6 +1,7 @@
 // title.cpp -- Animated title screen, based on animated title screen code from Krasten, which in turn was based on animated title screen code from a long-forgotten project.
 // Copyright (c) 2016-2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
+#include "filex.h"
 #include "guru.h"
 #include "iocore.h"
 #include "mathx.h"
@@ -64,6 +65,258 @@ void animate_fire(bool render)
 				else heat[(y * ANIMATED_FLAMES_W) + x] = 0;
 			}
 			if (render) iocore->rect_fine((x * 4) + ((midcol - 26) * 8), ((23 - y) * 4) + ((midrow - 15) * 8), 4, 4, flame_colour_blend[heat[(y * ANIMATED_FLAMES_W) + x]]);
+		}
+	}
+}
+
+// How much do you hate yourself?
+void choose_difficulty()
+{
+	STACK_TRACE();
+	bool redraw = true;
+	unsigned short midrow = iocore->midrow(), midcol = iocore->midcol();
+	unsigned int selected = 1;
+	while(true)
+	{
+		if (redraw)
+		{
+			redraw = false;
+			midrow = iocore->midrow();
+			midcol = iocore->midcol();
+			redraw_logo_and_bg();
+
+			const string choose1 = "Choose the DIFFICULTY you would like to play on.";
+			const string choose2 = "Please note, this can NOT be changed after you";
+			const string choose3 = "have started the game, so pick wisely!";
+			iocore->print(choose1, midcol - (choose1.size() / 2), midrow - 6, Colour::AQUA_BRIGHT, PRINT_FLAG_PLUS_FOUR_X | PRINT_FLAG_ALT_FONT);
+			iocore->print(choose2, midcol - (choose2.size() / 2), midrow - 5, Colour::AQUA_BRIGHT, PRINT_FLAG_PLUS_FOUR_X | PRINT_FLAG_ALT_FONT);
+			iocore->print(choose3, midcol - (choose3.size() / 2), midrow - 4, Colour::AQUA_BRIGHT, PRINT_FLAG_ALT_FONT);
+
+			iocore->sprite_print(Sprite::DIFF_EASY, midcol - 8, midrow - 2, Colour::CGA_LGREEN, SPRITE_FLAG_QUAD);
+			iocore->sprite_print(Sprite::DIFF_NORMAL, midcol - 2, midrow - 2, Colour::AQUA_BRIGHT, SPRITE_FLAG_QUAD);
+			iocore->sprite_print(Sprite::DIFF_HARD, midcol + 4, midrow - 2, Colour::CGA_LRED, SPRITE_FLAG_QUAD);
+			iocore->sprite_print(Sprite::CURSOR, midcol - 6 + (selected * 6), midrow + 2, Colour::CGA_WHITE, SPRITE_FLAG_QUAD);
+
+			string desc;
+			switch(selected)
+			{
+				case 0: desc = "{3D}Playing on {5A}Adventurer difficulty {3D}does not affect the toughness of your foes. Instead, you will retain all your equipment, "
+						"items and money upon death, though you will still be sent back to the surface. {5A}Your score will not be counted for the highscore table."; break;
+				case 1: desc = "{3D}Playing on {21}Hero difficulty{3D}, death is not the end: upon dying, your equipment, items and part of your soul will remain with your corpse and "
+						"you will be revived on the surface. To retrieve your lost belongings, you will have to find your corpse - but if you die again before that happens, your death is final. "
+						"{21}This is the recommended difficulty."; break;
+				case 2: desc = "{3D}Playing on {5C}Legend difficulty {3D}does not affect the toughness of your foes. Instead, death is permanent, there are no second chances! However, your "
+						"final score is doubled in this mode. {5C}This difficulty is unfair and recommended only for veteran players looking for a challenge!"; break;
+			}
+			vector<string> split = strx::ansi_vector_split(desc, 49);
+			iocore->print("Use the LEFT and RIGHT keys to select the game's", midcol - 24, midrow + 6, Colour::CGA_WHITE);
+			iocore->print("difficulty, then SPACE or ENTER key to decide.", midcol - 24, midrow + 7, Colour::CGA_WHITE);
+			for (unsigned int i = 0; i < split.size(); i++)
+			{
+				string line = split.at(i);
+				iocore->ansi_print(line, midcol - 24, midrow + 9 + i);
+			}
+
+			iocore->flip();
+		}
+
+		const unsigned int key = iocore->wait_for_key();
+		if (key == RESIZE_KEY) redraw = true;
+		else if (iocore->is_left(key))
+		{
+			if (selected > 0) selected--; else selected = 2;
+			redraw = true;
+		}
+		else if (iocore->is_right(key))
+		{
+			if (selected < 2) selected++; else selected = 0;
+			redraw = true;
+		}
+		else if (iocore->is_select(key))
+		{
+			return;
+		}
+		else if (key == LMB_KEY)
+		{
+			bool done = false;
+			if (iocore->did_mouse_click(midcol - 8, midrow - 2, 4, 4))
+			{
+				done = true;
+			}
+			else if (iocore->did_mouse_click(midcol - 2, midrow - 2, 4, 4))
+			{
+				done = true;
+			}
+			else if (iocore->did_mouse_click(midcol + 4, midrow - 2, 4, 4))
+			{
+				done = true;
+			}
+			if (done) return;
+		}
+
+	}
+}
+
+// Picks a name for the character.
+void choose_name()
+{
+	STACK_TRACE();
+	bool redraw = true, done = false;
+	string name;
+
+	do
+	{
+		if (redraw)
+		{
+			redraw = false;
+			const unsigned short midrow = iocore->midrow(), midcol = iocore->midcol();
+			redraw_logo_and_bg();
+
+			const string choose1 = "Choose a NAME for your new character. If you don't";
+			const string choose2 = "want to choose or can't think of anything, just hit";
+			const string choose3 = "ENTER and the game will pick a random name for you.";
+			iocore->print(choose1, midcol - (choose1.size() / 2), midrow - 6, Colour::AQUA_BRIGHT, PRINT_FLAG_PLUS_FOUR_X | PRINT_FLAG_ALT_FONT);
+			iocore->print(choose2, midcol - (choose2.size() / 2), midrow - 5, Colour::AQUA_BRIGHT, PRINT_FLAG_PLUS_FOUR_X | PRINT_FLAG_ALT_FONT);
+			iocore->print(choose3, midcol - (choose3.size() / 2), midrow - 4, Colour::AQUA_BRIGHT, PRINT_FLAG_ALT_FONT);
+			iocore->print("Use the keyboard to type a name for your", midcol - 24, midrow + 6, Colour::GRAY_PALE);
+			iocore->print("character, and hit the ENTER key when done. You", midcol - 24, midrow + 7, Colour::GRAY_PALE);
+			iocore->print("can use BACKSPACE to erase letters.", midcol - 24, midrow + 8, Colour::GRAY_PALE);
+
+			const int pos = (iocore->get_cols() * 4) - (name.size() * 12);
+			iocore->alagard_print(name, pos, midrow * 8, Colour::CGA_LCYAN);
+
+			iocore->flip();
+		}
+
+		unsigned int key = iocore->wait_for_key();
+		if (key >= 'a' && key <= 'z' && name.size() < 16) { name += string(1, key - 32); redraw = true; }
+		else if (((key >= 'A' && key <= 'Z') || key == ' ') && name.size() < 16) { name += string(1, key); redraw = true; }
+		else if (key == SDLK_BACKSPACE && name.size() > 0) { name = name.substr(0, name.size() - 1); redraw = true; }
+		else if (key == RESIZE_KEY) redraw = true;
+		else if (iocore->is_select(key))
+		{
+			done = true;
+			name = strx::trim_excess_spaces(name);
+			if (name.size())
+			{
+				// set name
+			}
+			else
+			{
+				string new_name;
+				unsigned char style = 1;	// replace with check for which style was chosen.
+				switch(style)
+				{
+					case 0: new_name = filex::random_line("data/names/female.txt", 1000); break;
+					case 1: new_name = filex::random_line("data/names/surnames.txt", 1997); break;
+					case 2: new_name = filex::random_line("data/names/male.txt", 1000); break;
+				}
+				new_name = strx::str_toupper(new_name);
+				const int pos = (iocore->get_cols() * 4) - (new_name.size() * 12);
+				iocore->alagard_print(new_name, pos, iocore->midrow() * 8, Colour::CGA_LCYAN);
+				iocore->flip();
+				iocore->sleep_for(3000);
+				// set name
+			}
+		}
+	} while(!done);
+}
+
+// Choose your character's style.
+void choose_style()
+{
+	STACK_TRACE();
+	bool redraw = true;
+	unsigned short midrow = iocore->midrow(), midcol = iocore->midcol();
+	unsigned char chosen_style = 1;
+	while(true)
+	{
+		if (redraw)
+		{
+			redraw = false;
+			midrow = iocore->midrow();
+			midcol = iocore->midcol();
+			redraw_logo_and_bg();
+
+			const string choose1 = "Choose a STYLE for your new character or NEUTRAL if";
+			const string choose2 = "you prefer not to choose either. Your character's";
+			const string choose3 = "style will not affect their stats or skills.";
+			iocore->print(choose1, midcol - (choose1.size() / 2), midrow - 6, Colour::AQUA_BRIGHT, PRINT_FLAG_PLUS_FOUR_X | PRINT_FLAG_ALT_FONT);
+			iocore->print(choose2, midcol - (choose2.size() / 2), midrow - 5, Colour::AQUA_BRIGHT, PRINT_FLAG_PLUS_FOUR_X | PRINT_FLAG_ALT_FONT);
+			iocore->print(choose3, midcol - (choose3.size() / 2), midrow - 4, Colour::AQUA_BRIGHT, PRINT_FLAG_ALT_FONT);
+
+			iocore->sprite_print(Sprite::LADY, midcol - 8, midrow - 2, Colour::MAGENTA_PALE, SPRITE_FLAG_QUAD);
+			iocore->sprite_print(Sprite::ENBY, midcol - 2, midrow - 2, Colour::CGA_LGREEN, SPRITE_FLAG_QUAD);
+			iocore->sprite_print(Sprite::GENT, midcol + 4, midrow - 2, Colour::AQUA_BRIGHT, SPRITE_FLAG_QUAD);
+			iocore->sprite_print(Sprite::CURSOR, midcol - 6 + (chosen_style * 6), midrow + 2, Colour::CGA_WHITE, SPRITE_FLAG_QUAD);
+
+			string desc;
+			switch(chosen_style)
+			{
+				case 0: desc = "{3D}While style has no bearing on your character's stats, skills or abilities, choosing a {34}FEMININE {3D}style will have "
+						"characters in the game refer to you with feminine pronouns and terms."; break;
+				case 1: desc = "{3D}Selecting a {5A}NEUTRAL {3D}style means that people you interact with in the game world will not use gendered pronouns, "
+						"and will instead refer to you by neutral terms such as 'adventurer'."; break;
+				case 2: desc = "{3D}While style has no bearing on your character's stats, skills or abilities, choosing a {21}MASCULINE {3D}style will have "
+						"characters in the game refer to you with masculine pronouns and terms."; break;
+			}
+			vector<string> split = strx::ansi_vector_split(desc, 49);
+			iocore->print("Use the LEFT and RIGHT keys to select your", midcol - 24, midrow + 6, Colour::CGA_WHITE);
+			iocore->print("chosen style, then SELECT or ENTER to decide.", midcol - 24, midrow + 7, Colour::CGA_WHITE);
+			for (unsigned int i = 0; i < split.size(); i++)
+			{
+				string line = split.at(i);
+				iocore->ansi_print(line, midcol - 24, midrow + 9 + i);
+			}
+
+			iocore->flip();
+		}
+		const unsigned int key = iocore->wait_for_key();
+		if (key == RESIZE_KEY) redraw = true;
+		if (iocore->is_down(key) || iocore->is_right(key) || key == MOUSEWHEEL_DOWN_KEY)
+		{
+			if (++chosen_style > 2) chosen_style = 0;
+			redraw = true;
+		}
+		else if (iocore->is_up(key) || iocore->is_left(key) || key == MOUSEWHEEL_UP_KEY)
+		{
+			if (!chosen_style) chosen_style = 2; else chosen_style--;
+			redraw = true;
+		}
+		else if (iocore->is_select(key))
+		{
+			// apply style
+			return;
+		}
+		else if (key == LMB_KEY || key == RMB_KEY)
+		{
+			const unsigned short midrow = iocore->midrow(), midcol = iocore->midcol();
+			if (iocore->did_mouse_click(midcol - 8, midrow - 2, 4, 4))
+			{
+				if (key == LMB_KEY)
+				{
+					// apply style (feminine)
+					return;
+				}
+				else redraw = true;
+			}
+			if (iocore->did_mouse_click(midcol - 2, midrow - 2, 4, 4))
+			{
+				if (key == LMB_KEY)
+				{
+					// apply style (neutral)
+					return;
+				}
+				else redraw = true;
+			}
+			if (iocore->did_mouse_click(midcol + 4, midrow - 2, 4, 4))
+			{
+				if (key == LMB_KEY)
+				{
+					// apply style (masculine)
+					return;
+				}
+			}
 		}
 	}
 }
@@ -178,6 +431,34 @@ void glitch_warning()
 	}
 }
 
+// Starts a new game!
+bool new_game(int slot, bool start_over)
+{
+	STACK_TRACE();
+	if (start_over && !iocore->yes_no_query("YES_NO_NG_WARN", "WARNING", Colour::CGA_LRED, YES_NO_FLAG_ANSI)) return false;
+
+	const string save_dir = "userdata/save/" + strx::itos(slot);
+	const string save_file = save_dir + "/" + "save.dat";
+
+	// Delete any old save files, then create a new save directory.
+	filex::remove_directory(save_dir);
+	if (start_over) return true;
+	filex::make_dir("userdata/save");
+	filex::make_dir(save_dir.c_str());
+
+	// Character creation.
+	choose_difficulty();
+	choose_style();
+	choose_name();
+
+	// Clean up memory used by the animated flames.
+	//delete[] heat; heat = nullptr;
+
+	// Start the main game loop.
+	//heartbeat::main_loop();
+	return true;
+}
+
 // Redraws the animated logo every frame.
 void redraw_animated_logo()
 {
@@ -233,6 +514,18 @@ void redraw_background()
 	iocore->print_at(Glyph::COPYRIGHT, copyright3_pos + 30, midrow + 3, Colour::CGA_WHITE);
 
 	redraw_menu();
+}
+
+// Does exactly what it says on the tin.
+void redraw_logo_and_bg()
+{
+	STACK_TRACE();
+	const unsigned short midrow = iocore->midrow(), midcol = iocore->midcol();
+	iocore->cls();
+	iocore->render_nebula(57720, 0, 0);
+	iocore->box(midcol - 27, midrow - 18, 55, 37, UI_COLOUR_BOX);
+	redraw_static_logo(-3);
+	iocore->box(midcol - 25, midrow + 5, 51, 13, UI_COLOUR_BOX);
 }
 
 // Redraws the title menu.
@@ -389,6 +682,224 @@ void render_floppy(int x, int y, Colour colour, bool front)
 	}
 }
 
+// Selects which slot to load, or start a new game.
+void select_save_slot()
+{
+	STACK_TRACE();
+
+	vector<string> slot_names, slot_times, slot_tiers;
+	vector<int> slot_hearts, slot_poisoned, slot_respawns, slot_dead, slot_difficulty;
+	for (int i = 0; i < MAX_SAVE_SLOTS; i++)
+	{
+		string tag_file = "userdata/" + strx::itos(i) + "/tag.dat";
+		if (filex::file_exists(tag_file))
+		{
+			std::ifstream file_tag(tag_file);
+			string line;
+			getline(file_tag, line); slot_names.push_back(line);
+			getline(file_tag, line); slot_times.push_back(line);
+			getline(file_tag, line); slot_tiers.push_back(line);
+			getline(file_tag, line); slot_respawns.push_back(std::stoi(line));
+			getline(file_tag, line); slot_hearts.push_back(std::stoi(line));
+			getline(file_tag, line); slot_poisoned.push_back(std::stoi(line));
+			getline(file_tag, line); slot_difficulty.push_back(std::stoi(line));
+			getline(file_tag, line); slot_dead.push_back(line.size());
+			file_tag.close();
+		}
+		else
+		{
+			slot_names.push_back("EMPTY SAVE SLOT");
+			slot_times.push_back("--:--:--");
+			slot_tiers.push_back("");
+			slot_respawns.push_back(0);
+			slot_hearts.push_back(0);
+			slot_poisoned.push_back(0);
+			slot_difficulty.push_back(3);
+			slot_dead.push_back(0);
+		}
+	}
+
+	unsigned int slot_pos = 0, slot_offset = 0;
+	unsigned int slots_visible = (iocore->get_rows() - 1) / 12;
+	unsigned int midcol = iocore->midcol();
+
+	while(true)
+	{
+		iocore->cls();
+		iocore->box(midcol - 27, 0, 54, iocore->get_rows(), UI_COLOUR_BOX);
+
+		for (unsigned int i = slot_offset; i < slot_offset + slots_visible; i++)
+		{
+			const unsigned int y_pos = ((i - slot_offset) * 12) + 1;
+			iocore->box(midcol - 26, y_pos, 52, 10, (i == slot_pos ? Colour::YELLOW_PURE : Colour::GRAY_LIGHT));
+			iocore->alagard_print(slot_names.at(i), (midcol - 25) * 8, (y_pos + 1) * 8, (i == slot_pos ? Colour::WHITE : Colour::GRAY_LIGHT));
+			iocore->print(slot_times.at(i), midcol + 25 - slot_times.at(i).size(), y_pos + 7, (i == slot_pos ? Colour::WHITE : Colour::GRAY_LIGHT));
+			if (slot_tiers.at(i).size())
+			{
+				string death_str, tier_colour = "{21}";
+				Sprite diff_sprite = Sprite::DIFF_NORMAL;
+				Colour diff_col = Colour::AQUA_BRIGHT;
+				switch(slot_difficulty.at(i))
+				{
+					case 0: diff_sprite = Sprite::DIFF_EASY; tier_colour = "{5A}"; diff_col = Colour::CGA_LGREEN; break;
+					case 2: diff_sprite = Sprite::DIFF_HARD; tier_colour = "{5C}"; diff_col = Colour::CGA_LRED; break;
+				}
+
+				if (slot_respawns.at(i))
+					death_str = (i == slot_pos ? " {5F}^042^x" : " {57}^042^x") + strx::itos(slot_respawns.at(i));
+				iocore->ansi_print(tier_colour + "Rank " + slot_tiers.at(i) + death_str, midcol - 20, y_pos + 5);
+				if (slot_difficulty.at(i) < 3) iocore->sprite_print(diff_sprite, midcol - 25, y_pos + 5, diff_col, SPRITE_FLAG_QUAD);
+
+				if (slot_dead.at(i)) iocore->print("^042^ DECEASED", midcol - 20, y_pos + 7, Colour::CGA_LRED);
+				else
+				{
+					const int hero_hearts = slot_hearts.at(i);
+					for (int j = 0; j < 10; j++)
+					{
+						Colour heart_colour = Colour::CGA_LRED;
+						if (slot_poisoned.at(i)) heart_colour = Colour::CGA_LGREEN;
+						const int qual = (j + 1) * 2;
+						bool full_gray = true, full_red = false, half_red = false;
+						if (hero_hearts >= qual) { full_red = true; full_gray = false; }
+						else if (hero_hearts >= qual - 1) half_red = true;
+
+						// Ensure it's not all gray if some health remains.
+						if (j == 0 && full_gray && !half_red) half_red = true;
+
+						if (full_gray) iocore->print_at(Glyph::HEART, midcol - 20 + j, y_pos + 7, Colour::GRAY_DARK);
+						else if (full_red) iocore->print_at(Glyph::HEART, midcol - 20 + j, y_pos + 7, heart_colour);
+						if (half_red) iocore->print_at(Glyph::HALF_HEART, midcol - 20 + j, y_pos + 7, heart_colour, PRINT_FLAG_ALPHA);
+					}
+				}
+			}
+		}
+
+		iocore->flip();
+		unsigned int key = iocore->wait_for_key();
+		if (key == RESIZE_KEY)
+		{
+			slots_visible = (iocore->get_rows() - 1) / 12;
+			slot_pos = slot_offset = 0;
+			midcol = iocore->midcol();
+		}
+		if (iocore->is_up(key) || key == MOUSEWHEEL_UP_KEY)
+		{
+			if (slot_pos > 0)
+			{
+				slot_pos--;
+				if (static_cast<signed int>(slot_pos) - static_cast<signed int>(slot_offset) < 0) slot_offset = slot_pos;
+			}
+		}
+		else if (iocore->is_down(key) || key == MOUSEWHEEL_DOWN_KEY)
+		{
+			if (slot_pos < (MAX_SAVE_SLOTS - 1))
+			{
+				slot_pos++;
+				if (slot_pos - slot_offset >= slots_visible) slot_offset++;
+			}
+		}
+		else if (iocore->is_cancel(key) || key == RMB_KEY) return;
+		else if (iocore->is_select(key) || key == LMB_KEY)
+		{
+			bool valid_selection = true;
+			if (key == LMB_KEY)
+			{
+				valid_selection = false;
+				for (unsigned int i = slot_offset; i < slot_offset + slots_visible; i++)
+				{
+					const unsigned int y_pos = ((i - slot_offset) * 12) + 1;
+					if (iocore->did_mouse_click(midcol - 26, y_pos, 52, 10))
+					{
+						valid_selection = true;
+						slot_pos = i;
+						break;
+					}
+				}
+			}
+			if (valid_selection)
+			{
+				if (slot_tiers.at(slot_pos).size())
+				{
+					const unsigned int y_pos = ((slot_pos - slot_offset) * 12) + 2;
+					const unsigned int box_height = 5;
+					const int max_choice = 1;
+					iocore->box(midcol + 15, y_pos, 10, box_height, Colour::WHITE);
+					int sub_choice = 0;
+					bool done = false;
+					bool dead = slot_dead.at(slot_pos);
+					bool always_prune = false;
+					while(!done)
+					{
+						const Colour continue_highlight = (dead ? Colour::CGA_LRED : (always_prune ? Colour::CGA_LGREEN : Colour::YELLOW_PURE));
+						const Colour continue_dark = (dead ? Colour::CGA_RED : Colour::GRAY_LIGHT);
+						iocore->print(sub_choice == 0 ? "CONTINUE" : "Continue", midcol + 16, y_pos + 1, sub_choice == 0 ? continue_highlight : continue_dark);
+						iocore->print(sub_choice == 1 ? "DELETE" : "Delete", midcol + 17, y_pos + 3, sub_choice == 1 ? Colour::YELLOW_PURE : Colour::GRAY_LIGHT);
+						iocore->flip();
+						unsigned int menu_key = iocore->wait_for_key();
+						if (iocore->is_up(menu_key) || menu_key == MOUSEWHEEL_UP_KEY)
+						{
+							if (sub_choice) sub_choice--; else sub_choice = max_choice;
+						}
+						else if (iocore->is_down(menu_key) || menu_key == MOUSEWHEEL_DOWN_KEY)
+						{
+							if (sub_choice < max_choice) sub_choice++; else sub_choice = 0;
+						}
+						else if (iocore->is_select(menu_key) || menu_key == LMB_KEY)
+						{
+							bool valid_keypress = true;
+							if (menu_key == LMB_KEY)
+							{
+								valid_keypress = false;
+								if (iocore->did_mouse_click(midcol + 16, y_pos + 1, 8))
+								{
+									valid_keypress = true;
+									sub_choice = 0;
+								}
+								else if (iocore->did_mouse_click(midcol + 16, y_pos + 3, 8))
+								{
+									valid_keypress = true;
+									sub_choice = 1;
+								}
+							}
+
+							if (valid_keypress)
+							{
+								done = true;
+								if (sub_choice == 0)
+								{
+									if (dead) done = false;
+									else
+									{
+										//load_game(slot_pos, always_prune);
+										return;
+									}
+								}
+								else if (sub_choice == 1)
+								{
+									bool result = new_game(slot_pos, true);
+									if (result)
+									{
+										slot_names.at(slot_pos) = "EMPTY SAVE SLOT";
+										slot_times.at(slot_pos) = "--:--:--";
+										slot_tiers.at(slot_pos) = "";
+										slot_hearts.at(slot_pos) = slot_respawns.at(slot_pos) = slot_poisoned.at(slot_pos) = 0;
+									}
+								}
+							}
+						}
+						else if (iocore->is_cancel(menu_key)) done = true;
+					}
+				}
+				else
+				{
+					new_game(slot_pos, false);
+					return;
+				}
+			}	// valid_selection
+		}
+	}
+}
+
 // Starts up the animated title screen!
 void title_screen()
 {
@@ -426,7 +937,7 @@ void title_screen()
 		{
 			if (menu_pos == 0)	// Begin Adventure
 			{
-				//select_save_slot();
+				select_save_slot();
 				redraw_background();
 			}
 			else if (menu_pos == 1)	// Game Manual
@@ -456,7 +967,7 @@ void title_screen()
 			{
 				menu_pos = 0;
 				redraw_menu();
-				//select_save_slot();
+				select_save_slot();
 				redraw_background();
 			}
 			else if (iocore->did_mouse_click(midcol - 5, midrow + 10, 11))	// Game Manual

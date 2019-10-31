@@ -204,6 +204,14 @@ string str_tolower(string str)
 	return str;
 }
 
+// Converts a string to upper-case.
+string str_toupper(string str)
+{
+	STACK_TRACE();
+	std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+	return str;
+}
+
 // String split/explode function.
 vector<string> string_explode(string str, string separator)
 {
@@ -223,6 +231,13 @@ vector<string> string_explode(string str, string separator)
     results.push_back(str);
 
     return results;
+}
+
+// Trims out leading, trailing, and excess (more than one at a time) spaces from a string.
+string trim_excess_spaces(string source)
+{
+	STACK_TRACE();
+	return std::regex_replace(source, std::regex("^ +| +$|( ) +"), "$1");
 }
 
 int word_count(string str, string word)

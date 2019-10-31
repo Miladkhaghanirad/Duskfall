@@ -12,5 +12,7 @@ bool	directory_exists(string dir);	// Checks if a directory exists.
 bool	file_exists(string file);		// Checks if a file exists.
 vector<string>	files_in_dir(string directory);	// Returns a list of files in a given directory.
 void	make_dir(string dir);			// Makes a new directory, if it doesn't already exist.
+bool	remove_directory(string path);	// Removes a given directory and anything within.
+string	random_line(string filename, unsigned int lines);	// Returns a random line from a text file.
 
 }	// namespace filex

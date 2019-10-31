@@ -32,8 +32,16 @@ enum class Glyph : unsigned short { FACE_BLACK = 1, FACE_WHITE, HEART, DIAMOND, 
 	EXCLAIM_INVERTED, GUILLEMET_OPEN, GUILLEMET_CLOSE, SHADE_LIGHT, SHADE_MEDIUM, SHADE_HEAVY, LINE_V, LINE_VL, LINE_VLL, LINE_VVL, LINE_DDL, LINE_DLL, LINE_VVLL, LINE_VV, LINE_DDLL, LINE_UULL, LINE_UUL, LINE_ULL, LINE_DL, LINE_UR,
 	LINE_UH, LINE_DH, LINE_VR, LINE_H, LINE_VH, LINE_VRR, LINE_VVR, LINE_UURR, LINE_DDRR, LINE_UUHH, LINE_DDHH, LINE_VVRR, LINE_HH, LINE_VVHH, LINE_UHH, LINE_UUH, LINE_DHH, LINE_DDH, LINE_UUR, LINE_URR, LINE_DRR, LINE_DDR, LINE_VVH,
 	LINE_VHH, LINE_UL, LINE_DR, BLOCK_SOLID, BLOCK_D, BLOCK_L, BLOCK_R, BLOCK_U, ALPHA, BETA, GAMMA_CAPS, PI_CAPS, SIGMA_CAPS, SIGMA, MU, TAU, PHI_CAPS, THETA_CAPS, OMEGA_CAPS, DELTA, INFINITY, PHI, EPSILON, INTERSECTION,
-	TRIPLE_BAR, PLUS_MINUS, GEQ, LEQ, INTEGRAL, INTEGRAL_INVERTED, DIVISION, APPROXIMATION, DEGREE, BULLET_SMALL, INTERPUNCT, SQUARE_ROOT, N_SUPER, SQUARE, MIDBLOCK, COPYRIGHT = 256, BLOCKS_7 = 283, BLOCKS_11, BLOCKS_14, BLOCKS_13,
-	BLOCKS_4, UPSIDE_DOWN_HD, BLOCKS_8 = 315, BLOCKS_1, BLOCKS_2, CORNER_CLIP_DL, CORNER_CLIP_DR, CURVE_DL, CURVE_UR, CURVE_UL, CURVE_DR, FLOPPY_DISK_METAL_HOLE, RETURN, TICK, MIDDOT, MIDCOMMA };
+	TRIPLE_BAR, PLUS_MINUS, GEQ, LEQ, INTEGRAL, INTEGRAL_INVERTED, DIVISION, APPROXIMATION, DEGREE, BULLET_SMALL, INTERPUNCT, SQUARE_ROOT, N_SUPER, SQUARE, MIDBLOCK, HALF_HEART, COPYRIGHT, BLOCKS_7 = 283, BLOCKS_11, BLOCKS_14,
+	BLOCKS_13, BLOCKS_4, UPSIDE_DOWN_HD, BLOCKS_8 = 315, BLOCKS_1, BLOCKS_2, CORNER_CLIP_DL, CORNER_CLIP_DR, CURVE_DL, CURVE_UR, CURVE_UL, CURVE_DR, FLOPPY_DISK_METAL_HOLE, RETURN, TICK, MIDDOT, MIDCOMMA };
+
+// Sprites used in sprites.png
+enum class Sprite : unsigned short { DIFF_EASY = 0, DIFF_NORMAL = 2, DIFF_HARD = 4, LADY = 6, GENT = 8, ENBY = 10, CURSOR = 12 };
+
+// box() flags
+#define BOX_FLAG_DOUBLE			(1 << 0)
+#define BOX_FLAG_ALPHA			(1 << 1)
+#define BOX_FLAG_OUTER_BORDER	(1 << 2)
 
 // print() flags
 #define PRINT_FLAG_NO_NBSP		(1 << 0)
@@ -46,10 +54,12 @@ enum class Glyph : unsigned short { FACE_BLACK = 1, FACE_WHITE, HEART, DIAMOND, 
 #define PRINT_FLAG_ABSOLUTE		(1 << 7)
 #define PRINT_FLAG_ALT_FONT		(1 << 8)
 
-// box() flags
-#define BOX_FLAG_DOUBLE			(1 << 0)
-#define BOX_FLAG_ALPHA			(1 << 1)
-#define BOX_FLAG_OUTER_BORDER	(1 << 2)
+// sprite_print() flags
+#define SPRITE_FLAG_PLUS_FOUR	(1 << 0)
+#define SPRITE_FLAG_QUAD		(1 << 1)
+
+// yes_no_query() flags
+#define YES_NO_FLAG_ANSI			(1 << 0)
 
 // Control keys.
 enum { CTRL_A = 1, CTRL_B, CTRL_C, CTRL_D, CTRL_E, CTRL_F, CTRL_G, CTRL_H, CTRL_I, CTRL_J, CTRL_K, CTRL_L, CTRL_M, CTRL_N, CTRL_O, CTRL_P, CTRL_Q, CTRL_R, CTRL_S, CTRL_T, CTRL_U, CTRL_V, CTRL_W, CTRL_X, CTRL_Y, CTRL_Z };
@@ -106,13 +116,17 @@ public:
 	void	rect_fine(int x, int y, int w, int h, Colour colour);	// Draws a rectangle at very specific coords.
 	void	rect_fine(int x, int y, int w, int h, s_rgb colour);	// As above, but with direct RGB input.
 	void	render_nebula(unsigned short seed, int off_x, int off_y);	// Renders a nebula on the screen.
+	void	sleep_for(unsigned int amount);	// Do absolutely nothing for a little while.
+	void	sprite_print(Sprite id, int x, int y, Colour colour = Colour::CGA_WHITE, unsigned char print_flags = 0);	// Prints a sprite at the given location.
 	void	unlock_surfaces();		// Unlocks the mutexes, if they're locked. Only for use by the Guru system.
 	void	update_ntsc_mode(int force = -1);	// Updates the NTSC filter.
 	unsigned int	wait_for_key(unsigned short max_ms = 0);	// Polls SDL until a key is pressed. If a time is specified, it will abort after this time.
+	bool	yes_no_query(string yn_strings, string yn_title, Colour title_colour, unsigned int flags = 0);	// Renders a yes/no popup box and returns the result.
 
 private:
 	SDL_Surface		*font;					// The bitmap font texture.
 	SDL_Surface		*alagard;				// The texture for the large bitmap font.
+	SDL_Surface		*sprites;				// The texture for larger sprites.
 	unsigned short	font_sheet_size;		// The size of the font texture sheet, in glyphs.
 	SDL_Window		*main_window;			// The main (and only) SDL window.
 	SDL_Surface		*main_surface;			// The main render surface.
