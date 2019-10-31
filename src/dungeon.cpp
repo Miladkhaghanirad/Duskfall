@@ -5,6 +5,7 @@
 #include "guru.h"
 #include "hero.h"
 #include "iocore.h"
+#include "world.h"
 
 #include "SQLiteCpp/SQLiteCpp.h"
 
@@ -61,7 +62,7 @@ void Dungeon::load()
 	STACK_TRACE();
 	try
 	{
-		SQLite::Statement query(*hero->save_db, "SELECT * FROM dungeon WHERE level = ?");
+		SQLite::Statement query(*world()->save_db(), "SELECT * FROM dungeon WHERE level = ?");
 		query.bind(1, level);
 		while (query.executeStep())
 		{
@@ -84,15 +85,21 @@ void Dungeon::render()
 	STACK_TRACE();
 	iocore->cls();
 	for (unsigned int x = 0; x < width; x++)
-	{
 		for (unsigned int y = 0; y < height; y++)
-		{
-			Tile &here = tiles[x + y * width];
-			iocore->print_at(static_cast<Glyph>(here.glyph), x, y, here.colour);
-		}
+			render_tile(x, y);
+}
+
+// Renders a specific tile.
+void Dungeon::render_tile(unsigned short x, unsigned short y)
+{
+	STACK_TRACE();
+	if (x == world()->hero()->x && y == world()->hero()->y)
+	{
+		iocore->print_at('@', x, y, Colour::WHITE);
+		return;
 	}
-	iocore->print_at('@', hero->x, hero->y, Colour::WHITE);
-	iocore->flip();
+	Tile &here = tiles[x + y * width];
+	iocore->print_at(static_cast<Glyph>(here.glyph), x, y, here.colour);
 }
 
 // Saves this dungeon to disk.
@@ -101,11 +108,11 @@ void Dungeon::save()
 	STACK_TRACE();
 	try
 	{
-		hero->save_db->exec("CREATE TABLE IF NOT EXISTS dungeon ( level INTEGER PRIMARY KEY UNIQUE NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, tiles BLOB NOT NULL );");
-		SQLite::Statement delete_level(*hero->save_db, "DELETE FROM dungeon WHERE level = ?");
+		world()->save_db()->exec("CREATE TABLE IF NOT EXISTS dungeon ( level INTEGER PRIMARY KEY UNIQUE NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, tiles BLOB NOT NULL );");
+		SQLite::Statement delete_level(*world()->save_db(), "DELETE FROM dungeon WHERE level = ?");
 		delete_level.bind(1, level);
 		delete_level.exec();
-		SQLite::Statement sql(*hero->save_db, "INSERT INTO dungeon (level,width,height,tiles) VALUES (?,?,?,?)");
+		SQLite::Statement sql(*world()->save_db(), "INSERT INTO dungeon (level,width,height,tiles) VALUES (?,?,?,?)");
 		sql.bind(1, level);
 		sql.bind(2, width);
 		sql.bind(3, height);
@@ -124,4 +131,12 @@ void Dungeon::set_tile(unsigned short x, unsigned short y, Tile &tile)
 	STACK_TRACE();
 	if (x >= width || y >= height) guru->halt("Attempted to set out-of-bounds tile.");
 	tiles[x + y * width] = tile;
+}
+
+// Retrieves a specified tile pointer.
+Tile* Dungeon::tile(unsigned short x, unsigned short y)
+{
+	STACK_TRACE();
+	if (x >= width || y >= height) guru->halt("Attempted to set out-of-bounds tile.");
+	return &tiles[x + y * width];
 }

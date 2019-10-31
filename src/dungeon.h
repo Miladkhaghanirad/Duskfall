@@ -30,8 +30,10 @@ public:
 	void	generate();	// Generates a new dungeon level.
 	void	load();		// Loadds this dungeon from disk.
 	void	render();	// Renders the dungeon on the screen.
+	void	render_tile(unsigned short x, unsigned short y);	// Renders a specific tile.
 	void	save();		// Saves this dungeon to disk.
 	void	set_tile(unsigned short x, unsigned short y, Tile &tile);	// Sets a specified tile, with error checking.
+	Tile*	tile(unsigned short x, unsigned short y);	// Retrieves a specified tile pointer.
 
 private:
 	unsigned short	level;			// The vertical level of this dungeon.

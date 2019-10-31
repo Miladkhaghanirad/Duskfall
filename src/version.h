@@ -5,7 +5,7 @@
 #include "duskfall.h"
 
 #define DUSKFALL_VERSION_EPOCH		0
-#define DUSKFALL_VERSION_RELEASE	6
+#define DUSKFALL_VERSION_RELEASE	7
 #define DUSKFALL_VERSION_MAJOR		0
 #define DUSKFALL_VERSION_MINOR		0
 #define DUSKFALL_EDITION			"A New Beginning"

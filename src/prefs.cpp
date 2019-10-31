@@ -19,7 +19,7 @@ namespace prefs
 {
 
 #define FILENAME_PREFS	"userdata/prefs.dat"
-#define PREFS_KEYBINDS	14
+#define PREFS_KEYBINDS	15
 
 // Shift			letter
 // Ctrl				letter - 64
@@ -43,6 +43,7 @@ namespace prefs
 #define KEY_NORTHWEST_DEFAULT		'q'
 #define KEY_OPTIONS_WINDOW_DEFAULT	(KEYMOD_SHIFT_CTRL + 'O')
 #define KEY_QUIT_GAME_DEFAULT		(KEYMOD_SHIFT_CTRL + 'X')
+#define KEY_SAVE_DEFAULT			(KEYMOD_CTRL + 'S')
 #define KEY_SCREENSHOT_DEFAULT		SDLK_PRINTSCREEN
 #define KEY_SOUTH_DEFAULT			's'
 #define KEY_SOUTHEAST_DEFAULT		'c'
@@ -59,8 +60,7 @@ namespace prefs
 #define SCREENSHOT_TYPE_DEFAULT		2		// The format of screenshots (0 = BMP, 1 = PNG, 2 = JPEG)
 #define VISUAL_GLITCHES_DEFAULT		0		// Do we want visual glitches?
 
-enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_PALETTE, ID_GLITCHES, ID_SS_FORMAT, ID_ALT_FONT, ID_TEX_SCALING, ID_SOUND_MUSIC, ID_TITLE_MUSIC, ID_BGM, ID_VOLUME_S, ID_GAMEPAD, ID_FULLROOM, ID_CONDENSED,
-		ID_MINIMAP_BG, ID_AUTO_RELOAD, ID_DEATH_REPORT, ID_TUTORIALS, ID_SHOW_MUSIC_NAMES, ID_TUTORIALS_RESET, ID_VOLUME_M };
+enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_PALETTE, ID_GLITCHES, ID_SS_FORMAT, ID_TEX_SCALING, ID_DEATH_REPORT };
 
 }	// namespace prefs
 
@@ -207,9 +207,9 @@ namespace prefs
 unsigned int	keybinds[PREFS_KEYBINDS];	// Keybind definitions.
 
 uint32_t key_defaults[PREFS_KEYBINDS] = { KEY_NORTH_DEFAULT, KEY_SOUTH_DEFAULT, KEY_EAST_DEFAULT, KEY_WEST_DEFAULT, KEY_NORTHEAST_DEFAULT, KEY_NORTHWEST_DEFAULT, KEY_SOUTHEAST_DEFAULT, KEY_SOUTHWEST_DEFAULT, KEY_QUIT_GAME_DEFAULT,
-		KEY_OPTIONS_WINDOW_DEFAULT, KEY_MENU_OK_DEFAULT, KEY_MENU_OK_2_DEFAULT, KEY_MENU_CANCEL_DEFAULT, KEY_SCREENSHOT_DEFAULT };
+		KEY_OPTIONS_WINDOW_DEFAULT, KEY_MENU_OK_DEFAULT, KEY_MENU_OK_2_DEFAULT, KEY_MENU_CANCEL_DEFAULT, KEY_SCREENSHOT_DEFAULT, KEY_SAVE_DEFAULT };
 const string key_names[PREFS_KEYBINDS] = { "key_north", "key_south", "key_east", "key_west", "key_northeast", "key_northwest", "key_southeast", "key_southwest", "key_quit_game", "key_options_window", "key_menu_ok", "key_menu_ok_2",
-		"key_menu_cancel", "key_screenshot" };
+		"key_menu_cancel", "key_screenshot", "key_save" };
 
 // Used by the keybinds window.
 vector<string>			key_longname;
@@ -781,6 +781,7 @@ void ui_init_keybinds()
 	ui_add_keybind("Menu: OK", Keys::MENU_OK);
 	ui_add_keybind("Menu: OK", Keys::MENU_OK_2);
 	ui_add_keybind("Menu: Cancel", Keys::MENU_CANCEL);
+	ui_add_keybind("Save Game", Keys::SAVE);
 	ui_add_keybind("Quit Game", Keys::QUIT_GAME);
 	ui_add_keybind("Screenshot", Keys::SCREENSHOT);
 	ui_add_keybind("Game Settings", Keys::OPTIONS_WINDOW);
