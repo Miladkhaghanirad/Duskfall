@@ -505,9 +505,10 @@ void Dungeon::recalc_light_source(unsigned short x, unsigned short y, s_rgb colo
 		int brightest_total = 90;
 		for (short dx = -1; dx <= 1; dx++)
 		{
+			if (dx + xy.first < 0 || dx + xy.first >= width) continue;
 			for (short dy = -1; dy <= 1; dy++)
 			{
-				if (dx == 0 && dy == 0) continue;
+				if ((dx == 0 && dy == 0) || dy + xy.second < 0 || dy + xy.second >= height) continue;
 				if (tiles[xy.first + dx + (xy.second + dy) * width].opaque()) continue;
 				if (!los_check(xy.first + dx, xy.second + dy)) continue;
 				s_rgb light = lighting[xy.first + dx + (xy.second + dy) * width];
