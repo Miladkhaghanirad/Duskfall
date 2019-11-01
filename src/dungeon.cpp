@@ -14,7 +14,6 @@
 #include "SQLiteCpp/SQLiteCpp.h"
 
 #include <cmath>
-#include <set>
 
 
 // Used by the shadowcasting system below.
@@ -24,7 +23,6 @@ static signed char shadowcast_multipliers[4][8] = {
 	{ 0, 1, 1, 0, 0, -1, -1, 0 },
 	{ 1, 0, 0, 1, -1, 0, 0, -1 }
 };
-std::set<std::pair<unsigned short, unsigned short>> dynamic_light_temp;
 
 
 Dungeon::Dungeon(unsigned short new_level, unsigned short new_width, unsigned short new_height) : level(new_level), width(new_width), height(new_height), region(nullptr)
@@ -375,6 +373,68 @@ void Dungeon::load()
 	}
 }
 
+// Checks to see if a given tile is within the player's line of sight.
+// Largely adapted from Bresenham's Line Algorithm on RogueBasin.
+bool Dungeon::los_check(unsigned short x1, unsigned short y1)
+{
+	unsigned short x2 = world()->hero()->x, y2 = world()->hero()->y;
+
+	int delta_x(x2 - x1);
+	// if x1 == x2, then it does not matter what we set here
+	signed char const ix((delta_x > 0) - (delta_x < 0));
+	delta_x = std::abs(delta_x) << 1;
+
+	int delta_y(y2 - y1);
+	// if y1 == y2, then it does not matter what we set here
+	signed char const iy((delta_y > 0) - (delta_y < 0));
+	delta_y = std::abs(delta_y) << 1;
+
+	if (delta_x >= delta_y)
+	{
+		// error may go below zero
+		int error(delta_y - (delta_x >> 1));
+
+		while (x1 != x2)
+		{
+			// reduce error, while taking into account the corner case of error == 0
+			if ((error > 0) || (!error && (ix > 0)))
+			{
+				error -= delta_x;
+				y1 += iy;
+			}
+			// else do nothing
+
+			error += delta_y;
+			x1 += ix;
+
+			if (tiles[x1 + y1 * width].opaque()) return false;
+		}
+	}
+	else
+	{
+		// error may go below zero
+		int error(delta_x - (delta_y >> 1));
+
+		while (y1 != y2)
+		{
+			// reduce error, while taking into account the corner case of error == 0
+			if ((error > 0) || (!error && (iy > 0)))
+			{
+				error -= delta_y;
+				x1 += ix;
+			}
+			// else do nothing
+
+			error += delta_x;
+			y1 += iy;
+
+			if (tiles[x1 + y1 * width].opaque()) return false;
+		}
+	}
+
+	return true;
+}
+
 // View the dungeon map in its entirety. see_all should only be used in debugging/testing code.
 void Dungeon::map_view(bool see_lighting, bool see_all)
 {
@@ -418,10 +478,44 @@ void Dungeon::recalc_light_source(unsigned short x, unsigned short y, s_rgb colo
 		std::pair<unsigned short, unsigned short> xy = *iterator;
 		dynamic_light_temp.erase(iterator);
 
-		float distance = mathx::grid_dist(x, y, xy.first, xy.second);
-		light_tile(xy.first, xy.second, diminish_light(colour, distance, 1.05f));
+		if (!always_visible && tiles[xy.first + xy.second * width].opaque())
+		{
+			if (los_check(xy.first, xy.second)) dynamic_light_temp_walls.insert(xy);
+		} else
+		{
+			float distance = mathx::grid_dist(x, y, xy.first, xy.second);
+			light_tile(xy.first, xy.second, diminish_light(colour, distance, 1.05f));
+		}
 	}
+
+	// Brute-force check: look at all the *visible* (to the player) tiles surrounding the wall, and pick the brightest.
+	while (dynamic_light_temp_walls.size())
+	{
+		auto iterator = dynamic_light_temp_walls.begin();
+		std::pair<unsigned short, unsigned short> xy = *iterator;
+		dynamic_light_temp_walls.erase(iterator);
+		s_rgb brightest = { 30, 30, 30 };
+		int brightest_total = 90;
+		for (short dx = -1; dx <= 1; dx++)
+		{
+			for (short dy = -1; dy <= 1; dy++)
+			{
+				if (dx == 0 && dy == 0) continue;
+				if (tiles[xy.first + dx + (xy.second + dy) * width].opaque()) continue;
+				if (!los_check(xy.first + dx, xy.second + dy)) continue;
+				s_rgb light = lighting[xy.first + dx + (xy.second + dy) * width];
+				if (light.r + light.g + light.b > brightest_total)
+				{
+					brightest_total = light.r + light.g + light.b;
+					brightest = light;
+				}
+			}
+		}
+		lighting[xy.first + xy.second * width] = brightest;
+	}
+
 	dynamic_light_temp.clear();
+	dynamic_light_temp_walls.clear();
 }
 
 // Clears the lighting array and recalculates all light sources.
@@ -432,6 +526,8 @@ void Dungeon::recalc_lighting()
 	recalc_light_source(world()->hero()->x, world()->hero()->y, { 255, 255, 200 }, 100, true);
 	recalc_light_source(5, 5, { 0, 255, 0 }, 100, false);
 	recalc_light_source(35, 5, { 255, 0, 0 }, 100, false);
+	tiles[5 + 5 * width].glyph = '*';
+	tiles[5 + 5 * width].colour = Colour::CGA_LGREEN;
 }
 
 // Flood-fills a specified area with a new region ID.

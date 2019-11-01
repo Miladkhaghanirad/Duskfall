@@ -3,6 +3,7 @@
 
 #pragma once
 #include "duskfall.h"
+#include <set>
 
 enum class Colour : unsigned char;	// defined in iocore.h
 
@@ -37,6 +38,7 @@ public:
 	unsigned short	get_height() { return height; }	// Read-only access to the dungeon height.
 	unsigned short	get_width() { return width; }	// Read-only access to the dungeon width.
 	void	load();		// Loadds this dungeon from disk.
+	bool	los_check(unsigned short x1, unsigned short y1);	// Checks to see if a given tile is within the player's line of sight.
 	void	map_view(bool render_lighting = true, bool see_all = false);	// View the dungeon map in its entirety.
 	void	random_start_position(unsigned short &x, unsigned short &y);	// Picks a viable random starting location.
 	void	recalc_lighting();	// Clears the lighting array and recalculates all light sources.
@@ -51,6 +53,7 @@ private:
 	Tile			*tiles;			// An array of Tiles which make up this area.
 	s_rgb			*lighting;		// An array of 8-bit integers defining the light level or visibility of tiles.
 	unsigned int	*region;		// The region the current tile belongs to.
+	std::set<std::pair<unsigned short, unsigned short>> dynamic_light_temp, dynamic_light_temp_walls;	// Temporary data used by the dynamic lighting system.
 
 	void	carve_room(unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned int new_region);	// Carves out a square room.
 	void	cast_light(unsigned int x, unsigned int y, unsigned int radius, unsigned int row, float start_slope, float end_slope, unsigned int xx, unsigned int xy, unsigned int yx, unsigned int yy,  bool always_visible);
