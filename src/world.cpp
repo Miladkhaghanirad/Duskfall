@@ -64,6 +64,7 @@ void World::load()
 
 	the_dungeon = new Dungeon(level);
 	the_dungeon->load();
+	the_hero->recenter_camera();
 }
 
 // The main game loop!
@@ -105,8 +106,10 @@ void World::new_game()
 	STACK_TRACE();
 	level = 1;
 	hero()->x = hero()->y = 5;
-	the_dungeon = new Dungeon(1, 50, 30);
+	the_dungeon = new Dungeon(1, 100, 100);
 	the_dungeon->generate();
+	the_dungeon->random_start_position(hero()->x, hero()->y);
+	the_hero->recenter_camera();
 	save();
 }
 

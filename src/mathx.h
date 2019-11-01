@@ -11,6 +11,8 @@ namespace mathx
 extern unsigned int	prand_seed;		// Pseudorandom number seed.
 
 bool			check_flag(unsigned int flags, unsigned int flag_to_check);	// Checks to see if a flag is set.
+void			dev_timer_start();	// Starts a timer for debugging/testing purposes.
+float			dev_timer_stop();	// Stops the timer and reports the result.
 float			grid_dist(long long x1, long long y1, long long x2, long long y2);	// Determines the difference between two points on a grid.
 void			init();						// Sets up PCG pseudorandom number generator.
 bool			is_odd(unsigned int num);	// Checks if a number is odd.

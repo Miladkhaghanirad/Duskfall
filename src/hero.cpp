@@ -4,6 +4,7 @@
 #include "controls.h"
 #include "dungeon.h"
 #include "guru.h"
+#include "iocore.h"
 #include "hero.h"
 #include "strx.h"
 #include "world.h"
@@ -13,7 +14,7 @@
 #include <fstream>
 
 
-Hero::Hero() : difficulty(1), style(1)
+Hero::Hero() : difficulty(1), style(1), camera_off_x(0), camera_off_y(0)
 {
 	ai = new Controls(this);
 }
@@ -43,6 +44,28 @@ void Hero::load()
 	{
 		guru->halt(e.what());
 	}
+}
+
+// Recenters the camera on the Hero's position.
+void Hero::recenter_camera()
+{
+	STACK_TRACE();
+	recenter_camera_horiz();
+	recenter_camera_vert();
+}
+
+// Recenters the camera horizontally on the Hero's position, not adjusting the vertical.
+void Hero::recenter_camera_horiz()
+{
+	STACK_TRACE();
+	camera_off_x = (iocore->get_cols() / 2) - x;
+}
+
+// Recenters the camera vertically on the Hero's position, not adjusting the horizontal.
+void Hero::recenter_camera_vert()
+{
+	STACK_TRACE();
+	camera_off_y = (iocore->get_rows() / 2) - y;
 }
 
 // Saves the Hero's data to disk, along with the rest of the game world.

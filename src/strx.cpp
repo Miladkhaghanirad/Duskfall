@@ -176,6 +176,15 @@ bool find_and_replace(string &input, string to_find, string to_replace)
 	return found;
 }
 
+// Converts a float or double to a string.
+string ftos(double num)
+{
+	STACK_TRACE();
+	std::stringstream ss;
+	ss << num;
+	return ss.str();
+}
+
 // Converts a hex string back to an integer.
 unsigned int htoi(string hex_str)
 {

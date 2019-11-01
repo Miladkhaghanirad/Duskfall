@@ -18,6 +18,21 @@ bool check_flag(unsigned int flags, unsigned int flag_to_check)
 	return ((flags & flag_to_check) == flag_to_check);
 }
 
+std::chrono::time_point<std::chrono::system_clock> dev_timer;	// Timer used for testing.
+
+// Starts a timer for debugging/testing purposes.
+void dev_timer_start()
+{
+	dev_timer = std::chrono::system_clock::now();
+}
+
+// Stops the timer and reports the result.
+float dev_timer_stop()
+{
+	std::chrono::duration<float> elapsed_seconds = std::chrono::system_clock::now() - dev_timer;
+	return elapsed_seconds.count();
+}
+
 // Determines the difference between two points on a grid.
 float grid_dist(long long x1, long long y1, long long x2, long long y2)
 {

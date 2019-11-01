@@ -11,6 +11,7 @@ unsigned int	ansi_strlen(string input);	// Gives the length of a string, adjuste
 vector<string>	ansi_vector_split(string source, unsigned int line_len);	// Splits an ANSI string into a vector of strings, to a given line length.
 string			comma_list(vector<string> vec, bool use_and = true);	// Converts a vector to a comma-separated list.
 bool			find_and_replace(string &input, string to_find, string to_replace);	// Find and replace one string with another.
+string			ftos(double num);	// Converts a float or double to a string.
 unsigned int	htoi(string hex_str);	// Converts a hex string back to an integer.
 string			itos(long long num);	// Converts an integer to a string.
 string			str_tolower(string str);	// Converts a string to lower-case.
