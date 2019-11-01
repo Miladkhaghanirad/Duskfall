@@ -22,7 +22,7 @@ World::World(unsigned int new_slot, bool new_save) : recalc_lighting(true), redr
 	STACK_TRACE();
 	try
 	{
-		save_db_ptr = new SQLite::Database("userdata/save/" + strx::itos(level) + "/save.dat", SQLite::OPEN_READWRITE | (new_save ? SQLite::OPEN_CREATE : 0));
+		save_db_ptr = new SQLite::Database("userdata/save/" + strx::itos(save_slot) + "/save.dat", SQLite::OPEN_READWRITE | (new_save ? SQLite::OPEN_CREATE : 0));
 	}
 	catch(std::exception &e)
 	{
