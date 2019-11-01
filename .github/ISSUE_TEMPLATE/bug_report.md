@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: bug
+labels: bug needs_review
 assignees: ''
 
 ---
@@ -29,12 +29,6 @@ If the bug is easily reproduced via an existing saved-game, please include the s
  - OS: [e.g. Windows]
  - Compiler: [e.g. using precompiled binaries, built it myself on MSVC, etc.]
  - Version: [e.g. 0.3.2.7]
-
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
 
 **Additional context**
 Add any other context about the problem here.
