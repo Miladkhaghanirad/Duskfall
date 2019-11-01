@@ -11,6 +11,7 @@ enum class Colour : unsigned char;	// defined in iocore.h
 #define TILE_FLAG_OPAQUE		(1 << 1)
 #define TILE_FLAG_WALL			(1 << 2)
 #define TILE_FLAG_PERMAWALL		(1 << 3)
+#define TILE_FLAG_EXPLORED		(1 << 4)
 
 
 struct Tile
@@ -22,6 +23,7 @@ struct Tile
 
 			Tile() : glyph('?'), colour(static_cast<Colour>(0x30)), flags(0) { }
 	bool	destroyable_wall() { return wall() && !permawall(); }
+	bool	explored() { return (flags & TILE_FLAG_EXPLORED) == TILE_FLAG_EXPLORED; }
 	bool	impassible() { return (flags & TILE_FLAG_IMPASSIBLE) == TILE_FLAG_IMPASSIBLE; }
 	bool	opaque() { return (flags & TILE_FLAG_OPAQUE) == TILE_FLAG_OPAQUE; }
 	bool	permawall() { return (flags & TILE_FLAG_PERMAWALL) == TILE_FLAG_PERMAWALL; }
@@ -58,6 +60,7 @@ private:
 	void	carve_room(unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned int new_region);	// Carves out a square room.
 	void	cast_light(unsigned int x, unsigned int y, unsigned int radius, unsigned int row, float start_slope, float end_slope, unsigned int xx, unsigned int xy, unsigned int yx, unsigned int yy,  bool always_visible);
 	s_rgb	diminish_light(s_rgb colour, float distance, float falloff);	// Dims a specified RGB colour.
+	void	explore(unsigned short x, unsigned short y);					// Marks a given tile as explored.
 	bool	is_dead_end(unsigned short x, unsigned short y);				// Check to see if this tile is a dead-end.
 	s_rgb	light_surface(s_rgb surface_colour, s_rgb light_colour);		// Applies a light source to a surface, affecting its colour.
 	void	light_tile(unsigned short x, unsigned short y, s_rgb colour);	// Applies light to a specified tile.

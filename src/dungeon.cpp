@@ -130,6 +130,13 @@ s_rgb Dungeon::diminish_light(s_rgb colour, float distance, float falloff)
 	return colour;
 }
 
+// Marks a given tile as explored.
+void Dungeon::explore(unsigned short x, unsigned short y)
+{
+	STACK_TRACE();
+	tiles[x + y * width].flags |= TILE_FLAG_EXPLORED;
+}
+
 // Generates a new dungeon level.
 void Dungeon::generate()
 {
@@ -580,7 +587,12 @@ void Dungeon::render(bool render_lighting, bool see_all)
 						here_col.b += 30;
 					}
 				}
-				iocore->print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, here_col.r, here_col.g, here_col.b);
+				if (here_col.r >= 30 || here_col.g >= 30 || here_col.b >= 30)
+				{
+					iocore->print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, here_col.r, here_col.g, here_col.b);
+					explore(x, y);
+				}
+				else if (here.explored()) iocore->print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, 30, 30, 30);
 			}
 		}
 	}
