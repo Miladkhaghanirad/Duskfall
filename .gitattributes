@@ -1,0 +1,14 @@
+LICENSE linguist-documentation
+lib/* linguist-vendored
+README linguist-documentation
+src/libjpeg-turbo/* linguist-vendored
+src/lodepng/* linguist-vendored
+src/pcg/* linguist-vendored
+src/sdl_savejpeg/* linguist-vendored
+src/sdl2/* linguist-vendored
+src/snes_ntsc/* linguist-vendored
+src/sqlite/* linguist-vendored
+src/SQLiteCpp/* linguist-vendored
+win64/*.dll linguist-vendored
+win64/*.txt linguist-documentation
+win64/licenses/* linguist-documentation
