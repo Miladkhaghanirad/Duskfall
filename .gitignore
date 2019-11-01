@@ -1,4 +1,6 @@
 src/*.o
+src/lodepng/*.o
+src/SQLiteCpp/*.o
 win64/duskfall.exe
 win64/log.txt
 win64/userdata/
