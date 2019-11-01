@@ -109,6 +109,7 @@ public:
 	unsigned short	midcol() { return mid_col; }	// Retrieves the middle column on the screen.
 	unsigned short	midrow() { return mid_row; }	// Retrieves the middle row on the screen.
 	void	ok_box(int offset, Colour colour);	// Renders an OK box on a pop-up window.
+	void	parse_colour(Colour colour, unsigned char &r, unsigned char &g, unsigned char &b);	// Parses a colour code into RGB.
 	int		print(string message, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a message at the specified coordinates.
 	void	print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen.
 	void	print_at(char letter, int x, int y, Colour colour, unsigned int print_flags = 0) { print_at(static_cast<Glyph>(letter), x, y, colour, print_flags); }
@@ -165,7 +166,6 @@ private:
 	void	glitch_square();		// Square displacement glitch.
 	s_rgb	nebula(int x, int y);	// Determines the colour of a specific point in a nebula, based on X,Y coordinates.
 	unsigned char	nebula_rgb(unsigned char value, int modifier);	// Modifies an RGB value in the specified manner, used for rendering nebulae.
-	void	parse_colour(Colour colour, unsigned char &r, unsigned char &g, unsigned char &b);	// Parses a colour code into RGB.
 	void	render_glitches();		// Renders pre-calculated glitches.
 };
 

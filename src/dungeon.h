@@ -28,7 +28,6 @@ public:
 			Dungeon(unsigned short new_level, unsigned short new_width = 0, unsigned short new_height = 0);
 			~Dungeon();
 	void	generate();	// Generates a new dungeon level.
-	void	light_tile(unsigned short x, unsigned short y, s_rgb colour);	// Applies light to a specified tile.
 	void	load();		// Loadds this dungeon from disk.
 	void	recalc_lighting();	// Clears the lighting array and recalculates all light sources.
 	void	render();	// Renders the dungeon on the screen.
@@ -44,5 +43,7 @@ private:
 
 	void	cast_light(unsigned int x, unsigned int y, unsigned int radius, unsigned int row, float start_slope, float end_slope, unsigned int xx, unsigned int xy, unsigned int yx, unsigned int yy,  bool always_visible);
 	s_rgb	diminish_light(s_rgb colour, float distance, float falloff);	// Dims a specified RGB colour.
+	s_rgb	light_surface(s_rgb surface_colour, s_rgb light_colour);		// Applies a light source to a surface, affecting its colour.
+	void	light_tile(unsigned short x, unsigned short y, s_rgb colour);	// Applies light to a specified tile.
 	void	recalc_light_source(unsigned short x, unsigned short y, s_rgb colour, unsigned short radius, bool always_visible = false);	// Recalculates a specific light source.
 };

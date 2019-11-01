@@ -119,7 +119,7 @@ void Dungeon::generate()
 	Tile basic_floor;
 	basic_floor.name = 0;
 	basic_floor.glyph = static_cast<unsigned short>(Glyph::MIDDOT);
-	basic_floor.colour = Colour::CGA_GRAY;
+	basic_floor.colour = Colour::CGA_LGRAY;
 
 	for (unsigned short y = 0; y < height; y++)
 	{
@@ -144,6 +144,32 @@ void Dungeon::generate()
 		const unsigned short ry = mathx::rnd(height) - 1;
 		tiles[rx + ry * width] = indestructible_wall;
 	}
+}
+
+// Applies a light source to a surface, affecting its colour.
+s_rgb Dungeon::light_surface(s_rgb surface_colour, s_rgb light_colour)
+{
+	STACK_TRACE();
+	if (!light_colour.r && !light_colour.g && !light_colour.b) return { 0, 0, 0};
+	auto light_with = [](unsigned char surf, unsigned char light) -> unsigned char
+	{
+		float light_perc = static_cast<float>(light) / 255.0f;
+		unsigned char modified_surf = static_cast<unsigned char>(round(static_cast<float>(surf) * light_perc));
+		//unsigned char modified_surf = (surf / 2) + (light / 2);
+		if (modified_surf < 20 && surf > 0 && light > 0)
+		{
+			if (surf >= 20) modified_surf = 20;
+			else modified_surf = 20;
+		}
+		return modified_surf;
+	};
+
+	s_rgb lit_surface_colour;
+	lit_surface_colour.r = light_with(surface_colour.r, light_colour.r);
+	lit_surface_colour.g = light_with(surface_colour.g, light_colour.g);
+	lit_surface_colour.b = light_with(surface_colour.b, light_colour.b);
+
+	return lit_surface_colour;
 }
 
 // Applies light to a specified tile.
@@ -211,8 +237,9 @@ void Dungeon::recalc_lighting()
 {
 	STACK_TRACE();
 	memset(lighting, 0, sizeof(struct s_rgb) * width * height);
-	recalc_light_source(world()->hero()->x, world()->hero()->y, { 255, 0, 0 }, 30, true);
+	recalc_light_source(world()->hero()->x, world()->hero()->y, { 255, 255, 200 }, 30, true);
 	recalc_light_source(5, 5, { 0, 255, 0 }, 30, false);
+	recalc_light_source(35, 5, { 255, 0, 0 }, 30, false);
 }
 
 // Renders the dungeon on the screen.
@@ -228,7 +255,9 @@ void Dungeon::render()
 			else
 			{
 				Tile &here = tiles[x + y * width];
-				s_rgb here_col = lighting[x + y * width];
+				unsigned char r, g, b;
+				iocore->parse_colour(here.colour, r, g, b);
+				s_rgb here_col = light_surface({r,g,b}, lighting[x + y * width]);
 				iocore->print_at(static_cast<Glyph>(here.glyph), x, y, here_col.r, here_col.g, here_col.b);
 			}
 		}
