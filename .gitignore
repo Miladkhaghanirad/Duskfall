@@ -1,5 +1,8 @@
 src/*.o
 src/lodepng/*.o
+src/pcg/*.o
+src/sdl_savejpeg/*.o
+src/snes_ntsc/*.o
 src/SQLiteCpp/*.o
 win64/duskfall.exe
 win64/log.txt
