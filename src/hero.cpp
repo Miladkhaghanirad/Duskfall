@@ -14,7 +14,7 @@
 #include <fstream>
 
 
-Hero::Hero() : difficulty(1), style(1), camera_off_x(0), camera_off_y(0)
+Hero::Hero() : camera_off_x(0), camera_off_y(0), difficulty(1), played(0), style(1)
 {
 	ai = std::make_shared<Controls>(shared_ptr<Hero>(this));
 }
@@ -38,6 +38,7 @@ void Hero::load()
 			name = query.getColumn("name").getString();
 			x = query.getColumn("x").getUInt();
 			y = query.getColumn("y").getUInt();
+			played = query.getColumn("played").getUInt();
 		}
 	}
 	catch(std::exception &e)
@@ -75,13 +76,14 @@ void Hero::save()
 	try
 	{
 		world()->save_db()->exec("DROP TABLE IF EXISTS hero; CREATE TABLE hero ( id INTEGER PRIMARY KEY AUTOINCREMENT, difficulty INTEGER NOT NULL, style INTEGER NOT NULL, name TEXT NOT NULL, x INTEGER NOT NULL, "
-				"y INTEGER NOT NULL )");
-		SQLite::Statement query(*world()->save_db(), "INSERT INTO hero (difficulty,style,name,x,y) VALUES (?,?,?,?,?)");
+				"y INTEGER NOT NULL, played INTEGER NOT NULL )");
+		SQLite::Statement query(*world()->save_db(), "INSERT INTO hero (difficulty,style,name,x,y,played) VALUES (?,?,?,?,?,?)");
 		query.bind(1, difficulty);
 		query.bind(2, style);
 		query.bind(3, name);
 		query.bind(4, x);
 		query.bind(5, y);
+		query.bind(6, played);
 		query.exec();
 	}
 	catch(std::exception &e)
@@ -91,7 +93,24 @@ void Hero::save()
 
 	std::ofstream tag_file("userdata/save/" + strx::itos(world()->slot()) + "/tag.dat");
 	tag_file << name << std::endl;			// The character's name.
-	tag_file << "00:00:00" << std::endl;	// The gameplay timer.
+
+	// The gameplay timer.
+	unsigned int hours = 0, minutes = 0, seconds = played;
+	if (seconds >= 3600)
+	{
+		hours = seconds / 3600;
+		seconds -= (hours * 3600);
+	}
+	if (seconds >= 60)
+	{
+		minutes = seconds / 60;
+		seconds -= (minutes * 60);
+	}
+	string hours_string = strx::itos(hours); if (hours_string.size() < 2) hours_string = "0" + hours_string;
+	string minutes_string = strx::itos(minutes); if (minutes_string.size() < 2) minutes_string = "0" + minutes_string;
+	string seconds_string = strx::itos(seconds); if (seconds_string.size() < 2) seconds_string = "0" + seconds_string;
+	tag_file << hours_string + ":" + minutes_string + ":" + seconds_string << std::endl;
+
 	tag_file << "1 Novice" << std::endl;	// The character's level and class.
 	tag_file << "0" << std::endl;			// The number of times this character has died.
 	tag_file << "20" << std::endl;			// The character's total health percentage (0 = empty, 20 = full).

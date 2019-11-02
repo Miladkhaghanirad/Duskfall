@@ -13,6 +13,8 @@
 
 #include "SQLiteCpp/SQLiteCpp.h"
 
+#include <chrono>
+#include <cmath>
 #include <set>
 
 
@@ -72,6 +74,7 @@ void World::load()
 void World::main_loop()
 {
 	STACK_TRACE();
+	std::chrono::time_point<std::chrono::system_clock> game_clock = std::chrono::system_clock::now();
 	while(true)
 	{
 		if (recalc_lighting)
@@ -90,7 +93,13 @@ void World::main_loop()
 
 		const unsigned int key = iocore->wait_for_key();
 		if (key == RESIZE_KEY) redraw_full = true;
-		else if (key == prefs::keybind(Keys::SAVE)) save(true);
+		else if (key == prefs::keybind(Keys::SAVE))
+		{
+			std::chrono::duration<float> elapsed_seconds = std::chrono::system_clock::now() - game_clock;
+			the_hero->played += round(elapsed_seconds.count());
+			game_clock = std::chrono::system_clock::now();
+			save(true);
+		}
 		else if (key == prefs::keybind(Keys::NORTH)) hero()->ai->travel(0, -1);
 		else if (key == prefs::keybind(Keys::SOUTH)) hero()->ai->travel(0, 1);
 		else if (key == prefs::keybind(Keys::EAST)) hero()->ai->travel(1, 0);
