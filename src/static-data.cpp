@@ -62,6 +62,7 @@ void StaticData::init_mobs_json()
 		const Json::Value jval = json[actor_id];
 		auto new_mob = std::make_shared<Actor>();
 		init_actor_json(jval, actor_id, new_mob);
+		new_mob->flags |= ACTOR_FLAG_BLOCKER;	// Mobs cannot be walked through or over.
 		static_mob_data.insert(std::pair<string, shared_ptr<Actor>>(actor_id, new_mob));
 	}
 }
