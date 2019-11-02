@@ -10,8 +10,9 @@
 // Attempts to travel in a given direction.
 bool AI::travel(short x_dir, short y_dir)
 {
-	Dungeon *dungeon = world()->dungeon();
-	Tile *target_tile = dungeon->tile(owner->x + x_dir, owner->y + y_dir);
+	STACK_TRACE();
+	shared_ptr<Dungeon> dungeon = world()->dungeon();
+	shared_ptr<Tile> target_tile = dungeon->tile(owner->x + x_dir, owner->y + y_dir);
 	if (target_tile->impassible()) return false;
 	owner->x += x_dir;
 	owner->y += y_dir;

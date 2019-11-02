@@ -10,10 +10,10 @@ class Actor;	// defined in actor.h
 class AI
 {
 public:
-					AI(Actor *new_owner) : owner(new_owner) { }
+					AI(shared_ptr<Actor> new_owner) : owner(new_owner) { }
 	virtual			~AI() { }
 	virtual bool	travel(short x_dir, short y_dir);	// Attempts to travel in a given direction.
 
 protected:
-	Actor	*owner;	// The Actor that owns this AI.
+	shared_ptr<Actor>	owner;	// The Actor that owns this AI.
 };

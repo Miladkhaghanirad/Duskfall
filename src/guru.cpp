@@ -9,7 +9,7 @@
 
 #define FILENAME_LOG	"userdata/log.txt"
 
-Guru*	guru = nullptr;	// The main Guru object.
+shared_ptr<Guru>	guru = nullptr;	// The main Guru object.
 
 // Catches a segfault or other fatal signal.
 void intercept_signal(int sig)

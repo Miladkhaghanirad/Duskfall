@@ -8,6 +8,6 @@
 class Controls : public AI
 {
 public:
-			Controls(Actor *new_owner) : AI(new_owner) { }
+			Controls(shared_ptr<Actor> new_owner) : AI(new_owner) { }
 	bool	travel(short x_dir, short y_dir) override;	// Attempts to travel in a given direction.
 };

@@ -31,4 +31,4 @@ private:
 	string	message;		// The error message.
 };
 
-extern Guru*	guru;	// External access to the Guru object.
+extern shared_ptr<Guru>	guru;	// External access to the Guru object.

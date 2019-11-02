@@ -6,9 +6,11 @@
 #include "iocore.h"
 #include "world.h"
 
+
 // Attempts to travel in a given direction.
 bool Controls::travel(short x_dir, short y_dir)
 {
+	STACK_TRACE();
 	if (AI::travel(x_dir, y_dir))
 	{
 		const int screen_x = world()->hero()->x + world()->hero()->camera_off_x;

@@ -605,11 +605,11 @@ void Dungeon::set_tile(unsigned short x, unsigned short y, Tile &tile)
 }
 
 // Retrieves a specified tile pointer.
-Tile* Dungeon::tile(unsigned short x, unsigned short y)
+shared_ptr<Tile> Dungeon::tile(unsigned short x, unsigned short y)
 {
 	STACK_TRACE();
 	if (x >= width || y >= height) guru->halt("Attempted to set out-of-bounds tile.");
-	return &tiles[x + y * width];
+	return std::make_shared<Tile>(tiles[x + y * width]);
 }
 
 // Checks if this tile touches a different region.

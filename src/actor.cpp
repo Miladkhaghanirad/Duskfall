@@ -7,7 +7,4 @@
 
 Actor::Actor() : ai(nullptr), x(0), y(0) { }
 
-Actor::~Actor()
-{
-	if (ai) delete ai;
-}
+Actor::~Actor() { }

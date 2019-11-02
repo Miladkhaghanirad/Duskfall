@@ -85,7 +85,7 @@ unsigned int build_version() { return atoi(cc_date); }
  * END OF BUILD VERSION GENERATION *
  ***********************************/
 
-IOCore*	iocore = nullptr;	// The main IOCore object.
+shared_ptr<IOCore>	iocore = nullptr;	// The main IOCore object.
 
 IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), exit_func_level(1), hold_glyph_glitches(false), glitch_multi(1), mouse_clicked_x(0), mouse_clicked_y(0), glitch_clear_countdown(0), glitches_queued(0), ntsc_glitched(false),
 		cleaned_up(false)

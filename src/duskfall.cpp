@@ -15,14 +15,14 @@ int main(int argc, char* argv[])
 	// Check command-line parameters.
 	vector<string> parameters(argv, argv + argc);
 
-	guru = new Guru();
+	guru = std::make_shared<Guru>();
 	prefs::init();
-	iocore = new IOCore();
+	iocore = std::make_shared<IOCore>();
 	static_data();
 	guru->log("Everything looks good! Starting the game!", GURU_INFO);
 	title::title_screen();
-	delete iocore;
-	delete guru;
+	iocore = nullptr;
+	guru = nullptr;
 	return 0;
 }
 

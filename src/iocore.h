@@ -169,4 +169,4 @@ private:
 	void	render_glitches();		// Renders pre-calculated glitches.
 };
 
-extern IOCore*	iocore;	// External access to the IOCore object.
+extern shared_ptr<IOCore>	iocore;	// External access to the IOCore object.

@@ -16,7 +16,7 @@
 
 Hero::Hero() : difficulty(1), style(1), camera_off_x(0), camera_off_y(0)
 {
-	ai = new Controls(this);
+	ai = std::make_shared<Controls>(shared_ptr<Hero>(this));
 }
 
 Hero::~Hero()

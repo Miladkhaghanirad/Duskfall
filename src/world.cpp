@@ -15,7 +15,7 @@
 #include <set>
 
 
-World*	the_world = nullptr;	// The main World object.
+shared_ptr<World>	the_world = nullptr;	// The main World object.
 
 World::World(unsigned int new_slot, bool new_save) : recalc_lighting(true), redraw_full(true), the_dungeon(nullptr), save_slot(new_slot), level(0)
 {
@@ -28,16 +28,14 @@ World::World(unsigned int new_slot, bool new_save) : recalc_lighting(true), redr
 	{
 		guru->halt(e.what());
 	}
-	the_hero = new Hero();
+	the_hero = std::make_shared<Hero>();
 }
 
 World::~World()
 {
 	STACK_TRACE();
-	delete the_hero;
 	the_hero = nullptr;
 	if (save_db_ptr) delete save_db_ptr;
-	if (the_dungeon) delete the_dungeon;
 }
 
 // Loads the game from disk.
@@ -53,7 +51,7 @@ void World::load()
 		}
 		else guru->halt("Saved game file is damaged!");
 
-		the_dungeon = new Dungeon(level);
+		the_dungeon = std::make_shared<Dungeon>(level);
 		the_dungeon->load();
 		the_hero->load();
 	}
@@ -62,7 +60,7 @@ void World::load()
 		guru->halt(e.what());
 	}
 
-	the_dungeon = new Dungeon(level);
+	the_dungeon = std::make_shared<Dungeon>(level);
 	the_dungeon->load();
 	the_hero->recenter_camera();
 }
@@ -106,7 +104,7 @@ void World::new_game()
 	STACK_TRACE();
 	level = 1;
 	hero()->x = hero()->y = 5;
-	the_dungeon = new Dungeon(1, 100, 100);
+	the_dungeon = std::make_shared<Dungeon>(1, 100, 100);
 	the_dungeon->generate();
 	the_dungeon->random_start_position(hero()->x, hero()->y);
 	the_hero->recenter_camera();
@@ -140,11 +138,11 @@ void new_world(unsigned short slot, bool new_save)
 {
 	STACK_TRACE();
 	if (the_world) guru->halt("World object already exists!");
-	the_world = new World(slot, new_save);
+	the_world = std::make_shared<World>(slot, new_save);
 }
 
 // Returns a pointer to the main World object, if one exists.
-World* world()
+shared_ptr<World> world()
 {
 	STACK_TRACE();
 	if (!the_world) guru->halt("No world object defined!");

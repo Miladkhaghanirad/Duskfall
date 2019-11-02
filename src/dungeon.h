@@ -47,7 +47,7 @@ public:
 	void	render(bool render_lighting = true, bool see_all = false);	// Renders the dungeon on the screen.
 	void	save();		// Saves this dungeon to disk.
 	void	set_tile(unsigned short x, unsigned short y, Tile &tile);	// Sets a specified tile, with error checking.
-	Tile*	tile(unsigned short x, unsigned short y);	// Retrieves a specified tile pointer.
+	shared_ptr<Tile>	tile(unsigned short x, unsigned short y);	// Retrieves a specified tile pointer.
 
 private:
 	unsigned short	level;			// The vertical level of this dungeon.
