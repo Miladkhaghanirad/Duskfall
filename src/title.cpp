@@ -491,11 +491,11 @@ void redraw_animated_logo()
 	STACK_TRACE();
 	const int midrow = iocore->midrow(), midcol = iocore->midcol();
 	iocore->box(midcol - 27, midrow - 16, 55, 14, UI_COLOUR_BOX);
-	iocore->print(" All the world shall be your prison. ", midcol - 18, midrow - 16, Colour::AQUA_PALE, PRINT_FLAG_NO_NBSP | PRINT_FLAG_ALT_FONT);
-	iocore->print_at(Glyph::LINE_VL, midcol - 19, midrow - 16, UI_COLOUR_BOX);
-	iocore->print_at(Glyph::LINE_VR, midcol + 19, midrow - 16, UI_COLOUR_BOX);
+	iocore->print(" Damn the torpedoes! Full speed ahead! ", midcol - 19, midrow - 16, Colour::AQUA_PALE, PRINT_FLAG_NO_NBSP | PRINT_FLAG_ALT_FONT);
+	iocore->print_at(Glyph::LINE_VL, midcol - 20, midrow - 16, UI_COLOUR_BOX);
+	iocore->print_at(Glyph::LINE_VR, midcol + 20, midrow - 16, UI_COLOUR_BOX);
 
-	const string edition_str = " " + strx::itos(DUSKFALL_VERSION_EPOCH) + "." + strx::itos(DUSKFALL_VERSION_RELEASE) + " ^196^ " + DUSKFALL_EDITION + " ";
+	const string edition_str = " " + strx::itos(DUSKFALL_VERSION_EPOCH) + "." + strx::itos(DUSKFALL_VERSION_MAJOR) + " ^196^ " + DUSKFALL_EDITION + " ";
 	const unsigned int edition_len = strx::ansi_strlen(edition_str);
 	const unsigned int edition_pos = midcol - (edition_len / 2);
 	const bool offset = !mathx::is_odd(edition_len);
