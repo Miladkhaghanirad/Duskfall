@@ -1,3 +1,6 @@
+.github/* linguist-documentation
+CODE_OF_CONDUCT.md linguist-documentation
+CONTRIBUTING.md linguist-documentation
 LICENSE linguist-documentation
 lib/* linguist-vendored
 README linguist-documentation
