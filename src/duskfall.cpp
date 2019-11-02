@@ -1,4 +1,4 @@
-// duskfall.cpp -- Program entry point and stack trace macro.
+// duskfall.cpp -- Program main entry point. Not much to see here, but this is where it starts.
 // Copyright (c) 2016-2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
 #include "dungeon.h"
@@ -24,17 +24,4 @@ int main(int argc, char* argv[])
 	iocore = nullptr;
 	guru = nullptr;
 	return 0;
-}
-
-// Stack trace system.
-std::stack<const char*>	StackTrace::funcs;
-
-StackTrace::StackTrace(const char *func)
-{
-	funcs.push(func);
-}
-
-StackTrace::~StackTrace()
-{
-	if (!funcs.empty()) funcs.pop();
 }
