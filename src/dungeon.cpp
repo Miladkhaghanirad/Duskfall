@@ -529,10 +529,6 @@ void Dungeon::recalc_lighting()
 	STACK_TRACE();
 	memset(lighting, 0, sizeof(struct s_rgb) * width * height);
 	recalc_light_source(world()->hero()->x, world()->hero()->y, { 255, 255, 200 }, 100, true);
-	recalc_light_source(5, 5, { 0, 255, 0 }, 100, false);
-	recalc_light_source(35, 5, { 255, 0, 0 }, 100, false);
-	tiles[5 + 5 * width].glyph = '*';
-	tiles[5 + 5 * width].colour = Colour::CGA_LGREEN;
 }
 
 // Flood-fills a specified area with a new region ID.
