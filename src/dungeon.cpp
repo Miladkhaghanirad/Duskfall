@@ -496,11 +496,8 @@ void Dungeon::recalc_light_source(unsigned short x, unsigned short y, s_rgb colo
 	}
 
 	// Brute-force check: look at all the *visible* (to the player) tiles surrounding the wall, and pick the brightest.
-	while (dynamic_light_temp_walls.size())
+	for (auto &xy : dynamic_light_temp_walls)
 	{
-		auto iterator = dynamic_light_temp_walls.begin();
-		std::pair<unsigned short, unsigned short> xy = *iterator;
-		dynamic_light_temp_walls.erase(iterator);
 		s_rgb brightest = { 30, 30, 30 };
 		int brightest_total = 90;
 		for (short dx = -1; dx <= 1; dx++)
