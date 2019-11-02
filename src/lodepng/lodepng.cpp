@@ -1,5 +1,5 @@
 /*
-LodePNG version 20190914
+LodePNG version 20191020
 
 Copyright (c) 2005-2019 Lode Vandevenne
 
@@ -44,7 +44,7 @@ Rename this file to lodepng.cpp to use it for C++, or to lodepng.c to use it for
 #pragma warning( disable : 4996 ) /*VS does not like fopen, but fopen_s is not standard C so unusable here*/
 #endif /*_MSC_VER */
 
-const char* LODEPNG_VERSION_STRING = "20190914";
+const char* LODEPNG_VERSION_STRING = "20191020";
 
 /*
 This source file is built up in the following large parts. The code sections
@@ -306,7 +306,7 @@ static void ucvector_init(ucvector* p) {
 #endif /*LODEPNG_COMPILE_PNG*/
 
 #ifdef LODEPNG_COMPILE_ZLIB
-/*you can both convert from vector to buffer&size and vica versa. If you use
+/*you can both convert from vector to buffer&size and vice versa. If you use
 init_buffer to take over a buffer and size, it is not needed to use cleanup*/
 static void ucvector_init_buffer(ucvector* p, unsigned char* buffer, size_t size) {
   p->data = buffer;
@@ -978,7 +978,7 @@ unsigned lodepng_huffman_code_lengths(unsigned* lengths, const unsigned* frequen
   according to RFC 1951 section 3.2.7. Some decoders incorrectly require two. To
   make these work as well ensure there are at least two symbols. The
   Package-Merge code below also doesn't work correctly if there's only one
-  symbol, it'd give it the theoritical 0 bits but in practice zlib wants 1 bit*/
+  symbol, it'd give it the theoretical 0 bits but in practice zlib wants 1 bit*/
   if(numpresent == 0) {
     lengths[0] = lengths[1] = 1; /*note that for RFC 1951 section 3.2.7, only lengths[0] = 1 is needed*/
   } else if(numpresent == 1) {
@@ -1226,7 +1226,7 @@ static unsigned getTreeInflateDynamic(HuffmanTree* tree_ll, HuffmanTree* tree_d,
           ++i;
         }
       } else /*if(code == (unsigned)(-1))*/ /*huffmanDecodeSymbol returns (unsigned)(-1) in case of error*/ {
-        ERROR_BREAK(16); /*unexisting code, this can never happen*/
+        ERROR_BREAK(16); /*nonexistent code, this can never happen*/
       }
       /*check if any of the ensureBits above went out of bounds*/
       if(reader->bp > reader->bitsize) {
@@ -1809,7 +1809,7 @@ static unsigned deflateDynamic(LodePNGBitWriter* writer, Hash* hash,
   another huffman tree is used for the dist values ("d"). These two trees are
   stored using their code lengths, and to compress even more these code lengths
   are also run-length encoded and huffman compressed. This gives a huffman tree
-  of code lengths "cl". The code lenghts used to describe this third tree are
+  of code lengths "cl". The code lengths used to describe this third tree are
   the code length code lengths ("clcl").
   */
 
@@ -1821,8 +1821,8 @@ static unsigned deflateDynamic(LodePNGBitWriter* writer, Hash* hash,
   uivector frequencies_ll; /*frequency of lit,len codes*/
   uivector frequencies_d; /*frequency of dist codes*/
   uivector frequencies_cl; /*frequency of code length codes*/
-  uivector bitlen_lld; /*lit,len,dist code lenghts (int bits), literally (without repeat codes).*/
-  uivector bitlen_lld_e; /*bitlen_lld encoded with repeat codes (this is a rudemtary run length compression)*/
+  uivector bitlen_lld; /*lit,len,dist code lengths (int bits), literally (without repeat codes).*/
+  uivector bitlen_lld_e; /*bitlen_lld encoded with repeat codes (this is a rudimentary run length compression)*/
   /*bitlen_cl is the code length code lengths ("clcl"). The bit lengths of codes to represent tree_cl
   (these are written as is in the file, it would be crazy to compress these using yet another huffman
   tree that needs to be represented by yet another set of code lengths)*/
@@ -1830,7 +1830,7 @@ static unsigned deflateDynamic(LodePNGBitWriter* writer, Hash* hash,
   size_t datasize = dataend - datapos;
 
   /*
-  Due to the huffman compression of huffman tree representations ("two levels"), there are some anologies:
+  Due to the huffman compression of huffman tree representations ("two levels"), there are some analogies:
   bitlen_lld is to tree_cl what data is to tree_ll and tree_d.
   bitlen_lld_e is to bitlen_lld what lz77_encoded is to data.
   bitlen_cl is to bitlen_lld_e what bitlen_lld is to lz77_encoded.
@@ -1894,7 +1894,7 @@ static unsigned deflateDynamic(LodePNGBitWriter* writer, Hash* hash,
     /*run-length compress bitlen_ldd into bitlen_lld_e by using repeat codes 16 (copy length 3-6 times),
     17 (3-10 zeroes), 18 (11-138 zeroes)*/
     for(i = 0; i != (unsigned)bitlen_lld.size; ++i) {
-      unsigned j = 0; /*amount of repititions*/
+      unsigned j = 0; /*amount of repetitions*/
       while(i + j + 1 < (unsigned)bitlen_lld.size && bitlen_lld.data[i + j + 1] == bitlen_lld.data[i]) ++j;
 
       if(bitlen_lld.data[i] == 0 && j >= 2) /*repeat code for zeroes*/ {
@@ -1943,7 +1943,7 @@ static unsigned deflateDynamic(LodePNGBitWriter* writer, Hash* hash,
 
     if(!uivector_resize(&bitlen_cl, tree_cl.numcodes)) ERROR_BREAK(83 /*alloc fail*/);
     for(i = 0; i != tree_cl.numcodes; ++i) {
-      /*lenghts of code length tree is in the order as specified by deflate*/
+      /*lengths of code length tree is in the order as specified by deflate*/
       bitlen_cl.data[i] = HuffmanTree_getLength(&tree_cl, CLCL_ORDER[i]);
     }
     while(bitlen_cl.data[bitlen_cl.size - 1] == 0 && bitlen_cl.size > 4) {
@@ -1958,7 +1958,7 @@ static unsigned deflateDynamic(LodePNGBitWriter* writer, Hash* hash,
     After the BFINAL and BTYPE, the dynamic block consists out of the following:
     - 5 bits HLIT, 5 bits HDIST, 4 bits HCLEN
     - (HCLEN+4)*3 bits code lengths of code length alphabet
-    - HLIT + 257 code lenghts of lit/length alphabet (encoded using the code length
+    - HLIT + 257 code lengths of lit/length alphabet (encoded using the code length
       alphabet, + possible repetition codes 16, 17, 18)
     - HDIST + 1 code lengths of distance alphabet (encoded using the code length
       alphabet, + possible repetition codes 16, 17, 18)
@@ -1981,10 +1981,10 @@ static unsigned deflateDynamic(LodePNGBitWriter* writer, Hash* hash,
     writeBits(writer, HDIST, 5);
     writeBits(writer, HCLEN, 4);
 
-    /*write the code lenghts of the code length alphabet*/
+    /*write the code lengths of the code length alphabet*/
     for(i = 0; i != HCLEN + 4; ++i) writeBits(writer, bitlen_cl.data[i], 3);
 
-    /*write the lenghts of the lit/len AND the dist alphabet*/
+    /*write the lengths of the lit/len AND the dist alphabet*/
     for(i = 0; i != bitlen_lld_e.size; ++i) {
       writeBitsReversed(writer, HuffmanTree_getCode(&tree_cl, bitlen_lld_e.data[i]),
                         HuffmanTree_getLength(&tree_cl, bitlen_lld_e.data[i]));
@@ -2672,6 +2672,9 @@ unsigned lodepng_palette_add(LodePNGColorMode* info,
     lodepng_color_mode_alloc_palette(info);
     if(!info->palette) return 83; /*alloc fail*/
   }
+  if(info->palettesize >= 256) {
+    return 108; /*too many palette values*/
+  }
   info->palette[4 * info->palettesize + 0] = r;
   info->palette[4 * info->palettesize + 1] = g;
   info->palette[4 * info->palettesize + 2] = b;
@@ -3244,7 +3247,7 @@ static void getPixelColorRGBA8(unsigned char* r, unsigned char* g,
 
 /*Similar to getPixelColorRGBA8, but with all the for loops inside of the color
 mode test cases, optimized to convert the colors much faster, when converting
-to the common case of RGBA with 8 bit per cannel. buffer must be RGBA with
+to the common case of RGBA with 8 bit per channel. buffer must be RGBA with
 enough memory.*/
 static void getPixelColorsRGBA8(unsigned char* LODEPNG_RESTRICT buffer, size_t numpixels,
                                 const unsigned char* LODEPNG_RESTRICT in,
@@ -3449,6 +3452,10 @@ unsigned lodepng_convert(unsigned char* out, const unsigned char* in,
   ColorTree tree;
   size_t numpixels = (size_t)w * (size_t)h;
   unsigned error = 0;
+
+  if(mode_in->colortype == LCT_PALETTE && !mode_in->palette) {
+    return 107; /* error: must provide palette if input mode is palette */
+  }
 
   if(lodepng_color_mode_equal(mode_out, mode_in)) {
     size_t numbytes = lodepng_get_raw_size(w, h, mode_in);
@@ -3867,7 +3874,7 @@ unsigned auto_choose_color(LodePNGColorMode* mode_out,
 #endif /* #ifdef LODEPNG_COMPILE_ENCODER */
 
 /*
-Paeth predicter, used by PNG filter type 4
+Paeth predictor, used by PNG filter type 4
 The parameters are of type short, but should come from unsigned chars, the shorts
 are only needed to make the paeth calculation correct.
 */
@@ -4090,7 +4097,7 @@ static unsigned unfilterScanline(unsigned char* recon, const unsigned char* scan
         }
       }
       break;
-    default: return 36; /*error: unexisting filter type given*/
+    default: return 36; /*error: nonexistent filter type given*/
   }
   return 0;
 }
@@ -4206,7 +4213,7 @@ static unsigned postProcessScanlines(unsigned char* out, unsigned char* in,
   /*
   This function converts the filtered-padded-interlaced data into pure 2D image buffer with the PNG's colortype.
   Steps:
-  *) if no Adam7: 1) unfilter 2) remove padding bits (= posible extra bits per scanline if bpp < 8)
+  *) if no Adam7: 1) unfilter 2) remove padding bits (= possible extra bits per scanline if bpp < 8)
   *) if adam7: 1) 7x unfilter 2) 7x remove padding bits 3) Adam7_deinterlace
   NOTE: the in buffer will be overwritten with intermediate data!
   */
@@ -4814,6 +4821,11 @@ static void decodeGeneric(unsigned char** out, unsigned* w, unsigned* h,
     if(!IEND) chunk = lodepng_chunk_next_const(chunk);
   }
 
+  if (state->info_png.color.colortype == LCT_PALETTE
+      && !state->info_png.color.palette) {
+    state->error = 106; /* error: PNG file must have PLTE chunk if color type is palette */
+  }
+
   /*predict output size, to allocate exact size for output buffer to avoid more dynamic allocation.
   If the decompressed size does not match the prediction, the image must be corrupt.*/
   if(state->info_png.interlace_method == 0) {
@@ -4872,8 +4884,7 @@ unsigned lodepng_decode(unsigned char** out, unsigned* w, unsigned* h,
       state->error = lodepng_color_mode_copy(&state->info_raw, &state->info_png.color);
       if(state->error) return state->error;
     }
-  } else {
-    /*color conversion needed; sort of copy of the data*/
+  } else { /*color conversion needed*/
     unsigned char* data = *out;
     size_t outsize;
 
@@ -5304,7 +5315,7 @@ static void filterScanline(unsigned char* out, const unsigned char* scanline, co
         for(i = bytewidth; i < length; ++i) out[i] = (scanline[i] - scanline[i - bytewidth]);
       }
       break;
-    default: return; /*unexisting filter type given*/
+    default: return; /*nonexistent filter type given*/
   }
 }
 
@@ -5584,7 +5595,7 @@ static unsigned preProcessScanlines(unsigned char** out, size_t* outsize, const 
                                     const LodePNGInfo* info_png, const LodePNGEncoderSettings* settings) {
   /*
   This function converts the pure 2D image with the PNG's colortype, into filtered-padded-interlaced data. Steps:
-  *) if no Adam7: 1) add padding bits (= posible extra bits per scanline if bpp < 8) 2) filter
+  *) if no Adam7: 1) add padding bits (= possible extra bits per scanline if bpp < 8) 2) filter
   *) if adam7: 1) Adam7_interlace 2) 7x add padding bits 3) 7x filter
   */
   unsigned bpp = lodepng_get_bpp(&info_png->color);
@@ -5731,17 +5742,17 @@ unsigned lodepng_encode(unsigned char** out, size_t* outsize,
     goto cleanup;
   }
   if(state->encoder.zlibsettings.btype > 2) {
-    state->error = 61; /*error: unexisting btype*/
+    state->error = 61; /*error: nonexistent btype*/
     goto cleanup;
   }
   if(info_png->interlace_method > 1) {
-    state->error = 71; /*error: unexisting interlace mode*/
+    state->error = 71; /*error: nonexistent interlace mode*/
     goto cleanup;
   }
   state->error = checkColorValidity(info_png->color.colortype, info_png->color.bitdepth);
-  if(state->error) goto cleanup; /*error: unexisting color type given*/
+  if(state->error) goto cleanup; /*error: nonexistent color type given*/
   state->error = checkColorValidity(state->info_raw.colortype, state->info_raw.bitdepth);
-  if(state->error) goto cleanup; /*error: unexisting color type given*/
+  if(state->error) goto cleanup; /*error: nonexistent color type given*/
 
   /* color convert and compute scanline filter types */
   lodepng_info_copy(&info, &state->info_png);
@@ -6011,7 +6022,7 @@ const char* lodepng_error_text(unsigned code) {
     case 13: return "problem while processing dynamic deflate block";
     case 14: return "problem while processing dynamic deflate block";
     case 15: return "problem while processing dynamic deflate block";
-    case 16: return "unexisting code while processing dynamic deflate block";
+    case 16: return "nonexistent code while processing dynamic deflate block";
     case 17: return "end of out buffer memory reached while inflating";
     case 18: return "invalid distance code while inflating";
     case 19: return "end of out buffer memory reached while inflating";
@@ -6056,7 +6067,7 @@ const char* lodepng_error_text(unsigned code) {
     case 54: return "repeat symbol in tree while there was no value symbol yet";
     /*jumped past tree while generating huffman tree, this could be when the
     tree will have more leaves than symbols after generating it out of the
-    given lenghts. They call this an oversubscribed dynamic bit lengths tree in zlib.*/
+    given lengths. They call this an oversubscribed dynamic bit lengths tree in zlib.*/
     case 55: return "jumped past tree while generating huffman tree";
     case 56: return "given output image colortype or bitdepth not supported for color conversion";
     case 57: return "invalid CRC encountered (checking CRC can be disabled)";
@@ -6074,8 +6085,8 @@ const char* lodepng_error_text(unsigned code) {
     case 67: return "the length of a text chunk keyword given to the encoder is smaller than the minimum of 1 byte";
     case 68: return "tried to encode a PLTE chunk with a palette that has less than 1 or more than 256 colors";
     case 69: return "unknown chunk type with 'critical' flag encountered by the decoder";
-    case 71: return "unexisting interlace mode given to encoder (must be 0 or 1)";
-    case 72: return "while decoding, unexisting compression method encountering in zTXt or iTXt chunk (it must be 0)";
+    case 71: return "nonexistent interlace mode given to encoder (must be 0 or 1)";
+    case 72: return "while decoding, nonexistent compression method encountering in zTXt or iTXt chunk (it must be 0)";
     case 73: return "invalid tIME chunk size";
     case 74: return "invalid pHYs chunk size";
     /*length could be wrong, or data chopped off*/
@@ -6110,6 +6121,9 @@ const char* lodepng_error_text(unsigned code) {
     case 103: return "invalid palette index in bKGD chunk. Maybe it came before PLTE chunk?";
     case 104: return "invalid bKGD color while encoding (e.g. palette index out of range)";
     case 105: return "integer overflow of bitsize";
+    case 106: return "PNG file must have PLTE chunk if color type is palette";
+    case 107: return "color convert from palette mode requested without setting the palette data in it";
+    case 108: return "tried to add more than 256 values to a palette";
   }
   return "unknown error code";
 }
