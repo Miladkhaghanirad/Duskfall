@@ -8,6 +8,7 @@ SOURCES+=$(wildcard src/pcg/*.c)
 SOURCES+=$(wildcard src/sdl_savejpeg/*.c)
 SOURCES+=$(wildcard src/snes_ntsc/*.c)
 SOURCES+=$(wildcard src/SQLiteCpp/*.cpp)
+OURCES+=$(wildcard src/jsoncpp/*.cpp)
 OBJS=$(SOURCES:.cpp=.o)
 
 duskfall: $(OBJS)

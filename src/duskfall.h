@@ -6,6 +6,9 @@
 #define __STDC_LIMIT_MACROS
 #define _USE_MATH_DEFINES
 
+// JsonCpp is not happy unless we define this.
+#define JSONCPP_USING_SECURE_MEMORY false
+
 // Target platform.
 #if defined(_WIN32) || defined(_WIN64)
 #define TARGET_WINDOWS
@@ -44,6 +47,7 @@ public:
 #include <vector>
 using std::shared_ptr;
 using std::string;
+using std::unique_ptr;
 using std::vector;
 
 struct s_rgb { unsigned char r, g, b; };	// RGB colour values.

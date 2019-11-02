@@ -7,6 +7,7 @@
 #include "iocore.h"
 #include "mathx.h"
 #include "prefs.h"
+#include "static-data.h"
 #include "world.h"
 
 #include "strx.h"
@@ -45,11 +46,7 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 {
 	STACK_TRACE();
 
-	Tile basic_floor;
-	basic_floor.name = 0;
-	basic_floor.glyph = static_cast<unsigned short>(Glyph::MIDDOT);
-	basic_floor.colour = Colour::CGA_LGRAY;
-
+	Tile basic_floor = static_data()->get_tile("BASIC_FLOOR");
 	for (unsigned int rx = x; rx < x + w; rx++)
 	{
 		for (unsigned int ry = y; ry < y + h; ry++)
@@ -143,20 +140,8 @@ void Dungeon::generate()
 	STACK_TRACE();
 
 	// Set a default layout with basic floor tiles and an impassible wall.
-	Tile indestructible_wall;
-	indestructible_wall.name = 1;
-	indestructible_wall.glyph = '#';
-	indestructible_wall.colour = Colour::CGA_GRAY;
-	indestructible_wall.flags = TILE_FLAG_IMPASSIBLE | TILE_FLAG_OPAQUE | TILE_FLAG_WALL | TILE_FLAG_PERMAWALL;
-	Tile basic_floor;
-	basic_floor.name = 0;
-	basic_floor.glyph = static_cast<unsigned short>(Glyph::MIDDOT);
-	basic_floor.colour = Colour::CGA_LGRAY;
-	Tile regular_wall;
-	regular_wall.name = 2;
-	regular_wall.glyph = '#';
-	regular_wall.colour = Colour::CGA_LGRAY;
-	regular_wall.flags = TILE_FLAG_IMPASSIBLE | TILE_FLAG_OPAQUE | TILE_FLAG_WALL;
+	Tile indestructible_wall = static_data()->get_tile("BOUNDARY_WALL");
+	Tile regular_wall = static_data()->get_tile("BASIC_WALL");
 
 	for (unsigned short y = 0; y < height; y++)
 	{
@@ -288,10 +273,7 @@ void Dungeon::generate_type_a()
 	}
 
 	// Attempt to place doors in room entrances.
-	Tile regular_door;
-	regular_door.name = 3;
-	regular_door.glyph = '+';
-	regular_door.colour = Colour::BROWN_LIGHT;
+	Tile regular_door = static_data()->get_tile("BASIC_DOOR");
 	for (unsigned short x = 2; x < width - 2; x++)
 		for (unsigned short y = 2; y < height - 2; y++)
 			if (viable_doorway(x, y) && mathx::rnd(3) == 1) tiles[x + y * width] = regular_door;
@@ -468,7 +450,7 @@ void Dungeon::random_start_position(unsigned short &x, unsigned short &y)
 	{
 		x = mathx::rnd(width - 4) + 2;
 		y = mathx::rnd(height - 4) + 2;
-		if (tiles[x + y * width].name == 0) return;
+		if (tiles[x + y * width].name == strx::hash("floor")) return;
 	}
 }
 
@@ -649,7 +631,7 @@ bool Dungeon::viable_doorway(unsigned short x, unsigned short y)
 {
 	STACK_TRACE();
 	if (x < 2 || y < 2 || x >= width - 2 || y >= height - 2) return false;
-	if (tiles[x + y * width].name != 0) return false;	// Only basic floor can become a door.
+	if (tiles[x + y * width].name != strx::hash("floor")) return false;	// Only basic floor can become a door.
 
 	if (tiles[x - 1 + y * width].wall() && tiles[x + 1 + y * width].wall())
 	{

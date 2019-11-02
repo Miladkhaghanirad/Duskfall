@@ -1,4 +1,5 @@
 src/*.o
+src/jsoncpp/*.o
 src/lodepng/*.o
 src/pcg/*.o
 src/sdl_savejpeg/*.o

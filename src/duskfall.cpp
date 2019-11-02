@@ -6,6 +6,7 @@
 #include "guru.h"
 #include "iocore.h"
 #include "prefs.h"
+#include "static-data.h"
 #include "title.h"
 
 // Program main entry point.
@@ -17,6 +18,8 @@ int main(int argc, char* argv[])
 	guru = new Guru();
 	prefs::init();
 	iocore = new IOCore();
+	static_data();
+	guru->log("Everything looks good! Starting the game!", GURU_INFO);
 	title::title_screen();
 	delete iocore;
 	delete guru;

@@ -1,0 +1,38 @@
+// tiles.json -- Definitions for the tiles which make up for the dungeons of Duskfall.
+// Copyright (c) 2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
+
+{
+
+// A basic type of door, used during dungeon generation.
+"BASIC_DOOR" : {
+	"colour" : "BROWN_LIGHT",
+	"flags" : "",
+	"glyph" : "+",
+	"name" : "door"
+},
+
+// The most basic and unremarkable of floor tiles, used during dungeon generation. Can be replaced to become more interesting floor types.
+"BASIC_FLOOR" : {
+	"colour" : "CGA_LGRAY",
+	"flags" : "",
+	"glyph" : "MIDDOT",
+	"name" : "floor"
+},
+
+// A basic and unremarkable dungeon wall, used during dungeon generation. Can be replaced to become more interesting wall types.
+"BASIC_WALL" : {
+	"colour" : "CGA_LGRAY",
+	"flags" : "IMPASSIBLE OPAQUE WALL",
+	"glyph" : "#",
+	"name" : "wall"
+},
+
+// The boundary wall which surrounds the dungeon. Regardless of dungeon generation, this is always used for the outermost layer.
+"BOUNDARY_WALL" : {
+	"colour" : "CGA_GRAY",
+	"flags" : "IMPASSIBLE OPAQUE PERMAWALL WALL",	// DO NOT MESS WITH THESE!
+	"glyph" : "#",
+	"name" : "wall"
+}
+
+}

@@ -185,6 +185,17 @@ string ftos(double num)
 	return ss.str();
 }
 
+// FNV string hash.
+unsigned int hash(string s)
+{
+	STACK_TRACE();
+	size_t result = 2166136261U;
+	std::string::const_iterator end = s.end();
+	for (std::string::const_iterator iter = s.begin(); iter != end; ++iter)
+		result = 127 * result + static_cast<unsigned char>(*iter);
+	return result;
+}
+
 // Converts a hex string back to an integer.
 unsigned int htoi(string hex_str)
 {

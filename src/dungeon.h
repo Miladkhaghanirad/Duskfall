@@ -19,7 +19,7 @@ struct Tile
 	unsigned short	glyph;	// The symbol used to represent this tile.
 	Colour			colour;	// The base colour of this tile, before any lighting effects.
 	unsigned char	flags;	// Various properties of this tile.
-	unsigned char	name;	// An integer for the tile's name, which is decoded elsewhere.
+	unsigned int	name;	// An integer for the tile's hashed name, which is decoded elsewhere.
 
 			Tile() : glyph('?'), colour(static_cast<Colour>(0x30)), flags(0) { }
 	bool	destroyable_wall() { return wall() && !permawall(); }

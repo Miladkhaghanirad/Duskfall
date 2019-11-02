@@ -12,6 +12,8 @@ Artos Serif and Victoria bitmap fonts (c) 2012 usr_share (CC-0).
 
 GCC runtime library DLLs and any embedded GCC library code is copyright (c) Free Software Foundation, Inc., distrubuted under the GCC Runtime Library Exception, version 3.1 of the GNU General Public License v3.
 
+JsonCpp (c) 2007-2010 Baptiste Lepilleur and The JsonCpp Authors.
+
 libpng (c) 2000-2002, 2004, 2006-2017 Glenn Randers-Pehrson.
 
 libjpeg (c) 1991-2016 Thomas G. Lane, Guido Vollbeding.
