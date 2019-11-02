@@ -1,6 +1,7 @@
 // static-data.cpp -- A source for static data defined in the JSON data files.
 // Copyright (c) 2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
+#include "actor.h"
 #include "dungeon.h"
 #include "filex.h"
 #include "guru.h"
@@ -19,6 +20,7 @@ StaticData::StaticData()
 	STACK_TRACE();
 	guru->log("Attempting to load static data from JSON files...", GURU_INFO);
 	init_tiles_json();
+	init_mobs_json();
 }
 
 // Retrieves a copy of a specified Tile
@@ -28,6 +30,40 @@ Tile StaticData::get_tile(string tile_id)
 	auto found = static_tile_data.find(tile_id);
 	if (found == static_tile_data.end()) guru->halt("Could not retrieve tile ID " + tile_id + "!");
 	return *found->second;
+}
+
+// Loads an Actor's data from JSON.
+void StaticData::init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor)
+{
+	STACK_TRACE();
+	const string actor_name = jval.get("name", "").asString();
+	if (!actor_name.size()) guru->log("No actor name specified for " + actor_id, GURU_WARN);
+	else actor->name = actor_name;
+
+	const string actor_colour_unparsed = jval.get("colour", "").asString();
+	if (!actor_colour_unparsed.size()) guru->log("No actor colour specified  for " + actor_id, GURU_WARN);
+	actor->colour = parse_colour_string(actor_colour_unparsed);
+
+	const string actor_glyph_unparsed = jval.get("glyph", "").asString();
+	if (!actor_glyph_unparsed.size()) guru->log("No actor glyph specified for " + actor_id, GURU_WARN);
+	actor->glyph = parse_glyph_string(actor_glyph_unparsed);
+}
+
+// Load the data from mobs.json
+void StaticData::init_mobs_json()
+{
+	STACK_TRACE();
+
+	Json::Value json = filex::load_json("mobs");
+	const Json::Value::Members jmem = json.getMemberNames();
+	for (unsigned int i = 0; i < jmem.size(); i++)
+	{
+		const string actor_id = jmem.at(i);
+		const Json::Value jval = json[actor_id];
+		auto new_mob = std::make_shared<Actor>();
+		init_actor_json(jval, actor_id, new_mob);
+		static_mob_data.insert(std::pair<string, shared_ptr<Actor>>(actor_id, new_mob));
+	}
 }
 
 // Load the data from tiles.json

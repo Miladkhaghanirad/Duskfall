@@ -5,6 +5,8 @@
 #include "duskfall.h"
 
 class AI;	// defined in ai.h
+enum class Colour : unsigned char;	// defined in iocore.h
+
 
 
 class Actor
@@ -12,9 +14,12 @@ class Actor
 public:
 					Actor();
 	virtual			~Actor();
-	virtual void	load() = 0;	// All Actors should be able to load themselves from disk.
-	virtual void	save() = 0;	// All Actors should be able to save themselves to disk.
+	virtual void	load();		// Loads this Actor's data from disk.
+	virtual void	save();		// Saves this Actor's data to disk.
 
-	shared_ptr<AI>	ai;	// If this Actor has AI, this is where its 'brain' is.
+	shared_ptr<AI>	ai;		// If this Actor has AI, this is where its 'brain' is.
+	Colour			colour;	// The colour of this Actor's glyph.
+	string			name;	// The Actor's name.
+	unsigned short	glyph;	// The glyph to represent this Actor in the world.
 	unsigned short	x, y;	// X,Y coordinates on the current dungeon level.
 };

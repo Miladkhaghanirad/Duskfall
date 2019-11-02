@@ -1,0 +1,24 @@
+// mobs.json -- This is where the mobs (mobiles) who populate the world are defined.
+// Copyright (c) 2019 Raine "Gravecat" Simmons. All rights reserved.
+
+{
+
+"ORC" : {
+	"armour" : 0,
+	"attack" : 3,
+	"colour" : "LIME_LIGHT",
+	"glyph" : "o",
+	"hp" : 10,
+	"name" : "orc"
+},
+
+"TROLL" : {
+	"armour" : 1,
+	"attack" : 4,
+	"colour" : "GREEN_LIGHT",
+	"glyph" : "T",
+	"hp" : 16,
+	"name" : "troll"
+}
+
+}

@@ -17,6 +17,7 @@
 Hero::Hero() : camera_off_x(0), camera_off_y(0), difficulty(1), played(0), style(1)
 {
 	ai = std::make_shared<Controls>(shared_ptr<Hero>(this));
+	glyph = '@';
 }
 
 Hero::~Hero()
