@@ -19,7 +19,7 @@ namespace prefs
 {
 
 #define FILENAME_PREFS	"userdata/prefs.dat"
-#define PREFS_KEYBINDS	19
+#define PREFS_KEYBINDS	23
 
 // Shift			letter
 // Ctrl				letter - 64
@@ -46,9 +46,13 @@ namespace prefs
 #define KEY_SAVE_DEFAULT			(KEYMOD_CTRL + 'S')
 #define KEY_SCREENSHOT_DEFAULT		SDLK_PRINTSCREEN
 #define KEY_SCROLL_BOTTOM_DEFAULT	SDLK_END
+#define KEY_SCROLL_DOWN_DEFAULT		SDLK_DOWN
+#define KEY_SCROLL_LEFT_DEFAULT		SDLK_LEFT
 #define KEY_SCROLL_PAGEDOWN_DEFAULT	SDLK_PAGEDOWN
 #define KEY_SCROLL_PAGEUP_DEFAULT	SDLK_PAGEUP
+#define KEY_SCROLL_RIGHT_DEFAULT	SDLK_RIGHT
 #define KEY_SCROLL_TOP_DEFAULT		SDLK_HOME
+#define KEY_SCROLL_UP_DEFAULT		SDLK_UP
 #define KEY_SOUTH_DEFAULT			's'
 #define KEY_SOUTHEAST_DEFAULT		'c'
 #define KEY_SOUTHWEST_DEFAULT		'z'
@@ -213,9 +217,9 @@ unsigned int	keybinds[PREFS_KEYBINDS];	// Keybind definitions.
 
 uint32_t key_defaults[PREFS_KEYBINDS] = { KEY_NORTH_DEFAULT, KEY_SOUTH_DEFAULT, KEY_EAST_DEFAULT, KEY_WEST_DEFAULT, KEY_NORTHEAST_DEFAULT, KEY_NORTHWEST_DEFAULT, KEY_SOUTHEAST_DEFAULT, KEY_SOUTHWEST_DEFAULT, KEY_QUIT_GAME_DEFAULT,
 		KEY_OPTIONS_WINDOW_DEFAULT, KEY_MENU_OK_DEFAULT, KEY_MENU_OK_2_DEFAULT, KEY_MENU_CANCEL_DEFAULT, KEY_SCREENSHOT_DEFAULT, KEY_SAVE_DEFAULT, KEY_SCROLL_TOP_DEFAULT, KEY_SCROLL_BOTTOM_DEFAULT, KEY_SCROLL_PAGEUP_DEFAULT,
-		KEY_SCROLL_PAGEDOWN_DEFAULT };
+		KEY_SCROLL_PAGEDOWN_DEFAULT, KEY_SCROLL_UP_DEFAULT, KEY_SCROLL_DOWN_DEFAULT, KEY_SCROLL_LEFT_DEFAULT, KEY_SCROLL_RIGHT_DEFAULT };
 const string key_names[PREFS_KEYBINDS] = { "key_north", "key_south", "key_east", "key_west", "key_northeast", "key_northwest", "key_southeast", "key_southwest", "key_quit_game", "key_options_window", "key_menu_ok", "key_menu_ok_2",
-		"key_menu_cancel", "key_screenshot", "key_save", "key_scroll_top", "key_scroll_bottom", "key_scroll_pageup", "key_scroll_pagedown" };
+		"key_menu_cancel", "key_screenshot", "key_save", "key_scroll_top", "key_scroll_bottom", "key_scroll_pageup", "key_scroll_pagedown", "key_scroll_up", "key_scroll_down", "key_scroll_left", "key_scroll_right" };
 
 // Used by the keybinds window.
 vector<string>			key_longname;
@@ -790,8 +794,12 @@ void ui_init_keybinds()
 	ui_add_keybind("Travel Southwest", Keys::SOUTHWEST);
 	ui_add_keybind("", UINT_MAX);
 
-	ui_add_keybind("{5F}^219^^178^^177^^176^ MESSAGE LOG ^176^^177^^178^^219^", UINT_MAX);
+	ui_add_keybind("{5F}^219^^178^^177^^176^ MESSAGE LOG & WIKI ^176^^177^^178^^219^", UINT_MAX);
 	ui_add_keybind("", UINT_MAX);
+	ui_add_keybind("Scroll Up", Keys::SCROLL_UP);
+	ui_add_keybind("Scroll Down", Keys::SCROLL_DOWN);
+	ui_add_keybind("Select Left (Wiki)", Keys::SCROLL_LEFT);
+	ui_add_keybind("Select Right (Wiki)", Keys::SCROLL_RIGHT);
 	ui_add_keybind("Scroll PageUp", Keys::SCROLL_PAGEUP);
 	ui_add_keybind("Scroll PageDown", Keys::SCROLL_PAGEDOWN);
 	ui_add_keybind("Scroll Top", Keys::SCROLL_TOP);

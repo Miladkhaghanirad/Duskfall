@@ -22,7 +22,6 @@ private:
 	std::unordered_map<unsigned int, string>		tile_names;	// The tile name strings, which are stored as integers on the tiles themselves.
 
 	void			init_tiles_json();			// Load the data from tiles.json
-	Json::Value		load_json(string filename);	// Loads an individual JSON file, with error-checking.
 	Colour			parse_colour_string(string colour_string);	// Parses a colour string into a Colour.
 	unsigned int	parse_glyph_string(string glyph_string);	// Parses a glyph string into a Glyph.
 };

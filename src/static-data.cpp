@@ -2,14 +2,13 @@
 // Copyright (c) 2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
 #include "dungeon.h"
+#include "filex.h"
 #include "guru.h"
 #include "iocore.h"
 #include "static-data.h"
 #include "strx.h"
 
 #include "jsoncpp/json/json.h"
-
-#include <fstream>
 
 // The main StaticData object.
 shared_ptr<StaticData> static_ptr = nullptr;
@@ -39,7 +38,7 @@ void StaticData::init_tiles_json()
 	const std::unordered_map<string, unsigned int> tile_flag_map = { { "IMPASSIBLE", TILE_FLAG_IMPASSIBLE }, { "OPAQUE", TILE_FLAG_OPAQUE }, { "WALL", TILE_FLAG_WALL }, { "PERMAWALL", TILE_FLAG_PERMAWALL },
 		{ "EXPLORED", TILE_FLAG_EXPLORED } };
 
-	Json::Value json = load_json("tiles");
+	Json::Value json = filex::load_json("tiles");
 	const Json::Value::Members jmem = json.getMemberNames();
 	for (unsigned int i = 0; i < jmem.size(); i++)
 	{
@@ -83,33 +82,6 @@ void StaticData::init_tiles_json()
 
 		static_tile_data.insert(std::pair<string, shared_ptr<Tile>>(tile_id, new_tile));
 	}
-}
-
-// Loads an individual JSON file, with error-checking.
-Json::Value	StaticData::load_json(string filename)
-{
-	STACK_TRACE();
-	Json::Value json;
-	std::ifstream file_load("data/json/" + filename + ".json", std::ios::in);
-	try
-	{
-		Json::CharReaderBuilder builder;
-		builder["rejectDupKeys"] = true;
-		JSONCPP_STRING errs;
-		bool ok = Json::parseFromStream(builder, file_load, &json, &errs);
-		if (!ok)
-		{
-			file_load.close();
-			guru->halt(errs);
-		}
-	}
-	catch (std::exception &e)
-	{
-		file_load.close();
-		guru->halt(e.what());
-	}
-	file_load.close();
-	return json;
 }
 
 // Parses a colour string into a Colour.

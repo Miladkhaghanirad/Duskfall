@@ -2,7 +2,10 @@
 // Copyright (c) 2016-2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
 #include "filex.h"
+#include "guru.h"
 #include "mathx.h"
+
+#include "jsoncpp/json/json.h"
 
 #include <dirent.h>
 #include <fstream>
@@ -47,6 +50,33 @@ vector<string> files_in_dir(string directory)
 	}
 	closedir(dir);
 	return files;
+}
+
+// Loads an individual JSON file, with error-checking.
+Json::Value	load_json(string filename)
+{
+	STACK_TRACE();
+	Json::Value json;
+	std::ifstream file_load("data/json/" + filename + ".json", std::ios::in);
+	try
+	{
+		Json::CharReaderBuilder builder;
+		builder["rejectDupKeys"] = true;
+		JSONCPP_STRING errs;
+		bool ok = Json::parseFromStream(builder, file_load, &json, &errs);
+		if (!ok)
+		{
+			file_load.close();
+			guru->halt(errs);
+		}
+	}
+	catch (std::exception &e)
+	{
+		file_load.close();
+		guru->halt(e.what());
+	}
+	file_load.close();
+	return json;
 }
 
 // Makes a new directory, if it doesn't already exist.

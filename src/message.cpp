@@ -86,14 +86,14 @@ void MessageLog::process_input(unsigned int key)
 		reset_buffer_pos();
 		render();
 	}
-	else if (key == prefs::keybind(Keys::SCROLL_PAGEUP) || key == MOUSEWHEEL_UP_KEY)
+	else if (key == prefs::keybind(Keys::SCROLL_PAGEUP) || key == MOUSEWHEEL_UP_KEY || key == prefs::keybind(Keys::SCROLL_UP))
 	{
 		unsigned int magnitude = 1;
 		if (key == prefs::keybind(Keys::SCROLL_PAGEUP)) magnitude = MESSAGE_LOG_SIZE - 1;
 		if (buffer_pos > magnitude) buffer_pos -= magnitude; else buffer_pos = 0;
 		render();
 	}
-	else if (key == prefs::keybind(Keys::SCROLL_PAGEDOWN) || key == MOUSEWHEEL_DOWN_KEY)
+	else if (key == prefs::keybind(Keys::SCROLL_PAGEDOWN) || key == MOUSEWHEEL_DOWN_KEY || key == prefs::keybind(Keys::SCROLL_DOWN))
 	{
 		unsigned int magnitude = 1;
 		if (key == prefs::keybind(Keys::SCROLL_PAGEDOWN)) magnitude = MESSAGE_LOG_SIZE - 1;

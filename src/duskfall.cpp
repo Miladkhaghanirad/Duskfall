@@ -8,6 +8,7 @@
 #include "prefs.h"
 #include "static-data.h"
 #include "title.h"
+#include "wiki.h"
 
 // Program main entry point.
 int main(int argc, char* argv[])
@@ -19,6 +20,7 @@ int main(int argc, char* argv[])
 	prefs::init();
 	iocore = std::make_shared<IOCore>();
 	static_data();
+	wiki = std::make_shared<Wiki>();
 	guru->log("Everything looks good! Starting the game!", GURU_INFO);
 	title::title_screen();
 	iocore = nullptr;
