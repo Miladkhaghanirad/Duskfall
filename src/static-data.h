@@ -6,7 +6,6 @@
 #include <unordered_map>
 
 class Tile;							// defined in dungeon.h
-namespace Json { class Value; }		// defined in json.cpp/json/json.h
 enum class Colour : unsigned char;	// defined in iocore.h
 
 
