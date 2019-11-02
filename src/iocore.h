@@ -89,7 +89,7 @@ public:
 			~IOCore();				// This is where we clean up our shit.
 	void	alagard_print(string message, int x, int y, Colour colour = Colour::CGA_WHITE);	// Prints a string in the Alagard font at the specified coordinates.
 	void	alagard_print_at(char letter, int x, int y, Colour colour = Colour::CGA_WHITE);	// Prints an Alagard font character at the specified coordinates.
-	void	ansi_print(string msg, int x, int y, unsigned int print_flags = 0);	// Prints an ANSI string at the specified position.
+	void	ansi_print(string msg, int x, int y, unsigned int print_flags = 0, unsigned int dim = 0);	// Prints an ANSI string at the specified position.
 	void	box(int x, int y, int w, int h, Colour colour, unsigned char flags = 0, string title = "");	// Renders an ASCII box at the given coordinates.
 	void	clear_shade() { shade_mode = 0; }	// Clears 'shade mode' entirely.
 	void	cls();					// Clears the screen.
@@ -111,6 +111,7 @@ public:
 	void	ok_box(int offset, Colour colour);	// Renders an OK box on a pop-up window.
 	void	parse_colour(Colour colour, unsigned char &r, unsigned char &g, unsigned char &b);	// Parses a colour code into RGB.
 	int		print(string message, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a message at the specified coordinates.
+	int		print(string message, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// Prints a message at the specified coordinates, in RGB colours.
 	void	print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen.
 	void	print_at(char letter, int x, int y, Colour colour, unsigned int print_flags = 0) { print_at(static_cast<Glyph>(letter), x, y, colour, print_flags); }
 	void	print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen, in RGB colours.

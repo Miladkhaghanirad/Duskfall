@@ -19,7 +19,7 @@ namespace prefs
 {
 
 #define FILENAME_PREFS	"userdata/prefs.dat"
-#define PREFS_KEYBINDS	15
+#define PREFS_KEYBINDS	19
 
 // Shift			letter
 // Ctrl				letter - 64
@@ -45,6 +45,10 @@ namespace prefs
 #define KEY_QUIT_GAME_DEFAULT		(KEYMOD_SHIFT_CTRL + 'X')
 #define KEY_SAVE_DEFAULT			(KEYMOD_CTRL + 'S')
 #define KEY_SCREENSHOT_DEFAULT		SDLK_PRINTSCREEN
+#define KEY_SCROLL_BOTTOM_DEFAULT	SDLK_END
+#define KEY_SCROLL_PAGEDOWN_DEFAULT	SDLK_PAGEDOWN
+#define KEY_SCROLL_PAGEUP_DEFAULT	SDLK_PAGEUP
+#define KEY_SCROLL_TOP_DEFAULT		SDLK_HOME
 #define KEY_SOUTH_DEFAULT			's'
 #define KEY_SOUTHEAST_DEFAULT		'c'
 #define KEY_SOUTHWEST_DEFAULT		'z'
@@ -52,6 +56,7 @@ namespace prefs
 
 #define DEATH_REPORTS_DEFAULT		true	// Generate death report text files?
 #define FULLSCREEN_DEFAULT			false	// Run the game in full-screen mode?
+#define MESSAGE_LOG_DIM_DEFAULT		true	// Dim the colours in the message log?
 #define NTSC_MODE_DEFAULT			2		// Different post-processing modes (0 is least, 2 is most)
 #define PALETTE_DEFAULT				0		// Which colour palette to use?
 #define SCALE_MOD_DEFAULT			0		// Experimental surface scaling.
@@ -60,7 +65,7 @@ namespace prefs
 #define SCREENSHOT_TYPE_DEFAULT		2		// The format of screenshots (0 = BMP, 1 = PNG, 2 = JPEG)
 #define VISUAL_GLITCHES_DEFAULT		0		// Do we want visual glitches?
 
-enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_PALETTE, ID_GLITCHES, ID_SS_FORMAT, ID_TEX_SCALING, ID_DEATH_REPORT };
+enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_PALETTE, ID_GLITCHES, ID_SS_FORMAT, ID_TEX_SCALING, ID_DEATH_REPORT, ID_MESSAGE_LOG_DIM };
 
 }	// namespace prefs
 
@@ -207,9 +212,10 @@ namespace prefs
 unsigned int	keybinds[PREFS_KEYBINDS];	// Keybind definitions.
 
 uint32_t key_defaults[PREFS_KEYBINDS] = { KEY_NORTH_DEFAULT, KEY_SOUTH_DEFAULT, KEY_EAST_DEFAULT, KEY_WEST_DEFAULT, KEY_NORTHEAST_DEFAULT, KEY_NORTHWEST_DEFAULT, KEY_SOUTHEAST_DEFAULT, KEY_SOUTHWEST_DEFAULT, KEY_QUIT_GAME_DEFAULT,
-		KEY_OPTIONS_WINDOW_DEFAULT, KEY_MENU_OK_DEFAULT, KEY_MENU_OK_2_DEFAULT, KEY_MENU_CANCEL_DEFAULT, KEY_SCREENSHOT_DEFAULT, KEY_SAVE_DEFAULT };
+		KEY_OPTIONS_WINDOW_DEFAULT, KEY_MENU_OK_DEFAULT, KEY_MENU_OK_2_DEFAULT, KEY_MENU_CANCEL_DEFAULT, KEY_SCREENSHOT_DEFAULT, KEY_SAVE_DEFAULT, KEY_SCROLL_TOP_DEFAULT, KEY_SCROLL_BOTTOM_DEFAULT, KEY_SCROLL_PAGEUP_DEFAULT,
+		KEY_SCROLL_PAGEDOWN_DEFAULT };
 const string key_names[PREFS_KEYBINDS] = { "key_north", "key_south", "key_east", "key_west", "key_northeast", "key_northwest", "key_southeast", "key_southwest", "key_quit_game", "key_options_window", "key_menu_ok", "key_menu_ok_2",
-		"key_menu_cancel", "key_screenshot", "key_save" };
+		"key_menu_cancel", "key_screenshot", "key_save", "key_scroll_top", "key_scroll_bottom", "key_scroll_pageup", "key_scroll_pagedown" };
 
 // Used by the keybinds window.
 vector<string>			key_longname;
@@ -228,7 +234,7 @@ unsigned char	palette = PALETTE_DEFAULT;	// Which colour palette to use?
 unsigned char	scale_mod = SCALE_MOD_DEFAULT;		// Experimental surface scaling.
 bool			glitch_warn = false;	// Have we shown the user the glitch warning screen?
 bool			death_reports = DEATH_REPORTS_DEFAULT;	// Generate death report text files?
-unsigned int	tutorial_flags = 0, tutorial_flags_b = 0;	// Any and all tutorial messages the player has already seen.
+bool			message_log_dim = MESSAGE_LOG_DIM_DEFAULT;	// Dim the colours in the message log?
 
 // Resets a keybind to default.
 void default_keybind(Keys key)
@@ -278,6 +284,7 @@ void init()
 				else if (id == "scale_mod") scale_mod = value;
 				else if (id == "glitch_warn") glitch_warn = value;
 				else if (id == "death_reports") death_reports = value;
+				else if (id == "message_log_dim") message_log_dim = value;
 				else guru->log("Unknown preference found in prefs.dat: " + id, GURU_WARN);
 			}
 
@@ -561,7 +568,7 @@ void prefs_window_graphics()
 	else if (actual_resolution >= 1024 * 768) resolution_choice = 1;
 	else resolution_choice = 0;
 
-	PrefsEntry pe_screen_res, pe_full_screen, pe_shader, pe_palette, pe_glitches, pe_ss_format, pe_alt_font, pe_tex_scaling, pe_minimap_bg;
+	PrefsEntry pe_screen_res, pe_full_screen, pe_shader, pe_palette, pe_glitches, pe_ss_format, pe_tex_scaling, pe_ml_dim;
 	Prefs prefs_screen;
 	prefs_screen.name = "GRAPHICS";
 
@@ -639,6 +646,12 @@ void prefs_window_graphics()
 	pe_ss_format.options_str.push_back("JPG");
 	prefs_screen.add_item(pe_ss_format);
 
+	pe_ml_dim.id = ID_MESSAGE_LOG_DIM;
+	pe_ml_dim.name = "Dim Message Log";
+	pe_ml_dim.selected = (prefs::message_log_dim ? 1 : 0);
+	pe_ml_dim.is_boolean = true;
+	prefs_screen.add_item(pe_ml_dim);
+
 	while(!prefs_screen.done)
 	{
 		prefs_screen.render();
@@ -654,6 +667,7 @@ void prefs_window_graphics()
 				case ID_GLITCHES: prefs::visual_glitches = val; break;
 				case ID_SS_FORMAT: prefs::screenshot_type = val; break;
 				case ID_TEX_SCALING: prefs::scale_mod = val; break;
+				case ID_MESSAGE_LOG_DIM: prefs::message_log_dim = val; break;
 			}
 			if (prefs_screen.selected_id() == ID_SCREEN_RES)
 			{
@@ -718,6 +732,7 @@ void save(SQLite::Database *prefs_db)
 		sql_insert_pref("scale_mod", scale_mod);
 		sql_insert_pref("glitch_warn", glitch_warn);
 		sql_insert_pref("death_reports", death_reports);
+		sql_insert_pref("message_log_dim", message_log_dim);
 
 		auto sql_insert_keybind = [prefs_db] (string key, long long value)
 		{
@@ -774,6 +789,13 @@ void ui_init_keybinds()
 	ui_add_keybind("Travel Southeast", Keys::SOUTHEAST);
 	ui_add_keybind("Travel Southwest", Keys::SOUTHWEST);
 	ui_add_keybind("", UINT_MAX);
+
+	ui_add_keybind("{5F}^219^^178^^177^^176^ MESSAGE LOG ^176^^177^^178^^219^", UINT_MAX);
+	ui_add_keybind("", UINT_MAX);
+	ui_add_keybind("Scroll PageUp", Keys::SCROLL_PAGEUP);
+	ui_add_keybind("Scroll PageDown", Keys::SCROLL_PAGEDOWN);
+	ui_add_keybind("Scroll Top", Keys::SCROLL_TOP);
+	ui_add_keybind("Scroll Bottom", Keys::SCROLL_BOTTOM);
 
 	ui_add_keybind("", UINT_MAX);
 	ui_add_keybind("{5F}^219^^178^^177^^176^ MISCELLANEOUS ^176^^177^^178^^219^", UINT_MAX);

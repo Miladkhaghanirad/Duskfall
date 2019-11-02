@@ -21,7 +21,7 @@ public:
 	void				new_game();		// Sets up a new game.
 	void				queue_recalc_lighting() { recalc_lighting = true; }	// Queues up a recalculation of the game's dynamic lighting.
 	void				queue_redraw() { redraw_full = true; }				// Queues up a full redraw of the game world.
-	void				save();			// Saves the game to disk.
+	void				save(bool announce);	// Saves the game to disk.
 	SQLite::Database*	save_db() { return save_db_ptr; }	// Returns a pointer to the save file handle.
 	unsigned short	slot() { return save_slot; }	// Read-only access to the save slot currently in use.
 

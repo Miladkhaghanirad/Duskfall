@@ -266,24 +266,33 @@ void IOCore::alagard_print_at(char letter, int x, int y, Colour colour)
 }
 
 // Prints an ANSI string at the specified position.
-void IOCore::ansi_print(string msg, int x, int y, unsigned int print_flags)
+void IOCore::ansi_print(string msg, int x, int y, unsigned int print_flags, unsigned int dim)
 {
 	STACK_TRACE();
 
 	msg = msg + "{10}";
 	Colour colour = Colour::CGA_LGRAY;
+	unsigned char r, g, b;
 	int offset = 0;
 	string::size_type pos = 0;
 	string code;
 
 	do
 	{
+		parse_colour(colour, r, g, b);
+		if (dim)
+		{
+			float dim_m = 1.0f - static_cast<float>(dim) / 8.0f;
+			r = round(static_cast<float>(r) * dim_m);
+			g = round(static_cast<float>(g) * dim_m);
+			b = round(static_cast<float>(b) * dim_m);
+		}
 		pos = msg.find((string)"{");
 		if (pos != string::npos)
 		{
 			if (pos > 0)
 			{
-				offset += print(msg.substr(0, pos), x + offset, y, colour, print_flags);
+				offset += print(msg.substr(0, pos), x + offset, y, r, g, b, print_flags);
 				msg = msg.substr(pos);
 				x += pos;
 			}
@@ -770,7 +779,15 @@ void IOCore::parse_colour(Colour colour, unsigned char &r, unsigned char &g, uns
 int IOCore::print(string message, int x, int y, Colour colour, unsigned int print_flags)
 {
 	STACK_TRACE();
-	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
+	unsigned char r, g, b;
+	parse_colour(colour, r, g, b);
+	return print(message, x, y, r, g, b, print_flags);
+}
+
+// Prints a message at the specified coordinates, in RGB colours.
+int IOCore::print(string message, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags)
+{
+	STACK_TRACE();
 	int offset = 0;
 	for (unsigned int i = 0; i < message.size(); i++)
 	{
@@ -784,7 +801,7 @@ int IOCore::print(string message, int x, int y, Colour colour, unsigned int prin
 					const Glyph code = static_cast<Glyph>(atoi(message.substr(i + 1, 3).c_str()));
 					if (static_cast<int>(code))	// Do not print ^000^ code.
 					{
-						print_at(code, x + i + offset, y, colour, print_flags);
+						print_at(code, x + i + offset, y, r, g, b, print_flags);
 						offset -= 4;
 					}
 					else offset -= 5;
@@ -792,7 +809,7 @@ int IOCore::print(string message, int x, int y, Colour colour, unsigned int prin
 				}
 			}
 		}
-		else print_at(static_cast<Glyph>(message.at(i)), x + i + offset, y, colour, print_flags);
+		else print_at(static_cast<Glyph>(message.at(i)), x + i + offset, y, r, g, b, print_flags);
 	}
 	return offset;
 }

@@ -6,6 +6,7 @@
 #include "hero.h"
 #include "iocore.h"
 #include "mathx.h"
+#include "message.h"
 #include "prefs.h"
 #include "static-data.h"
 #include "world.h"
@@ -539,11 +540,11 @@ void Dungeon::render(bool render_lighting, bool see_all)
 	for (unsigned int x = 0; x < width; x++)
 	{
 		int screen_x = static_cast<signed int>(x) + world()->hero()->camera_off_x;
-		if (screen_x < 0 || screen_x > iocore->get_cols()) continue;
+		if (screen_x < 0 || screen_x >= iocore->get_cols()) continue;
 		for (unsigned int y = 0; y < height; y++)
 		{
 			int screen_y = static_cast<signed int>(y) + world()->hero()->camera_off_y;
-			if (screen_y < 0 || screen_y > iocore->get_rows()) continue;
+			if (screen_y < 0 || screen_y >= iocore->get_rows() - MESSAGE_LOG_SIZE) continue;
 
 			if (x == world()->hero()->x && y == world()->hero()->y) iocore->print_at('@', screen_x, screen_y, Colour::WHITE);
 			else

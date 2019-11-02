@@ -6,7 +6,7 @@
 
 namespace SQLite { class Database; }	// defined in SQLiteCpp/SQLiteCpp.h
 
-enum Keys { NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST, QUIT_GAME, OPTIONS_WINDOW, MENU_OK, MENU_OK_2, MENU_CANCEL, SCREENSHOT, SAVE };
+enum Keys { NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST, QUIT_GAME, OPTIONS_WINDOW, MENU_OK, MENU_OK_2, MENU_CANCEL, SCREENSHOT, SAVE, SCROLL_TOP, SCROLL_BOTTOM, SCROLL_PAGEUP, SCROLL_PAGEDOWN };
 
 class PrefsEntry
 {
@@ -59,6 +59,7 @@ extern unsigned char	palette;			// Which colour palette to use?
 extern unsigned char	scale_mod;			// Experimental surface scaling.
 extern bool				glitch_warn;		// Have we shown the user the glitch warning screen?
 extern bool				death_reports;		// Generate death report text files?
+extern bool				message_log_dim;	// Dim the colours in the message log?
 
 void	init();	// Loads and configures the user's preferences.
 void	save(SQLite::Database *prefs_db = nullptr);	// Saves the updated preferences file.
