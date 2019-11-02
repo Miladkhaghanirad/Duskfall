@@ -14,4 +14,6 @@ src/sqlite/* linguist-vendored
 src/SQLiteCpp/* linguist-vendored
 win64/*.dll linguist-vendored
 win64/*.txt linguist-documentation
+win64/data/json/*.json linguist-detectable=true
+win64/data/json/*.json linguist-language=JSON
 win64/licenses/* linguist-documentation
