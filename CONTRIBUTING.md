@@ -28,7 +28,8 @@ the issues page, and I especially welcome reports of bugs I'm unaware of! :)
 
 * Fork or clone the Duskfall repository and start tinkering! I'm open to any reasonable [pull requests](https://github.com/Gravecat/Duskfall/pulls),
 though as mentioned above, I reserve the right to personally decide which content makes it into the main build of the game. If in
-doubt, feel free to shoot me an email with your suggestions first.
+doubt, feel free to shoot me an email with your suggestions first. Please ensure that you target the 'contrib' branch with pull
+requests, *not* the 'master' branch.
 
 * I plan on keeping Duskfall free and open-source forever; I'm working on this project because I love coding and want to make a
 great game! With that said, I have a [Ko-fi page](https://ko-fi.com/gravecat) where I will gratefully accept any donations towards
