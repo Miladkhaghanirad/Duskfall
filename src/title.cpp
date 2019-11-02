@@ -481,7 +481,6 @@ bool new_game(int slot, bool start_over)
 	// Start a new game and begin the loop!
 	world()->new_game();
 	world()->main_loop();
-
 	return true;
 }
 

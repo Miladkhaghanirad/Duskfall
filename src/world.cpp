@@ -101,6 +101,16 @@ void World::main_loop()
 		else if (key == prefs::keybind(Keys::SOUTHWEST)) hero()->ai->travel(-1, 1);
 		else if (key == prefs::keybind(Keys::SCROLL_TOP) || key == prefs::keybind(Keys::SCROLL_BOTTOM) || key == prefs::keybind(Keys::SCROLL_PAGEUP) || key == prefs::keybind(Keys::SCROLL_PAGEDOWN) || key == MOUSEWHEEL_UP_KEY
 				|| key == MOUSEWHEEL_DOWN_KEY) msglog->process_input(key);
+		else if (key == prefs::keybind(Keys::OPTIONS_WINDOW))
+		{
+			prefs::prefs_window();
+			redraw_full = true;
+		}
+		else if (key == prefs::keybind(Keys::QUIT_GAME))
+		{
+			iocore->exit_functions();
+			exit(0);
+		}
 	}
 }
 

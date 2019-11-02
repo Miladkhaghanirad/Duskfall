@@ -95,6 +95,7 @@ public:
 	void	cls();					// Clears the screen.
 	void	delay(unsigned int ms);	// Calls SDL_Delay but also handles visual glitches.
 	bool	did_mouse_click(unsigned short x, unsigned short y, unsigned short w = 1, unsigned short h = 1);	// Checks if the player clicked in a specified area.
+	void	exit_functions();		// This is where we clean up our shit.
 	void	flip();					// Redraws the display.
 	unsigned short	get_cols() { return cols; }		// Returns the number of columns on the screen.
 	unsigned short	get_rows() { return rows; }		// Returns the number of rows on the screen.
@@ -161,7 +162,6 @@ private:
 
 	Colour	adjust_palette(Colour colour);	// Adjusts the colour palette, if needed.
 	void	calc_glitches();		// Calculates glitch positions.
-	void	exit_functions();		// This is where we clean up our shit.
 	void	glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf);	// Offsets part of the display.
 	void	glitch_horizontal();	// Horizontal displacement visual glitch.
 	void	glitch_square();		// Square displacement glitch.

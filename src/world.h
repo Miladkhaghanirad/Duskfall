@@ -36,4 +36,4 @@ private:
 };
 
 void				new_world(unsigned short slot, bool new_save);	// Creates a new World in the specified save slot.
-shared_ptr<World>	world();	// Returns a pointer to the main World object, or creates a new one if none exists.
+shared_ptr<World>	world();		// Returns a pointer to the main World object, or creates a new one if none exists.
