@@ -8,3 +8,6 @@ win64/duskfall.exe
 win64/log.txt
 win64/userdata/
 win64/src/
+
+# I use some personal maintenance scripts for the git repo that don't need to be shared here.
+*.sh
