@@ -67,13 +67,13 @@ Json::Value	load_json(string filename)
 		if (!ok)
 		{
 			file_load.close();
-			guru->halt(errs);
+			guru::halt(errs);
 		}
 	}
 	catch (std::exception &e)
 	{
 		file_load.close();
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 	file_load.close();
 	return json;

@@ -17,7 +17,7 @@ shared_ptr<StaticData> static_ptr = nullptr;
 StaticData::StaticData()
 {
 	STACK_TRACE();
-	guru->log("Attempting to load static data from JSON files...", GURU_INFO);
+	guru::log("Attempting to load static data from JSON files...", GURU_INFO);
 	init_tiles_json();
 }
 
@@ -26,7 +26,7 @@ Tile StaticData::get_tile(string tile_id)
 {
 	STACK_TRACE();
 	auto found = static_tile_data.find(tile_id);
-	if (found == static_tile_data.end()) guru->halt("Could not retrieve tile ID " + tile_id + "!");
+	if (found == static_tile_data.end()) guru::halt("Could not retrieve tile ID " + tile_id + "!");
 	return *found->second;
 }
 
@@ -47,7 +47,7 @@ void StaticData::init_tiles_json()
 		auto new_tile = std::make_shared<Tile>();
 
 		const string tile_colour_unparsed = jval.get("colour", "").asString();
-		if (!tile_colour_unparsed.size()) guru->log("No tile colour specified in tiles.json for " + tile_id, GURU_WARN);
+		if (!tile_colour_unparsed.size()) guru::log("No tile colour specified in tiles.json for " + tile_id, GURU_WARN);
 		new_tile->colour = parse_colour_string(tile_colour_unparsed);
 
 		const string tile_flags_unparsed = jval.get("flags", "").asString();
@@ -58,20 +58,20 @@ void StaticData::init_tiles_json()
 			for (auto flag : tile_flags_vec)
 			{
 				auto found = tile_flag_map.find(strx::str_toupper(flag));
-				if (found == tile_flag_map.end()) guru->log("Unknown tile flag in tiles.json for " + tile_id + ": " + flag, GURU_WARN);
+				if (found == tile_flag_map.end()) guru::log("Unknown tile flag in tiles.json for " + tile_id + ": " + flag, GURU_WARN);
 				else new_tile->flags |= found->second;
 			}
 		}
 
 		const string tile_glyph_unparsed = jval.get("glyph", "").asString();
-		if (!tile_glyph_unparsed.size()) guru->log("No glyph specified in tiles.json for " + tile_id, GURU_WARN);
+		if (!tile_glyph_unparsed.size()) guru::log("No glyph specified in tiles.json for " + tile_id, GURU_WARN);
 		new_tile->glyph = parse_glyph_string(tile_glyph_unparsed);
 
 		const string tile_name = jval.get("name", "").asString();
 		if (!tile_name.size())
 		{
 			new_tile->name = 0;
-			guru->log("No name specified in tiles.json for " + tile_id, GURU_WARN);
+			guru::log("No name specified in tiles.json for " + tile_id, GURU_WARN);
 		}
 		else
 		{
@@ -110,7 +110,7 @@ Colour StaticData::parse_colour_string(string colour_string)
 	auto found = colour_map.find(strx::str_toupper(colour_string));
 	if (found == colour_map.end())
 	{
-		guru->log("Could not parse colour code: " + colour_string);
+		guru::log("Could not parse colour code: " + colour_string);
 		return Colour::ERROR_COLOUR;
 	}
 	else return found->second;
@@ -120,11 +120,11 @@ Colour StaticData::parse_colour_string(string colour_string)
 unsigned int StaticData::parse_glyph_string(string glyph_string)
 {
 	STACK_TRACE();
-	const std::unordered_map<string, Glyph> glyph_map = { { "FACE_BLACK", Glyph::FACE_BLACK }, { "FACE_WHITE", Glyph::FACE_WHITE }, { "HEART", Glyph::HEART }, { "DIAMOND", Glyph::DIAMOND }, { "CLUB", Glyph::CLUB },
+	const std::unordered_map<string, Glyph> glyph_map = { { "FACE", Glyph::FACE }, { "HALF_HEART", Glyph::HALF_HEART }, { "HEART", Glyph::HEART }, { "DIAMOND", Glyph::DIAMOND }, { "CLUB", Glyph::CLUB },
 		{ "SPADE", Glyph::SPADE }, { "BULLET", Glyph::BULLET }, { "BULLET_INVERT", Glyph::BULLET_INVERT }, { "CIRCLE", Glyph::CIRCLE }, { "CIRCLE_INVERT", Glyph::CIRCLE_INVERT }, { "MALE", Glyph::MALE }, { "FEMALE", Glyph::FEMALE },
 		{ "MUSIC", Glyph::MUSIC }, { "MUSIC_DOUBLE", Glyph::MUSIC_DOUBLE }, { "SUN", Glyph::SUN }, { "TRIANGLE_RIGHT", Glyph::TRIANGLE_RIGHT }, { "TRIANGLE_LEFT", Glyph::TRIANGLE_LEFT }, { "ARROW_UD", Glyph::ARROW_UD },
 		{ "DOUBLE_EXCLAIM", Glyph::DOUBLE_EXCLAIM }, { "PILCROW", Glyph::PILCROW }, { "SECTION", Glyph::SECTION }, { "GEOM_A", Glyph::GEOM_A }, { "ARROW_UD_B", Glyph::ARROW_UD_B }, { "ARROW_UP", Glyph::ARROW_UP },
-		{ "ARROW_DOWN", Glyph::ARROW_DOWN }, { "ARROW_RIGHT", Glyph::ARROW_RIGHT }, { "ARROW_LEFT", Glyph::ARROW_LEFT }, { "BRACKET", Glyph::BRACKET }, { "ARROW_LR", Glyph::ARROW_LR }, { "TRIANGLE_UP", Glyph::TRIANGLE_UP },
+		{ "ARROW_DOWN", Glyph::ARROW_DOWN }, { "ARROW_RIGHT", Glyph::ARROW_RIGHT }, { "ARROW_LEFT", Glyph::ARROW_LEFT }, { "RETURN", Glyph::RETURN }, { "ARROW_LR", Glyph::ARROW_LR }, { "TRIANGLE_UP", Glyph::TRIANGLE_UP },
 		{ "TRIANGLE_DOWN", Glyph::TRIANGLE_DOWN }, { "HOUSE", Glyph::HOUSE }, { "C_CEDILLA_CAPS", Glyph::C_CEDILLA_CAPS }, { "U_DIAERESIS", Glyph::U_DIAERESIS }, { "E_ACUTE", Glyph::E_ACUTE }, { "A_CIRCUMFLEX", Glyph::A_CIRCUMFLEX },
 		{ "A_DIAERESIS", Glyph::A_DIAERESIS }, { "A_GRAVE", Glyph::A_GRAVE }, { "A_OVERRING", Glyph::A_OVERRING }, { "C_CEDILLA", Glyph::C_CEDILLA }, { "E_CIRCUMFLEX", Glyph::E_CIRCUMFLEX }, { "E_DIAERESIS", Glyph::E_DIAERESIS },
 		{ "E_GRAVE", Glyph::E_GRAVE }, { "I_DIAERESIS", Glyph::I_DIAERESIS }, { "I_CIRCUMFLEX", Glyph::I_CIRCUMFLEX }, { "I_GRAVE", Glyph::I_GRAVE }, { "A_DIAERESIS_CAPS", Glyph::A_DIAERESIS_CAPS },
@@ -146,17 +146,13 @@ unsigned int StaticData::parse_glyph_string(string glyph_string)
 		{ "DELTA", Glyph::DELTA }, { "INFINITY", Glyph::INFINITY }, { "PHI", Glyph::PHI }, { "EPSILON", Glyph::EPSILON }, { "INTERSECTION", Glyph::INTERSECTION }, { "TRIPLE_BAR", Glyph::TRIPLE_BAR },
 		{ "PLUS_MINUS", Glyph::PLUS_MINUS }, { "GEQ", Glyph::GEQ }, { "LEQ", Glyph::LEQ }, { "INTEGRAL", Glyph::INTEGRAL }, { "INTEGRAL_INVERTED", Glyph::INTEGRAL_INVERTED }, { "DIVISION", Glyph::DIVISION },
 		{ "APPROXIMATION", Glyph::APPROXIMATION }, { "DEGREE", Glyph::DEGREE }, { "BULLET_SMALL", Glyph::BULLET_SMALL }, { "INTERPUNCT", Glyph::INTERPUNCT }, { "SQUARE_ROOT", Glyph::SQUARE_ROOT }, { "N_SUPER", Glyph::N_SUPER },
-		{ "SQUARE", Glyph::SQUARE }, { "MIDBLOCK", Glyph::MIDBLOCK }, { "HALF_HEART", Glyph::HALF_HEART }, { "COPYRIGHT", Glyph::COPYRIGHT }, { "BLOCKS_7", Glyph::BLOCKS_7 }, { "BLOCKS_11", Glyph::BLOCKS_11 },
-		{ "BLOCKS_14", Glyph::BLOCKS_14 }, { "BLOCKS_13", Glyph::BLOCKS_13 }, { "BLOCKS_4", Glyph::BLOCKS_4 }, { "UPSIDE_DOWN_HD", Glyph::UPSIDE_DOWN_HD }, { "BLOCKS_8", Glyph::BLOCKS_8 }, { "BLOCKS_1", Glyph::BLOCKS_1 },
-		{ "BLOCKS_2", Glyph::BLOCKS_2 }, { "CORNER_CLIP_DL", Glyph::CORNER_CLIP_DL }, { "CORNER_CLIP_DR", Glyph::CORNER_CLIP_DR }, { "CURVE_DL", Glyph::CURVE_DL }, { "CURVE_UR", Glyph::CURVE_UR }, { "CURVE_UL", Glyph::CURVE_UL },
-		{ "CURVE_DR", Glyph::CURVE_DR }, { "FLOPPY_DISK_METAL_HOLE", Glyph::FLOPPY_DISK_METAL_HOLE }, { "RETURN", Glyph::RETURN }, { "TICK", Glyph::TICK }, { "MIDDOT", Glyph::MIDDOT }, { "MIDCOMMA", Glyph::MIDCOMMA },
-		{ "SKULL", Glyph::SKULL } };
+		{ "SQUARE", Glyph::SQUARE }, { "CORNER_BLOCK", Glyph::CORNER_BLOCK }, { "COPYRIGHT", Glyph::COPYRIGHT } };
 
 	if (glyph_string.size() == 1) return glyph_string[0];
 	auto found = glyph_map.find(strx::str_toupper(glyph_string));
 	if (found == glyph_map.end())
 	{
-		guru->log("Could not parse glyph code: " + glyph_string);
+		guru::log("Could not parse glyph code: " + glyph_string);
 		return '?';
 	}
 	else return static_cast<unsigned int>(found->second);
@@ -168,7 +164,7 @@ string StaticData::tile_name(unsigned int name_id)
 	auto found = tile_names.find(name_id);
 	if (found == tile_names.end())
 	{
-		guru->log("Could not decode tile name ID " + strx::itos(name_id) + "!", GURU_ERROR);
+		guru::log("Could not decode tile name ID " + strx::itos(name_id) + "!", GURU_ERROR);
 		return "[unknown]";
 	}
 	return found->second;

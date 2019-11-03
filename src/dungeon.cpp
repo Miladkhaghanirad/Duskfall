@@ -359,7 +359,7 @@ void Dungeon::load()
 	}
 	catch(std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 }
 
@@ -432,10 +432,10 @@ void Dungeon::map_view(bool see_lighting, bool see_all)
 	recalc_lighting();
 	while(true)
 	{
-		iocore->cls();
+		iocore::cls();
 		render(see_lighting, see_all);
-		iocore->flip();
-		const unsigned int key = iocore->wait_for_key();
+		iocore::flip();
+		const unsigned int key = iocore::wait_for_key();
 		if (key == prefs::keybind(Keys::NORTH) || key == prefs::keybind(Keys::NORTHEAST) || key == prefs::keybind(Keys::NORTHWEST)) world()->hero()->camera_off_y++;
 		else if (key == prefs::keybind(Keys::SOUTH) || key == prefs::keybind(Keys::SOUTHEAST) || key == prefs::keybind(Keys::SOUTHWEST)) world()->hero()->camera_off_y--;
 		if (key == prefs::keybind(Keys::EAST) || key == prefs::keybind(Keys::SOUTHEAST) || key == prefs::keybind(Keys::NORTHEAST)) world()->hero()->camera_off_x--;
@@ -536,22 +536,22 @@ void Dungeon::region_floodfill(unsigned short x, unsigned short y, unsigned int 
 void Dungeon::render(bool render_lighting, bool see_all)
 {
 	STACK_TRACE();
-	iocore->cls();
+	iocore::cls();
 	for (unsigned int x = 0; x < width; x++)
 	{
 		int screen_x = static_cast<signed int>(x) + world()->hero()->camera_off_x;
-		if (screen_x < 0 || screen_x >= iocore->get_cols()) continue;
+		if (screen_x < 0 || screen_x >= iocore::get_cols()) continue;
 		for (unsigned int y = 0; y < height; y++)
 		{
 			int screen_y = static_cast<signed int>(y) + world()->hero()->camera_off_y;
-			if (screen_y < 0 || screen_y >= iocore->get_rows() - MESSAGE_LOG_SIZE) continue;
+			if (screen_y < 0 || screen_y >= iocore::get_rows() - MESSAGE_LOG_SIZE) continue;
 
-			if (x == world()->hero()->x && y == world()->hero()->y) iocore->print_at('@', screen_x, screen_y, Colour::WHITE);
+			if (x == world()->hero()->x && y == world()->hero()->y) iocore::print_at('@', screen_x, screen_y, Colour::WHITE);
 			else
 			{
 				Tile &here = tiles[x + y * width];
 				unsigned char r, g, b;
-				iocore->parse_colour(here.colour, r, g, b);
+				iocore::parse_colour(here.colour, r, g, b);
 				s_rgb here_col;
 				if (render_lighting) here_col = light_surface({r,g,b}, lighting[x + y * width]);
 				else here_col = { r, g, b };
@@ -566,10 +566,10 @@ void Dungeon::render(bool render_lighting, bool see_all)
 				}
 				if (here_col.r >= 30 || here_col.g >= 30 || here_col.b >= 30)
 				{
-					iocore->print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, here_col.r, here_col.g, here_col.b);
+					iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, here_col.r, here_col.g, here_col.b);
 					explore(x, y);
 				}
-				else if (here.explored()) iocore->print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, 30, 30, 30);
+				else if (here.explored()) iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, 30, 30, 30);
 			}
 		}
 	}
@@ -593,7 +593,7 @@ void Dungeon::save()
 	}
 	catch(std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 }
 
@@ -601,7 +601,7 @@ void Dungeon::save()
 void Dungeon::set_tile(unsigned short x, unsigned short y, Tile &tile)
 {
 	STACK_TRACE();
-	if (x >= width || y >= height) guru->halt("Attempted to set out-of-bounds tile.");
+	if (x >= width || y >= height) guru::halt("Attempted to set out-of-bounds tile.");
 	tiles[x + y * width] = tile;
 }
 
@@ -609,7 +609,7 @@ void Dungeon::set_tile(unsigned short x, unsigned short y, Tile &tile)
 shared_ptr<Tile> Dungeon::tile(unsigned short x, unsigned short y)
 {
 	STACK_TRACE();
-	if (x >= width || y >= height) guru->halt("Attempted to set out-of-bounds tile.");
+	if (x >= width || y >= height) guru::halt("Attempted to set out-of-bounds tile.");
 	return std::make_shared<Tile>(tiles[x + y * width]);
 }
 

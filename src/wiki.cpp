@@ -41,7 +41,7 @@ string Wiki::get_wiki_data(string key)
 void Wiki::process_key(unsigned int key)
 {
 	STACK_TRACE();
-	const unsigned int height = iocore->get_rows() - 1;
+	const unsigned int height = iocore::get_rows() - 1;
 	if (key == prefs::keybind(Keys::SCROLL_TOP))
 	{
 		buffer_pos = 0;
@@ -104,7 +104,7 @@ void Wiki::process_key(unsigned int key)
 			wiki_history.erase(wiki_history.end() - 1);
 			wiki(page);
 		}
-		else iocore->cls();
+		else iocore::cls();
 	}
 	else if (key == LMB_KEY)
 	{
@@ -112,7 +112,7 @@ void Wiki::process_key(unsigned int key)
 		{
 			const unsigned short link_x = link_coords.at(i).first + 2;
 			const unsigned short link_y = link_coords.at(i).second - buffer_pos + 1;
-			if (iocore->did_mouse_click(link_x, link_y, link_str.at(i).size()))
+			if (iocore::did_mouse_click(link_x, link_y, link_str.at(i).size()))
 			{
 				link_selected = i;
 				wiki(strx::str_toupper(link_str.at(link_selected)));
@@ -139,7 +139,7 @@ void Wiki::process_wiki_buffer()
 	// Process the console buffer.
 	for (auto raw : wiki_raw)
 	{
-		vector<string> line_vec = strx::ansi_vector_split(raw, iocore->get_cols() - 2);
+		vector<string> line_vec = strx::ansi_vector_split(raw, iocore::get_cols() - 2);
 		for (auto prc : line_vec)
 			wiki_prc.push_back(prc);
 	}
@@ -191,33 +191,33 @@ void Wiki::process_wiki_buffer()
 void Wiki::render()
 {
 	STACK_TRACE();
-	iocore->cls();
-	const unsigned int height = iocore->get_rows() - 1;
-	iocore->box(0, 0, iocore->get_cols(), height + 2, UI_COLOUR_BOX, BOX_FLAG_DOUBLE);
+	iocore::cls();
+	const unsigned int height = iocore::get_rows() - 1;
+	iocore::box(0, 0, iocore::get_cols(), height + 2, UI_COLOUR_BOX, BOX_FLAG_DOUBLE);
 	if (wiki_prc.size())
 	{
 		unsigned int end = wiki_prc.size();
 		if (end - buffer_pos > height) end = buffer_pos + height;
 		for (unsigned int i = buffer_pos; i < end; i++)
 		{
-			iocore->ansi_print(wiki_prc.at(i), 1, i - buffer_pos + 1);
+			iocore::ansi_print(wiki_prc.at(i), 1, i - buffer_pos + 1);
 			for (unsigned int j = 0; j < link_coords.size(); j++)
 			{
 				if (link_coords.at(j).second == i)
 				{
 					Colour link_col = Colour::CGA_LCYAN;
 					if (!link_good.at(j)) link_col = Colour::CGA_LRED;
-					iocore->print_at(static_cast<Glyph>('['), link_coords.at(j).first + 1, link_coords.at(j).second - buffer_pos + 1, Colour::CGA_WHITE);
-					iocore->print_at(static_cast<Glyph>(']'), link_coords.at(j).first + 2 + link_str.at(j).size(), link_coords.at(j).second - buffer_pos + 1, Colour::CGA_WHITE);
-					if (link_selected == j) iocore->rect(link_coords.at(j).first + 2, link_coords.at(j).second - buffer_pos + 1, link_str.at(j).size(), 1, link_col);
+					iocore::print_at(static_cast<Glyph>('['), link_coords.at(j).first + 1, link_coords.at(j).second - buffer_pos + 1, Colour::CGA_WHITE);
+					iocore::print_at(static_cast<Glyph>(']'), link_coords.at(j).first + 2 + link_str.at(j).size(), link_coords.at(j).second - buffer_pos + 1, Colour::CGA_WHITE);
+					if (link_selected == j) iocore::rect(link_coords.at(j).first + 2, link_coords.at(j).second - buffer_pos + 1, link_str.at(j).size(), 1, link_col);
 					string link_string_processed = link_str.at(j);
 					strx::find_and_replace(link_string_processed, "_", " ");
-					iocore->print(link_string_processed, link_coords.at(j).first + 2, link_coords.at(j).second - buffer_pos + 1, link_selected == j ? Colour::BLACK_PALE : link_col, link_selected == j ? PRINT_FLAG_ALPHA : 0);
+					iocore::print(link_string_processed, link_coords.at(j).first + 2, link_coords.at(j).second - buffer_pos + 1, link_selected == j ? Colour::BLACK_PALE : link_col, link_selected == j ? PRINT_FLAG_ALPHA : 0);
 				}
 			}
 		}
 	}
-	iocore->flip();
+	iocore::flip();
 }
 
 // Resets the wiki buffer position.
@@ -225,7 +225,7 @@ void Wiki::reset_buffer_pos()
 {
 	STACK_TRACE();
 	buffer_pos = 0;
-	const unsigned int height = iocore->get_rows() - 1;
+	const unsigned int height = iocore::get_rows() - 1;
 	if (wiki_prc.size() > height) buffer_pos = wiki_prc.size() - height;
 }
 
@@ -271,7 +271,7 @@ void Wiki::wiki(string page)
 	render();
 	while(true)
 	{
-		process_key(iocore->wait_for_key());
+		process_key(iocore::wait_for_key());
 		if (!wiki_history.size()) break;
 		if (wiki_history.at(wiki_history.size() - 1) != page) break;
 	}

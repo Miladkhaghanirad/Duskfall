@@ -15,7 +15,7 @@
 "BASIC_FLOOR" : {
 	"colour" : "CGA_LGRAY",
 	"flags" : "",
-	"glyph" : "MIDDOT",
+	"glyph" : "BULLET_SMALL",
 	"name" : "floor"
 },
 

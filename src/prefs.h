@@ -6,8 +6,8 @@
 
 namespace SQLite { class Database; }	// defined in SQLiteCpp/SQLiteCpp.h
 
-enum Keys { NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST, QUIT_GAME, OPTIONS_WINDOW, MENU_OK, MENU_OK_2, MENU_CANCEL, SCREENSHOT, SAVE, SCROLL_TOP, SCROLL_BOTTOM, SCROLL_PAGEUP, SCROLL_PAGEDOWN, SCROLL_UP,
-	SCROLL_DOWN, SCROLL_LEFT, SCROLL_RIGHT };
+enum Keys { NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST, QUIT_GAME, OPTIONS_WINDOW, MENU_OK, MENU_OK_2, MENU_CANCEL, SAVE, SCROLL_TOP, SCROLL_BOTTOM, SCROLL_PAGEUP, SCROLL_PAGEDOWN, SCROLL_UP, SCROLL_DOWN,
+	SCROLL_LEFT, SCROLL_RIGHT };
 
 class PrefsEntry
 {
@@ -53,12 +53,7 @@ namespace prefs
 
 extern short			screen_x, screen_y;	// The starting screen X,Y size.
 extern bool				fullscreen;			// Fullscreen mode.
-extern unsigned char	ntsc_mode;			// NTSC post-processing level.
-extern unsigned char	screenshot_type;	// The type of screenshots to take (BMP/UPNG/CPNG)
-extern unsigned char	visual_glitches;	// Visual glitches enabled/disabled.
 extern unsigned char	palette;			// Which colour palette to use?
-extern unsigned char	scale_mod;			// Experimental surface scaling.
-extern bool				glitch_warn;		// Have we shown the user the glitch warning screen?
 extern bool				death_reports;		// Generate death report text files?
 extern bool				message_log_dim;	// Dim the colours in the message log?
 

@@ -1,8 +1,8 @@
 // strx.cpp -- Extended string utility functions.
 // Copyright (c) 2016-2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
-#include "guru.h"
 #include "strx.h"
+
 #include <bits/stdc++.h>
 #include <sstream>
 
@@ -139,7 +139,7 @@ vector<string> ansi_vector_split(string source, unsigned int line_len)
 string comma_list(vector<string> vec, bool use_and)
 {
 	STACK_TRACE();
-	if (!vec.size()) guru->halt("comma_list: empty string vector");
+	if (!vec.size()) return "";
 	if (vec.size() == 1) return vec.at(0);
 	string plus = " and ";
 	if (!use_and) plus = ", ";
