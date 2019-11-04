@@ -945,13 +945,19 @@ void title_screen()
 	// We don't need to redraw the background very often.
 	redraw_background();
 	iocore::flip();
+	auto last_flame_redraw = std::chrono::system_clock::now();
 
 	do
 	{
-		const std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-		redraw_animated_logo();
+		const auto start = std::chrono::system_clock::now();
+		std::chrono::duration<float> time_since_last_redraw = std::chrono::system_clock::now() - last_flame_redraw;
+		if (time_since_last_redraw.count() >= 0.1f)
+		{
+			last_flame_redraw = std::chrono::system_clock::now();
+			redraw_animated_logo();
+		}
 		iocore::flip();
-		const std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+		const auto end = std::chrono::system_clock::now();
 		std::chrono::duration<float> elapsed_seconds = end - start;
 		const int delay = round(elapsed_seconds.count() * 1000);
 		unsigned int key = iocore::wait_for_key(delay < 50 ? 100 - delay : 50);
