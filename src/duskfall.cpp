@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 	mathx::init();
 	prefs::init();
 	iocore::init();
-	static_data();
+	data::init();
 	wiki::init();
 	guru::log("Everything looks good! Starting the game!", GURU_INFO);
 	title::title_screen();

@@ -11,20 +11,16 @@
 
 #include "jsoncpp/json/json.h"
 
-// The main StaticData object.
-shared_ptr<StaticData> static_ptr = nullptr;
 
-
-StaticData::StaticData()
+namespace data
 {
-	STACK_TRACE();
-	guru::log("Attempting to load static data from JSON files...", GURU_INFO);
-	init_tiles_json();
-	init_mobs_json();
-}
+
+std::unordered_map<string, shared_ptr<Actor>>	static_mob_data;	// The data containing templates for monsters from mobs.json
+std::unordered_map<string, shared_ptr<Tile>>	static_tile_data;	// The data about dungeon tiles from tiles.json
+std::unordered_map<unsigned int, string>		tile_names;	// The tile name strings, which are stored as integers on the tiles themselves.
 
 // Retrieves a copy of a specified mob.
-shared_ptr<Actor> StaticData::get_mob(string mob_id)
+shared_ptr<Actor> get_mob(string mob_id)
 {
 	STACK_TRACE();
 	auto found = static_mob_data.find(mob_id);
@@ -33,7 +29,7 @@ shared_ptr<Actor> StaticData::get_mob(string mob_id)
 }
 
 // Retrieves a copy of a specified Tile
-Tile StaticData::get_tile(string tile_id)
+Tile get_tile(string tile_id)
 {
 	STACK_TRACE();
 	auto found = static_tile_data.find(tile_id);
@@ -41,8 +37,17 @@ Tile StaticData::get_tile(string tile_id)
 	return *found->second;
 }
 
+// Loads the static data from JSON files.
+void init()
+{
+	STACK_TRACE();
+	guru::log("Attempting to load static data from JSON files...", GURU_INFO);
+	init_tiles_json();
+	init_mobs_json();
+}
+
 // Loads an Actor's data from JSON.
-void StaticData::init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor)
+void init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor)
 {
 	STACK_TRACE();
 	const string actor_name = jval.get("name", "").asString();
@@ -59,7 +64,7 @@ void StaticData::init_actor_json(Json::Value jval, string actor_id, shared_ptr<A
 }
 
 // Load the data from mobs.json
-void StaticData::init_mobs_json()
+void init_mobs_json()
 {
 	STACK_TRACE();
 
@@ -77,7 +82,7 @@ void StaticData::init_mobs_json()
 }
 
 // Load the data from tiles.json
-void StaticData::init_tiles_json()
+void init_tiles_json()
 {
 	STACK_TRACE();
 
@@ -131,7 +136,7 @@ void StaticData::init_tiles_json()
 }
 
 // Parses a colour string into a Colour.
-Colour StaticData::parse_colour_string(string colour_string)
+Colour parse_colour_string(string colour_string)
 {
 	STACK_TRACE();
 	const std::unordered_map<string, Colour> colour_map = { { "GRAY", Colour::GRAY }, { "AQUA", Colour::AQUA }, { "BLUE", Colour::BLUE }, { "PURPLE", Colour::PURPLE }, { "MAGENTA", Colour::MAGENTA }, { "PINK", Colour::PINK },
@@ -163,7 +168,7 @@ Colour StaticData::parse_colour_string(string colour_string)
 }
 
 // Parses a glyph string into a Glyph.
-unsigned int StaticData::parse_glyph_string(string glyph_string)
+unsigned int parse_glyph_string(string glyph_string)
 {
 	STACK_TRACE();
 	const std::unordered_map<string, Glyph> glyph_map = { { "FACE_BLACK", Glyph::FACE_BLACK }, { "FACE_WHITE", Glyph::FACE_WHITE }, { "HEART", Glyph::HEART }, { "DIAMOND", Glyph::DIAMOND }, { "CLUB", Glyph::CLUB },
@@ -209,7 +214,7 @@ unsigned int StaticData::parse_glyph_string(string glyph_string)
 }
 
 // Parses a tile name ID into a string.
-string StaticData::tile_name(unsigned int name_id)
+string tile_name(unsigned int name_id)
 {
 	auto found = tile_names.find(name_id);
 	if (found == tile_names.end())
@@ -220,10 +225,4 @@ string StaticData::tile_name(unsigned int name_id)
 	return found->second;
 }
 
-// External access to the main StaticData object. If none exists, one will be created.
-shared_ptr<StaticData> static_data()
-{
-	STACK_TRACE();
-	if (!static_ptr) static_ptr = std::make_shared<StaticData>();
-	return static_ptr;
-}
+}	// namespace data

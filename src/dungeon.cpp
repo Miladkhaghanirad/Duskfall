@@ -47,7 +47,7 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 {
 	STACK_TRACE();
 
-	Tile basic_floor = static_data()->get_tile("BASIC_FLOOR");
+	Tile basic_floor = data::get_tile("BASIC_FLOOR");
 	for (unsigned int rx = x; rx < x + w; rx++)
 	{
 		for (unsigned int ry = y; ry < y + h; ry++)
@@ -65,8 +65,8 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 	{
 		monsters_here--;
 		shared_ptr<Actor> new_mob;
-		if (mathx::rnd(10) >= 8) new_mob = static_data()->get_mob("TROLL");
-		else new_mob = static_data()->get_mob("ORC");
+		if (mathx::rnd(10) >= 8) new_mob = data::get_mob("TROLL");
+		else new_mob = data::get_mob("ORC");
 		bool success = find_empty_tile(x, y, w, h, new_mob->x, new_mob->y);
 		if (!success) return;
 		actors.push_back(new_mob);
@@ -185,8 +185,8 @@ void Dungeon::generate()
 	STACK_TRACE();
 
 	// Set a default layout with basic floor tiles and an impassible wall.
-	Tile indestructible_wall = static_data()->get_tile("BOUNDARY_WALL");
-	Tile regular_wall = static_data()->get_tile("BASIC_WALL");
+	Tile indestructible_wall = data::get_tile("BOUNDARY_WALL");
+	Tile regular_wall = data::get_tile("BASIC_WALL");
 
 	for (unsigned short y = 0; y < height; y++)
 	{
@@ -318,7 +318,7 @@ void Dungeon::generate_type_a()
 	}
 
 	// Attempt to place doors in room entrances.
-	Tile regular_door = static_data()->get_tile("BASIC_DOOR");
+	Tile regular_door = data::get_tile("BASIC_DOOR");
 	for (unsigned short x = 2; x < width - 2; x++)
 		for (unsigned short y = 2; y < height - 2; y++)
 			if (viable_doorway(x, y) && mathx::rnd(3) == 1) tiles[x + y * width] = regular_door;
