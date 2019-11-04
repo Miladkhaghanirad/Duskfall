@@ -1325,6 +1325,10 @@ unsigned int wait_for_key(unsigned short max_ms)
 		if (prefs::screenshot_type == 1) std::thread(convert_png, filename).detach();
 	}
 
+	// This seems counter-intuitive, but it needs to be here, and I'm going to tell you why: Without it, holding down a directional key to run down a corridor or something will, thanks to the auto-repeat on
+	// keys, end up backlogging key events faster than we can process them -- so when the player releases the key, their character will keep running for a few more tiles. This is a REALLY REALLY BAD THING
+	// for a roguelike. By flushing the input every time we return a valid keypress, holding down keys to move still works just fine, but the game will react almost instantly as soon as the key is released.
+	// So with this in mind, trust me when I say that this is absolutely essential and should not be removed, even if it seems wrong.
 	SDL_FlushEvent(SDL_KEYDOWN);
 	return key;
 }

@@ -56,6 +56,21 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 			if (region) region[rx + ry * width] = new_region;
 		}
 	}
+
+	// Put things in this room!
+	if (w <= 1 || h <= 1) return;
+	unsigned int monsters_here = mathx::rnd(4) - 1;
+	guru::log(strx::itos(monsters_here));
+	while (monsters_here)
+	{
+		monsters_here--;
+		shared_ptr<Actor> new_mob;
+		if (mathx::rnd(10) >= 8) new_mob = static_data()->get_mob("TROLL");
+		else new_mob = static_data()->get_mob("ORC");
+		bool success = find_empty_tile(x, y, w, h, new_mob->x, new_mob->y);
+		if (!success) return;
+		actors.push_back(new_mob);
+	}
 }
 
 // Shadowcasting engine, thanks to RogueBasin's C++ implementation of Björn Bergström's recursive shadowcasting FOV algorithm.
@@ -133,6 +148,35 @@ void Dungeon::explore(unsigned short x, unsigned short y)
 {
 	STACK_TRACE();
 	tiles[x + y * width].flags |= TILE_FLAG_EXPLORED;
+}
+
+// Attempts to find an empty tile within the specified space, aborts after too many failures.
+bool Dungeon::find_empty_tile(unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned short &rx, unsigned short &ry)
+{
+	STACK_TRACE();
+	unsigned int attempts = 0;
+	while (attempts++ < 100)
+	{
+		unsigned int tx = mathx::rnd(w) - 1 + x;
+		unsigned int ty = mathx::rnd(h) - 1 + y;
+		if (tiles[tx + ty * width].impassible()) continue;
+		bool viable = true;
+		for (auto actor : actors)
+		{
+			if (actor->x == tx && actor->y == ty)
+			{
+				viable = false;
+				break;
+			}
+		}
+		if (viable)
+		{
+			rx = tx;
+			ry = ty;
+			return true;
+		}
+	}
+	return false;
 }
 
 // Generates a new dungeon level.
@@ -356,6 +400,20 @@ void Dungeon::load()
 			const void* blob = query.getColumn("tiles").getBlob();
 			memcpy(tiles, blob, sizeof(Tile) * width * height);
 		}
+
+		const unsigned int actor_count = world()->save_db()->execAndGet("SELECT COUNT(*) FROM actors WHERE did = " + strx::itos(level));
+		guru::log(strx::itos(actor_count));
+
+		SQLite::Statement actors_query(*world()->save_db(), "SELECT * FROM actors WHERE did = ?");
+		actors_query.bind(1, level);
+		actors.resize(actor_count);
+		while (actors_query.executeStep())
+		{
+			unsigned int actor_id = actors_query.getColumn("aid").getUInt();
+			shared_ptr<Actor> new_actor = std::make_shared<Actor>();
+			new_actor->load(actor_id, level);
+			actors.at(actor_id) = new_actor;
+		}
 	}
 	catch(std::exception &e)
 	{
@@ -566,7 +624,20 @@ void Dungeon::render(bool render_lighting, bool see_all)
 				}
 				if (here_col.r >= 30 || here_col.g >= 30 || here_col.b >= 30)
 				{
-					iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, here_col.r, here_col.g, here_col.b);
+					shared_ptr<Actor> actor_here = nullptr;
+					for (auto actor : actors)
+					{
+						if (actor->x == x && actor->y == y)
+						{
+							actor_here = actor;	// todo: Handle stacking here (i.e. mobs stand on items, etc.)
+							break;
+						}
+					}
+					if (actor_here)
+					{
+						iocore::print_at(static_cast<Glyph>(actor_here->glyph), screen_x, screen_y, actor_here->colour);
+					}
+					else iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, here_col.r, here_col.g, here_col.b);
 					explore(x, y);
 				}
 				else if (here.explored()) iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, 30, 30, 30);
@@ -590,6 +661,12 @@ void Dungeon::save()
 		sql.bind(3, height);
 		sql.bind(4, (void*)tiles, sizeof(Tile) * width * height);
 		sql.exec();
+
+		SQLite::Statement actors_sql(*world()->save_db(), "DELETE FROM actors WHERE did = ?");
+		actors_sql.bind(1, level);
+		actors_sql.exec();
+		for (unsigned int a = 0; a < actors.size(); a++)
+			actors.at(a)->save(a, level);
 	}
 	catch(std::exception &e)
 	{

@@ -15,7 +15,8 @@ class StaticData
 {
 public:
 			StaticData();
-	Tile	get_tile(string tile_id);			// Retrieves a copy of a specified Tile.
+	shared_ptr<Actor>	get_mob(string mob_id);		// Retrieves a copy of a specified mob.
+	Tile	get_tile(string tile_id);	// Retrieves a copy of a specified Tile.
 	string	tile_name(unsigned int name_id);	// Parses a tile name ID into a string.
 
 private:

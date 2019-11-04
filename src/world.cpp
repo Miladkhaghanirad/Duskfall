@@ -54,11 +54,6 @@ void World::load()
 			level = query.getColumn("level").getUInt();
 		}
 		else guru::halt("Saved game file is damaged!");
-
-		the_dungeon = std::make_shared<Dungeon>(level);
-		the_dungeon->load();
-		the_hero->load();
-		msglog->load();
 	}
 	catch (std::exception &e)
 	{
@@ -67,7 +62,9 @@ void World::load()
 
 	the_dungeon = std::make_shared<Dungeon>(level);
 	the_dungeon->load();
+	the_hero->load(0, 0);
 	the_hero->recenter_camera();
+	msglog->load();
 }
 
 // The main game loop!
@@ -98,7 +95,7 @@ void World::main_loop()
 			std::chrono::duration<float> elapsed_seconds = std::chrono::system_clock::now() - game_clock;
 			the_hero->played += round(elapsed_seconds.count());
 			game_clock = std::chrono::system_clock::now();
-			save(true);
+			save();
 		}
 		else if (key == prefs::keybind(Keys::NORTH)) hero()->ai->travel(0, -1);
 		else if (key == prefs::keybind(Keys::SOUTH)) hero()->ai->travel(0, 1);
@@ -134,23 +131,29 @@ void World::new_game()
 	the_dungeon->random_start_position(hero()->x, hero()->y);
 	the_hero->recenter_camera();
 	msglog->msg("It is very dark. You are likely to be eaten by a grue.");
-	save(false);
+	save(true);
 }
 
 // Saves the game to disk.
-void World::save(bool announce)
+void World::save(bool first_time)
 {
 	STACK_TRACE();
-	if (announce) msglog->msg("Saving game...", MC::INFO);
+	if (!first_time) msglog->msg("Saving game...", MC::INFO);
 	try
 	{
 		SQLite::Transaction transaction(*world()->save_db());
-		save_db_ptr->exec("DROP TABLE IF EXISTS world; CREATE TABLE world ( id INTEGER PRIMARY KEY AUTOINCREMENT, level INTEGER NOT NULL );");
+		if (first_time)
+			save_db_ptr->exec("CREATE TABLE world ( id INTEGER PRIMARY KEY AUTOINCREMENT, level INTEGER NOT NULL ); "
+					"CREATE TABLE hero ( id INTEGER PRIMARY KEY AUTOINCREMENT, difficulty INTEGER NOT NULL, style INTEGER NOT NULL, played INTEGER NOT NULL );"
+					"CREATE TABLE actors ( aid INTEGER NOT NULL, did INTEGER NOT NULL, colour INTEGER NOT NULL, name TEXT, flags INTEGER NOT NULL, glyph INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, "
+					"PRIMARY KEY ('aid', 'did') );");
+
+		save_db_ptr->exec("DELETE FROM world; DELETE FROM hero; DELETE FROM actors;");
 		SQLite::Statement query(*save_db_ptr, "INSERT INTO world (level) VALUES (?)");
 		query.bind(1, level);
 		query.exec();
 
-		hero()->save();
+		hero()->save(0, 0);
 		the_dungeon->save();
 		msglog->save();
 		transaction.commit();
@@ -159,7 +162,7 @@ void World::save(bool announce)
 	{
 		guru::halt(e.what());
 	}
-	if (announce) msglog->amend(" done!");
+	if (!first_time) msglog->amend(" done!");
 }
 
 // Creates a new World in the specified save slot.

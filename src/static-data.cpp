@@ -23,6 +23,15 @@ StaticData::StaticData()
 	init_mobs_json();
 }
 
+// Retrieves a copy of a specified mob.
+shared_ptr<Actor> StaticData::get_mob(string mob_id)
+{
+	STACK_TRACE();
+	auto found = static_mob_data.find(mob_id);
+	if (found == static_mob_data.end()) guru::halt("Could not find mob ID " + mob_id + "!");
+	return std::make_shared<Actor>(*found->second);
+}
+
 // Retrieves a copy of a specified Tile
 Tile StaticData::get_tile(string tile_id)
 {

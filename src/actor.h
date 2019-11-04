@@ -16,8 +16,8 @@ public:
 					Actor();
 	virtual			~Actor();
 	bool			blocker() { return (flags & ACTOR_FLAG_BLOCKER) == ACTOR_FLAG_BLOCKER; }
-	virtual void	load();		// Loads this Actor's data from disk.
-	virtual void	save();		// Saves this Actor's data to disk.
+	virtual void	load(unsigned int actor_id, unsigned int dungeon_id);		// Loads this Actor's data from disk.
+	virtual void	save(unsigned int actor_id, unsigned int dungeon_id);		// Saves this Actor's data to disk.
 
 	AI*				ai;	// If this Actor has AI, this is where its 'brain' is.
 	Colour			colour;	// The colour of this Actor's glyph.
