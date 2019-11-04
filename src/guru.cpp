@@ -65,6 +65,7 @@ void halt(string error)
 	dead_already = true;	// You only die once.
 
 	message = error;
+	if (message.size() > 39) message = message.substr(0, 38) + "^330^";
 	iocore::cls();
 	iocore::flip();
 	while(true)
@@ -148,7 +149,7 @@ void redraw()
 	iocore::cls();
 	if (flash_state) iocore::box(iocore::midcol() - 20, iocore::midrow() - 3, 41, 7, Colour::TERM_LRED);
 	iocore::print("Software Failure, Halting Execution", iocore::midcol() - 17, iocore::midrow() - 1, Colour::TERM_LRED);
-	iocore::print(message, iocore::midcol() - (message.size() / 2), iocore::midrow() + 1, Colour::TERM_LRED);
+	iocore::print(message, iocore::midcol() - (strx::ansi_strlen(message) / 2), iocore::midrow() + 1, Colour::TERM_LRED);
 	iocore::flip();
 }
 

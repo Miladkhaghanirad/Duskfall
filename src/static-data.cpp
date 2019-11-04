@@ -196,7 +196,7 @@ unsigned int StaticData::parse_glyph_string(string glyph_string)
 		{ "BLOCKS_14", Glyph::BLOCKS_14 }, { "BLOCKS_13", Glyph::BLOCKS_13 }, { "BLOCKS_4", Glyph::BLOCKS_4 }, { "UPSIDE_DOWN_HD", Glyph::UPSIDE_DOWN_HD }, { "BLOCKS_8", Glyph::BLOCKS_8 }, { "BLOCKS_1", Glyph::BLOCKS_1 },
 		{ "BLOCKS_2", Glyph::BLOCKS_2 }, { "CORNER_CLIP_DL", Glyph::CORNER_CLIP_DL }, { "CORNER_CLIP_DR", Glyph::CORNER_CLIP_DR }, { "CURVE_DL", Glyph::CURVE_DL }, { "CURVE_UR", Glyph::CURVE_UR }, { "CURVE_UL", Glyph::CURVE_UL },
 		{ "CURVE_DR", Glyph::CURVE_DR }, { "FLOPPY_DISK_METAL_HOLE", Glyph::FLOPPY_DISK_METAL_HOLE }, { "RETURN", Glyph::RETURN }, { "TICK", Glyph::TICK }, { "MIDDOT", Glyph::MIDDOT }, { "MIDCOMMA", Glyph::MIDCOMMA },
-		{ "SKULL", Glyph::SKULL } };
+		{ "SKULL", Glyph::SKULL }, { "ELLIPSIS", Glyph::ELLIPSIS } };
 
 	if (glyph_string.size() == 1) return glyph_string[0];
 	auto found = glyph_map.find(strx::str_toupper(glyph_string));
