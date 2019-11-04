@@ -719,7 +719,7 @@ void select_save_slot()
 		{
 			const unsigned int y_pos = ((i - slot_offset) * 12) + 1;
 			iocore::box(midcol - 26, y_pos, 52, 10, (i == slot_pos ? Colour::YELLOW_PURE : Colour::GRAY_LIGHT));
-			iocore::alagard_print(slot_names.at(i), (midcol - 20), (y_pos + 1), (i == slot_pos ? Colour::WHITE : Colour::GRAY_LIGHT), ALAGARD_FLAG_MINUS_EIGHT_Y);
+			iocore::alagard_print(slot_names.at(i), midcol - 25, y_pos + 1, (i == slot_pos ? Colour::WHITE : Colour::GRAY_LIGHT));
 			iocore::print(slot_times.at(i), midcol + 25 - slot_times.at(i).size(), y_pos + 7, (i == slot_pos ? Colour::WHITE : Colour::GRAY_LIGHT));
 			if (slot_tiers.at(i).size())
 			{

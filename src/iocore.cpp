@@ -139,10 +139,8 @@ Colour adjust_palette(Colour colour)
 void alagard_print(string message, int x, int y, Colour colour, unsigned int flags)
 {
 	STACK_TRACE();
-	x = static_cast<unsigned int>(round(static_cast<float>(x) / 3.0f));
-	y = static_cast<unsigned int>(round(static_cast<float>(y) / 3.0f));
 	for (unsigned int i = 0; i < message.size(); i++)
-		alagard_print_at(message.at(i), x + i, y, colour, flags);
+		alagard_print_at(message.at(i), x + (i * 3), y, colour, flags);
 }
 
 // Prints an Alagard font character at the specified coordinates.
@@ -156,7 +154,7 @@ void alagard_print_at(char letter, int x, int y, Colour colour, unsigned int fla
 	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
 	const bool minus_eight_y = (flags & ALAGARD_FLAG_MINUS_EIGHT_Y) == ALAGARD_FLAG_MINUS_EIGHT_Y;
 	terminal_color(rgb_string(colour).c_str());
-	terminal_put(x * 3, (y * 3) - (minus_eight_y ? 1 : 0), 0x2000 + letter);
+	terminal_put(x, y - (minus_eight_y ? 8 : 0), 0x2000 + letter);
 }
 
 // Prints an ANSI string at the specified position.
