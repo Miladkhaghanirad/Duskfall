@@ -28,7 +28,7 @@ bool Controls::travel(short x_dir, short y_dir)
 		{
 			if (actor->x == owner->x + x_dir && actor->y == owner->y + y_dir && actor->blocker())
 			{
-				msglog->msg("The " + actor->name + " blocks your path!", MC::WARN);
+				message::msg("The " + actor->name + " blocks your path!", MC::WARN);
 				return false;
 			}
 		}

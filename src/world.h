@@ -23,7 +23,7 @@ public:
 	void				queue_redraw() { redraw_full = true; }				// Queues up a full redraw of the game world.
 	void				save(bool first_time = false);	// Saves the game to disk.
 	SQLite::Database*	save_db() { return save_db_ptr; }	// Returns a pointer to the save file handle.
-	unsigned short	slot() { return save_slot; }	// Read-only access to the save slot currently in use.
+	unsigned short		slot() { return save_slot; }	// Read-only access to the save slot currently in use.
 
 private:
 	bool				recalc_lighting;	// Recalculate the dynamic lighting at the start of the next turn.

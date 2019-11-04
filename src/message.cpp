@@ -10,16 +10,19 @@
 
 #include "SQLiteCpp/SQLiteCpp.h"
 
-#define OUTBUF_MAX			128	// Maximum size of the output buffer.
-
-shared_ptr<MessageLog>	msglog = nullptr;	// The MessageLog object.
+#define OUTBUF_MAX	128	// Maximum size of the output buffer.
 
 
-MessageLog::MessageLog() : buffer_pos(0), old_cols(0) { }
+namespace message
+{
 
+unsigned int	buffer_pos = 0;	// The position of the output buffer.
+unsigned int	old_cols = 0;	// Old column count, for determining auto buffer shunting.
+vector<string>	output_prc;		// The nicely processed output buffer, ready for rendering.
+vector<string>	output_raw;		// The raw, unprocessed output buffer.
 
 // Amends the last message, adding additional text.
-void MessageLog::amend(string message)
+void amend(string message)
 {
 	STACK_TRACE();
 	if (!output_raw.size()) { msg(message); return; }
@@ -29,7 +32,7 @@ void MessageLog::amend(string message)
 }
 
 // Loads the output buffer from disk.
-void MessageLog::load()
+void load()
 {
 	STACK_TRACE();
 	output_raw.clear();
@@ -52,7 +55,7 @@ void MessageLog::load()
 }
 
 // Adds a message to the output buffer.
-void MessageLog::msg(string message, MC colours)
+void msg(string message, MC colours)
 {
 	STACK_TRACE();
 
@@ -72,7 +75,7 @@ void MessageLog::msg(string message, MC colours)
 }
 
 // Processes input while in message-window mode.
-void MessageLog::process_input(unsigned int key)
+void process_input(unsigned int key)
 {
 	STACK_TRACE();
 
@@ -106,7 +109,7 @@ void MessageLog::process_input(unsigned int key)
 }
 
 // Processes the output buffer after an update or screen resize.
-void MessageLog::process_output_buffer()
+void process_output_buffer()
 {
 	STACK_TRACE();
 
@@ -131,7 +134,7 @@ void MessageLog::process_output_buffer()
 }
 
 // Clears the entire output buffer.
-void MessageLog::purge_buffer()
+void purge_buffer()
 {
 	STACK_TRACE();
 	output_raw.clear();
@@ -141,7 +144,7 @@ void MessageLog::purge_buffer()
 }
 
 // Renders the message window.
-void MessageLog::render()
+void render()
 {
 	STACK_TRACE();
 	iocore::rect(0, iocore::get_rows() - MESSAGE_LOG_SIZE, iocore::get_cols(), MESSAGE_LOG_SIZE, Colour::BLACK);
@@ -163,7 +166,7 @@ void MessageLog::render()
 }
 
 // Resets the output buffer position.
-void MessageLog::reset_buffer_pos()
+void reset_buffer_pos()
 {
 	STACK_TRACE();
 	buffer_pos = 0;
@@ -172,7 +175,7 @@ void MessageLog::reset_buffer_pos()
 }
 
 // Saves the output buffer to disk.
-void MessageLog::save()
+void save()
 {
 	STACK_TRACE();
 	try
@@ -190,3 +193,5 @@ void MessageLog::save()
 		guru::halt(e.what());
 	}
 }
+
+}	// namespace message

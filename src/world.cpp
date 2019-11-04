@@ -32,7 +32,6 @@ World::World(unsigned int new_slot, bool new_save) : recalc_lighting(true), redr
 		guru::halt(e.what());
 	}
 	the_hero = std::make_shared<Hero>();
-	msglog = std::make_shared<MessageLog>();
 }
 
 World::~World()
@@ -64,7 +63,7 @@ void World::load()
 	the_dungeon->load();
 	the_hero->load(0, 0);
 	the_hero->recenter_camera();
-	msglog->load();
+	message::load();
 }
 
 // The main game loop!
@@ -83,7 +82,7 @@ void World::main_loop()
 		{
 			iocore::cls();
 			the_dungeon->render();
-			msglog->render();
+			message::render();
 			redraw_full = false;
 		}
 		iocore::flip();
@@ -106,7 +105,7 @@ void World::main_loop()
 		else if (key == prefs::keybind(Keys::SOUTHEAST)) hero()->ai->travel(1, 1);
 		else if (key == prefs::keybind(Keys::SOUTHWEST)) hero()->ai->travel(-1, 1);
 		else if (key == prefs::keybind(Keys::SCROLL_TOP) || key == prefs::keybind(Keys::SCROLL_BOTTOM) || key == prefs::keybind(Keys::SCROLL_PAGEUP) || key == prefs::keybind(Keys::SCROLL_PAGEDOWN) || key == MOUSEWHEEL_UP_KEY
-				|| key == MOUSEWHEEL_DOWN_KEY || key == prefs::keybind(Keys::SCROLL_UP) || key == prefs::keybind(Keys::SCROLL_DOWN)) msglog->process_input(key);
+				|| key == MOUSEWHEEL_DOWN_KEY || key == prefs::keybind(Keys::SCROLL_UP) || key == prefs::keybind(Keys::SCROLL_DOWN)) message::process_input(key);
 		else if (key == prefs::keybind(Keys::OPTIONS_WINDOW))
 		{
 			prefs::prefs_window();
@@ -130,7 +129,7 @@ void World::new_game()
 	the_dungeon->generate();
 	the_dungeon->random_start_position(hero()->x, hero()->y);
 	the_hero->recenter_camera();
-	msglog->msg("It is very dark. You are likely to be eaten by a grue.");
+	message::msg("It is very dark. You are likely to be eaten by a grue.");
 	save(true);
 }
 
@@ -138,7 +137,7 @@ void World::new_game()
 void World::save(bool first_time)
 {
 	STACK_TRACE();
-	if (!first_time) msglog->msg("Saving game...", MC::INFO);
+	if (!first_time) message::msg("Saving game...", MC::INFO);
 	try
 	{
 		SQLite::Transaction transaction(*world()->save_db());
@@ -155,14 +154,14 @@ void World::save(bool first_time)
 
 		hero()->save(0, 0);
 		the_dungeon->save();
-		msglog->save();
+		message::save();
 		transaction.commit();
 	}
 	catch (std::exception &e)
 	{
 		guru::halt(e.what());
 	}
-	if (!first_time) msglog->amend(" done!");
+	if (!first_time) message::amend(" done!");
 }
 
 // Creates a new World in the specified save slot.
