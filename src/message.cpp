@@ -39,7 +39,7 @@ void load()
 	output_prc.clear();
 	try
 	{
-		SQLite::Statement query(*world()->save_db(), "SELECT line FROM msgbuffer");
+		SQLite::Statement query(*world::save_db(), "SELECT line FROM msgbuffer");
 		while (query.executeStep())
 		{
 			string line = query.getColumn("line").getString();
@@ -180,10 +180,10 @@ void save()
 	STACK_TRACE();
 	try
 	{
-		world()->save_db()->exec("DROP TABLE IF EXISTS msgbuffer; CREATE TABLE msgbuffer ( key INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, line TEXT )");
+		world::save_db()->exec("DROP TABLE IF EXISTS msgbuffer; CREATE TABLE msgbuffer ( key INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, line TEXT )");
 		for (unsigned int i = 0; i < output_raw.size(); i++)
 		{
-			SQLite::Statement query(*world()->save_db(), "INSERT INTO msgbuffer (line) VALUES (?)");
+			SQLite::Statement query(*world::save_db(), "INSERT INTO msgbuffer (line) VALUES (?)");
 			query.bind(1, output_raw.at(i));
 			query.exec();
 		}

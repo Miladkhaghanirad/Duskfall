@@ -34,7 +34,7 @@ void Hero::load(unsigned int actor_id, unsigned int dungeon_id)
 	actor_id = actor_id; dungeon_id = dungeon_id;	// These will always be 0, so this line is just to silence compiler warnings.
 	try
 	{
-		SQLite::Statement query(*world()->save_db(), "SELECT * FROM hero");
+		SQLite::Statement query(*world::save_db(), "SELECT * FROM hero");
 		while (query.executeStep())
 		{
 			difficulty = query.getColumn("difficulty").getUInt();
@@ -78,7 +78,7 @@ void Hero::save(unsigned int actor_id, unsigned int dungeon_id)
 	actor_id = actor_id; dungeon_id = dungeon_id;	// These will always be 0, so this line is just to silence compiler warnings.
 	try
 	{
-		SQLite::Statement query(*world()->save_db(), "INSERT INTO hero (difficulty,style,played) VALUES (?,?,?)");
+		SQLite::Statement query(*world::save_db(), "INSERT INTO hero (difficulty,style,played) VALUES (?,?,?)");
 		query.bind(1, difficulty);
 		query.bind(2, style);
 		query.bind(3, played);
@@ -90,7 +90,7 @@ void Hero::save(unsigned int actor_id, unsigned int dungeon_id)
 	}
 	Actor::save(0, 0);
 
-	std::ofstream tag_file("userdata/save/" + strx::itos(world()->slot()) + "/tag.dat");
+	std::ofstream tag_file("userdata/save/" + strx::itos(world::slot()) + "/tag.dat");
 	tag_file << name << std::endl;	// The character's name.
 
 	// The gameplay timer.

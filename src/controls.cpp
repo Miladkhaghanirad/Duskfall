@@ -15,15 +15,15 @@ bool Controls::travel(short x_dir, short y_dir)
 	STACK_TRACE();
 	if (AI::travel(x_dir, y_dir))
 	{
-		const int screen_x = world()->hero()->x + world()->hero()->camera_off_x;
-		const int screen_y = world()->hero()->y + world()->hero()->camera_off_y;
-		if (screen_x <= 5 || screen_x >= iocore::get_cols() - MESSAGE_LOG_SIZE - 5) world()->hero()->recenter_camera_horiz();
-		if (screen_y <= 5 || screen_y >= iocore::get_rows() - MESSAGE_LOG_SIZE - 5) world()->hero()->recenter_camera_vert();
+		const int screen_x = world::hero()->x + world::hero()->camera_off_x;
+		const int screen_y = world::hero()->y + world::hero()->camera_off_y;
+		if (screen_x <= 5 || screen_x >= iocore::get_cols() - MESSAGE_LOG_SIZE - 5) world::hero()->recenter_camera_horiz();
+		if (screen_y <= 5 || screen_y >= iocore::get_rows() - MESSAGE_LOG_SIZE - 5) world::hero()->recenter_camera_vert();
 		return true;
 	}
 	else
 	{
-		shared_ptr<Dungeon> dungeon = world()->dungeon();
+		shared_ptr<Dungeon> dungeon = world::dungeon();
 		for (auto actor : dungeon->actors)
 		{
 			if (actor->x == owner->x + x_dir && actor->y == owner->y + y_dir && actor->blocker())

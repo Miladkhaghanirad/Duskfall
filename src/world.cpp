@@ -18,31 +18,32 @@
 #include <set>
 
 
-shared_ptr<World>	the_world = nullptr;	// The main World object.
-
-World::World(unsigned int new_slot, bool new_save) : recalc_lighting(true), redraw_full(true), the_dungeon(nullptr), save_slot(new_slot), level(0)
+namespace world
 {
-	STACK_TRACE();
-	try
-	{
-		save_db_ptr = new SQLite::Database("userdata/save/" + strx::itos(save_slot) + "/save.dat", SQLite::OPEN_READWRITE | (new_save ? SQLite::OPEN_CREATE : 0));
-	}
-	catch(std::exception &e)
-	{
-		guru::halt(e.what());
-	}
-	the_hero = std::make_shared<Hero>();
+
+unsigned short		level = 0;				// The current dungeon level depth.
+bool				recalc_lighting = true;	// Recalculate the dynamic lighting at the start of the next turn.
+bool				redraw_full = true;		// Redraw the dungeon entirely at the start of the next turn.
+SQLite::Database	*save_db_ptr = nullptr;	// SQLite handle for the save game file.
+unsigned short		save_slot = 0;			// The save file slot.
+shared_ptr<Dungeon>	the_dungeon = nullptr;	// The current dungeon level.
+shared_ptr<Hero>	the_hero = nullptr;		// The main Hero object.
+
+
+// Returns a pointer to the Dungeon object.
+shared_ptr<Dungeon>	dungeon()
+{
+	return the_dungeon;
 }
 
-World::~World()
+// Returns a pointer to the Hero object.
+shared_ptr<Hero> hero()
 {
-	STACK_TRACE();
-	the_hero = nullptr;
-	if (save_db_ptr) delete save_db_ptr;
+	return the_hero;
 }
 
 // Loads the game from disk.
-void World::load()
+void load()
 {
 	STACK_TRACE();
 	try
@@ -66,8 +67,30 @@ void World::load()
 	message::load();
 }
 
+// Creates a new World in the specified save slot.
+void new_world(unsigned short slot, bool new_save)
+{
+	STACK_TRACE();
+	save_slot = slot;
+	try
+	{
+		save_db_ptr = new SQLite::Database("userdata/save/" + strx::itos(save_slot) + "/save.dat", SQLite::OPEN_READWRITE | (new_save ? SQLite::OPEN_CREATE : 0));
+	}
+	catch(std::exception &e)
+	{
+		guru::halt(e.what());
+	}
+	the_hero = std::make_shared<Hero>();
+}
+
+// Queues up a recalculation of the game's dynamic lighting.
+void queue_recalc_lighting()
+{
+	recalc_lighting = true;
+}
+
 // The main game loop!
-void World::main_loop()
+void main_loop()
 {
 	STACK_TRACE();
 	std::chrono::time_point<std::chrono::system_clock> game_clock = std::chrono::system_clock::now();
@@ -120,7 +143,7 @@ void World::main_loop()
 }
 
 // Sets up a new game.
-void World::new_game()
+void new_game()
 {
 	STACK_TRACE();
 	level = 1;
@@ -133,14 +156,20 @@ void World::new_game()
 	save(true);
 }
 
+// Queues up a full redraw of the game world.
+void queue_redraw()
+{
+	redraw_full = true;
+}
+
 // Saves the game to disk.
-void World::save(bool first_time)
+void save(bool first_time)
 {
 	STACK_TRACE();
 	if (!first_time) message::msg("Saving game...", MC::INFO);
 	try
 	{
-		SQLite::Transaction transaction(*world()->save_db());
+		SQLite::Transaction transaction(*save_db_ptr);
 		if (first_time)
 			save_db_ptr->exec("CREATE TABLE world ( id INTEGER PRIMARY KEY AUTOINCREMENT, level INTEGER NOT NULL ); "
 					"CREATE TABLE hero ( id INTEGER PRIMARY KEY AUTOINCREMENT, difficulty INTEGER NOT NULL, style INTEGER NOT NULL, played INTEGER NOT NULL );"
@@ -164,18 +193,16 @@ void World::save(bool first_time)
 	if (!first_time) message::amend(" done!");
 }
 
-// Creates a new World in the specified save slot.
-void new_world(unsigned short slot, bool new_save)
+// Returns a pointer to the save file handle.
+SQLite::Database* save_db()
 {
-	STACK_TRACE();
-	if (the_world) guru::halt("World object already exists!");
-	the_world = std::make_shared<World>(slot, new_save);
+	return save_db_ptr;
 }
 
-// Returns a pointer to the main World object, if one exists.
-shared_ptr<World> world()
+// Read-only access to the save slot currently in use.
+unsigned short slot()
 {
-	STACK_TRACE();
-	if (!the_world) guru::halt("No world object defined!");
-	return the_world;
+	return save_slot;
 }
+
+}	// namespace world

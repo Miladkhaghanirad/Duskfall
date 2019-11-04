@@ -11,7 +11,7 @@
 bool AI::travel(short x_dir, short y_dir)
 {
 	STACK_TRACE();
-	shared_ptr<Dungeon> dungeon = world()->dungeon();
+	shared_ptr<Dungeon> dungeon = world::dungeon();
 	shared_ptr<Tile> target_tile = dungeon->tile(owner->x + x_dir, owner->y + y_dir);
 	if (target_tile->impassible()) return false;
 	for (auto actor : dungeon->actors)
@@ -19,7 +19,7 @@ bool AI::travel(short x_dir, short y_dir)
 
 	owner->x += x_dir;
 	owner->y += y_dir;
-	world()->queue_redraw();
-	world()->queue_recalc_lighting();
+	world::queue_redraw();
+	world::queue_recalc_lighting();
 	return true;
 }

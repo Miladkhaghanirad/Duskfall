@@ -144,7 +144,7 @@ void choose_difficulty()
 		}
 		else if (iocore::is_select(key))
 		{
-			world()->hero()->difficulty = selected;
+			world::hero()->difficulty = selected;
 			return;
 		}
 		else if (key == LMB_KEY)
@@ -152,17 +152,17 @@ void choose_difficulty()
 			bool done = false;
 			if (iocore::did_mouse_click(midcol - 8, midrow - 2, 4, 4))
 			{
-				world()->hero()->difficulty = 0;
+				world::hero()->difficulty = 0;
 				done = true;
 			}
 			else if (iocore::did_mouse_click(midcol - 2, midrow - 2, 4, 4))
 			{
-				world()->hero()->difficulty = 1;
+				world::hero()->difficulty = 1;
 				done = true;
 			}
 			else if (iocore::did_mouse_click(midcol + 4, midrow - 2, 4, 4))
 			{
-				world()->hero()->difficulty = 2;
+				world::hero()->difficulty = 2;
 				done = true;
 			}
 			if (done) return;
@@ -211,7 +211,7 @@ void choose_name()
 		{
 			done = true;
 			name = strx::trim_excess_spaces(name);
-			if (name.size()) world()->hero()->name = name;
+			if (name.size()) world::hero()->name = name;
 			else
 			{
 				string new_name;
@@ -227,7 +227,7 @@ void choose_name()
 				iocore::alagard_print(new_name, pos, iocore::midrow() * 8, Colour::CGA_LCYAN);
 				iocore::flip();
 				iocore::sleep_for(1000);
-				world()->hero()->name = new_name;
+				world::hero()->name = new_name;
 			}
 		}
 	} while(!done);
@@ -296,7 +296,7 @@ void choose_style()
 		}
 		else if (iocore::is_select(key))
 		{
-			world()->hero()->style = chosen_style;
+			world::hero()->style = chosen_style;
 			return;
 		}
 		else if (key == LMB_KEY || key == RMB_KEY)
@@ -306,7 +306,7 @@ void choose_style()
 			{
 				if (key == LMB_KEY)
 				{
-					world()->hero()->style = 0;
+					world::hero()->style = 0;
 					return;
 				}
 				else redraw = true;
@@ -315,7 +315,7 @@ void choose_style()
 			{
 				if (key == LMB_KEY)
 				{
-					world()->hero()->style = 1;
+					world::hero()->style = 1;
 					return;
 				}
 				else redraw = true;
@@ -324,7 +324,7 @@ void choose_style()
 			{
 				if (key == LMB_KEY)
 				{
-					world()->hero()->style = 2;
+					world::hero()->style = 2;
 					return;
 				}
 			}
@@ -449,9 +449,9 @@ void load_game(int slot)
 	const string save_dir = "userdata/save/" + strx::itos(slot);
 	const string save_file = save_dir + "/" + "save.dat";
 
-	new_world(slot, false);
-	world()->load();
-	world()->main_loop();
+	world::new_world(slot, false);
+	world::load();
+	world::main_loop();
 }
 
 // Starts a new game!
@@ -471,7 +471,7 @@ bool new_game(int slot, bool start_over)
 	filex::make_dir(save_dir.c_str());
 
 	// Create the World object!
-	new_world(slot, true);
+	world::new_world(slot, true);
 
 	// Character creation.
 	choose_difficulty();
@@ -482,8 +482,8 @@ bool new_game(int slot, bool start_over)
 	delete[] heat; heat = nullptr;
 
 	// Start a new game and begin the loop!
-	world()->new_game();
-	world()->main_loop();
+	world::new_game();
+	world::main_loop();
 	return true;
 }
 

@@ -20,7 +20,7 @@ void Actor::load(unsigned int actor_id, unsigned int dungeon_id)
 	STACK_TRACE();
 	try
 	{
-		SQLite::Statement query(*world()->save_db(), "SELECT * FROM actors WHERE aid = ?  AND did = ?");
+		SQLite::Statement query(*world::save_db(), "SELECT * FROM actors WHERE aid = ?  AND did = ?");
 		query.bind(1, actor_id);
 		query.bind(2, dungeon_id);
 		while (query.executeStep())
@@ -45,7 +45,7 @@ void Actor::save(unsigned int actor_id, unsigned int dungeon_id)
 	STACK_TRACE();
 	try
 	{
-		SQLite::Statement query(*world()->save_db(), "INSERT INTO actors (aid,did,colour,name,flags,glyph,x,y) VALUES (?,?,?,?,?,?,?,?)");
+		SQLite::Statement query(*world::save_db(), "INSERT INTO actors (aid,did,colour,name,flags,glyph,x,y) VALUES (?,?,?,?,?,?,?,?)");
 		query.bind(1, actor_id);
 		query.bind(2, dungeon_id);
 		query.bind(3, static_cast<unsigned int>(colour));

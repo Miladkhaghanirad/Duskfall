@@ -389,7 +389,7 @@ void Dungeon::load()
 	STACK_TRACE();
 	try
 	{
-		SQLite::Statement query(*world()->save_db(), "SELECT * FROM dungeon WHERE level = ?");
+		SQLite::Statement query(*world::save_db(), "SELECT * FROM dungeon WHERE level = ?");
 		query.bind(1, level);
 		while (query.executeStep())
 		{
@@ -401,10 +401,10 @@ void Dungeon::load()
 			memcpy(tiles, blob, sizeof(Tile) * width * height);
 		}
 
-		const unsigned int actor_count = world()->save_db()->execAndGet("SELECT COUNT(*) FROM actors WHERE did = " + strx::itos(level));
+		const unsigned int actor_count = world::save_db()->execAndGet("SELECT COUNT(*) FROM actors WHERE did = " + strx::itos(level));
 		guru::log(strx::itos(actor_count));
 
-		SQLite::Statement actors_query(*world()->save_db(), "SELECT * FROM actors WHERE did = ?");
+		SQLite::Statement actors_query(*world::save_db(), "SELECT * FROM actors WHERE did = ?");
 		actors_query.bind(1, level);
 		actors.resize(actor_count);
 		while (actors_query.executeStep())
@@ -425,7 +425,7 @@ void Dungeon::load()
 // Largely adapted from Bresenham's Line Algorithm on RogueBasin.
 bool Dungeon::los_check(unsigned short x1, unsigned short y1)
 {
-	unsigned short x2 = world()->hero()->x, y2 = world()->hero()->y;
+	unsigned short x2 = world::hero()->x, y2 = world::hero()->y;
 
 	int delta_x(x2 - x1);
 	// if x1 == x2, then it does not matter what we set here
@@ -494,10 +494,10 @@ void Dungeon::map_view(bool see_lighting, bool see_all)
 		render(see_lighting, see_all);
 		iocore::flip();
 		const unsigned int key = iocore::wait_for_key();
-		if (key == prefs::keybind(Keys::NORTH) || key == prefs::keybind(Keys::NORTHEAST) || key == prefs::keybind(Keys::NORTHWEST)) world()->hero()->camera_off_y++;
-		else if (key == prefs::keybind(Keys::SOUTH) || key == prefs::keybind(Keys::SOUTHEAST) || key == prefs::keybind(Keys::SOUTHWEST)) world()->hero()->camera_off_y--;
-		if (key == prefs::keybind(Keys::EAST) || key == prefs::keybind(Keys::SOUTHEAST) || key == prefs::keybind(Keys::NORTHEAST)) world()->hero()->camera_off_x--;
-		else if (key == prefs::keybind(Keys::WEST) || key == prefs::keybind(Keys::SOUTHWEST) || key == prefs::keybind(Keys::NORTHWEST)) world()->hero()->camera_off_x++;
+		if (key == prefs::keybind(Keys::NORTH) || key == prefs::keybind(Keys::NORTHEAST) || key == prefs::keybind(Keys::NORTHWEST)) world::hero()->camera_off_y++;
+		else if (key == prefs::keybind(Keys::SOUTH) || key == prefs::keybind(Keys::SOUTHEAST) || key == prefs::keybind(Keys::SOUTHWEST)) world::hero()->camera_off_y--;
+		if (key == prefs::keybind(Keys::EAST) || key == prefs::keybind(Keys::SOUTHEAST) || key == prefs::keybind(Keys::NORTHEAST)) world::hero()->camera_off_x--;
+		else if (key == prefs::keybind(Keys::WEST) || key == prefs::keybind(Keys::SOUTHWEST) || key == prefs::keybind(Keys::NORTHWEST)) world::hero()->camera_off_x++;
 	}
 }
 
@@ -569,7 +569,7 @@ void Dungeon::recalc_lighting()
 {
 	STACK_TRACE();
 	memset(lighting, 0, sizeof(struct s_rgb) * width * height);
-	recalc_light_source(world()->hero()->x, world()->hero()->y, { 255, 255, 200 }, 100, true);
+	recalc_light_source(world::hero()->x, world::hero()->y, { 255, 255, 200 }, 100, true);
 }
 
 // Flood-fills a specified area with a new region ID.
@@ -597,14 +597,14 @@ void Dungeon::render(bool render_lighting, bool see_all)
 	iocore::cls();
 	for (unsigned int x = 0; x < width; x++)
 	{
-		int screen_x = static_cast<signed int>(x) + world()->hero()->camera_off_x;
+		int screen_x = static_cast<signed int>(x) + world::hero()->camera_off_x;
 		if (screen_x < 0 || screen_x >= iocore::get_cols()) continue;
 		for (unsigned int y = 0; y < height; y++)
 		{
-			int screen_y = static_cast<signed int>(y) + world()->hero()->camera_off_y;
+			int screen_y = static_cast<signed int>(y) + world::hero()->camera_off_y;
 			if (screen_y < 0 || screen_y >= iocore::get_rows() - MESSAGE_LOG_SIZE) continue;
 
-			if (x == world()->hero()->x && y == world()->hero()->y) iocore::print_at('@', screen_x, screen_y, Colour::WHITE);
+			if (x == world::hero()->x && y == world::hero()->y) iocore::print_at('@', screen_x, screen_y, Colour::WHITE);
 			else
 			{
 				Tile &here = tiles[x + y * width];
@@ -651,18 +651,18 @@ void Dungeon::save()
 	STACK_TRACE();
 	try
 	{
-		world()->save_db()->exec("CREATE TABLE IF NOT EXISTS dungeon ( level INTEGER PRIMARY KEY UNIQUE NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, tiles BLOB NOT NULL );");
-		SQLite::Statement delete_level(*world()->save_db(), "DELETE FROM dungeon WHERE level = ?");
+		world::save_db()->exec("CREATE TABLE IF NOT EXISTS dungeon ( level INTEGER PRIMARY KEY UNIQUE NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, tiles BLOB NOT NULL );");
+		SQLite::Statement delete_level(*world::save_db(), "DELETE FROM dungeon WHERE level = ?");
 		delete_level.bind(1, level);
 		delete_level.exec();
-		SQLite::Statement sql(*world()->save_db(), "INSERT INTO dungeon (level,width,height,tiles) VALUES (?,?,?,?)");
+		SQLite::Statement sql(*world::save_db(), "INSERT INTO dungeon (level,width,height,tiles) VALUES (?,?,?,?)");
 		sql.bind(1, level);
 		sql.bind(2, width);
 		sql.bind(3, height);
 		sql.bind(4, (void*)tiles, sizeof(Tile) * width * height);
 		sql.exec();
 
-		SQLite::Statement actors_sql(*world()->save_db(), "DELETE FROM actors WHERE did = ?");
+		SQLite::Statement actors_sql(*world::save_db(), "DELETE FROM actors WHERE did = ?");
 		actors_sql.bind(1, level);
 		actors_sql.exec();
 		for (unsigned int a = 0; a < actors.size(); a++)
