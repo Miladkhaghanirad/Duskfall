@@ -71,6 +71,12 @@
 							<outputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.outputtype.737358248" name="Resource Custom Build Step Output Type" outputNames="app-icon.o"/>
 						</tool>
 					</fileInfo>
+					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.1819485483" name="mathx.cpp" rcbsApplicability="disable" resourcePath="src/mathx.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.1912887114.1822806053">
+						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.1912887114.1822806053" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.1912887114">
+							<option id="gnu.cpp.compiler.option.other.other.909456211" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -fmessage-length=0 -Wno-unused-but-set-parameter" valueType="string"/>
+							<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.852622170" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+						</tool>
+					</fileInfo>
 					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.671862854" name="LICENSE" rcbsApplicability="disable" resourcePath="LICENSE" toolsToInvoke=""/>
 					<sourceEntries>
 						<entry excluding="LICENSE" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>

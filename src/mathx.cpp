@@ -24,8 +24,6 @@ bool check_flag(unsigned int flags, unsigned int flag_to_check)
 	return ((flags & flag_to_check) == flag_to_check);
 }
 
-std::chrono::time_point<std::chrono::system_clock> dev_timer;	// Timer used for testing.
-
 // Starts a timer for debugging/testing purposes.
 void dev_timer_start()
 {
