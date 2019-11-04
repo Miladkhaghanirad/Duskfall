@@ -18,7 +18,7 @@ public:
 	bool			is_boolean;		// Is this prefs option a boolean?
 	bool			is_slider;		// Is  this prefs option a menu slider?
 	bool			must_restart;	// Do we have to restart to change this option?
-	bool			experimental;	// Is this an experimental option?
+	bool			cpu_heavy;		// Is this an CPU-heavy option?
 	unsigned char	slider_size;	// The size of a menu slider, if any.
 	vector<string>	options_str;	// Vector of strings for the selectable options.
 	unsigned int	y_pos;			// The vertical position on the screen where this entry will be rendered.
@@ -44,23 +44,24 @@ private:
 
 	vector<PrefsEntry>	entries;	// The prefs entries in this list.
 	int		y_pos;				// The vertical position of the prefs entries.
-	bool	has_experimental;	// Do we have any experimental options?
+	bool	has_cpu_heavy	;	// Do we have any CPU-heavy options?
 	bool	has_must_restart;	// Do we have an option that requires a restart?
 };
 
 namespace prefs
 {
 
-extern short			screen_x, screen_y;	// The starting screen X,Y size.
+extern bool				death_reports;		// Generate death report text files?
 extern bool				fullscreen;			// Fullscreen mode.
+extern bool				glitch_warn;		// Have we shown the user the glitch warning screen?
+extern bool				message_log_dim;	// Dim the colours in the message log?
+extern bool				ntsc_filter;		// Whether or not the NTSC filter is enabled.
 extern unsigned char	ntsc_mode;			// NTSC post-processing level.
-extern unsigned char	screenshot_type;	// The type of screenshots to take (BMP/UPNG/CPNG)
-extern unsigned char	visual_glitches;	// Visual glitches enabled/disabled.
 extern unsigned char	palette;			// Which colour palette to use?
 extern unsigned char	scale_mod;			// Experimental surface scaling.
-extern bool				glitch_warn;		// Have we shown the user the glitch warning screen?
-extern bool				death_reports;		// Generate death report text files?
-extern bool				message_log_dim;	// Dim the colours in the message log?
+extern short			screen_x, screen_y;	// The starting screen X,Y size.
+extern unsigned char	screenshot_type;	// The type of screenshots to take (BMP/UPNG/CPNG)
+extern unsigned char	visual_glitches;	// Visual glitches enabled/disabled.
 
 void	init();	// Loads and configures the user's preferences.
 void	save(SQLite::Database *prefs_db = nullptr);	// Saves the updated preferences file.
