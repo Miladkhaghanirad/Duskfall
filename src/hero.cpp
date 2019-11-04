@@ -18,6 +18,7 @@ Hero::Hero() : camera_off_x(0), camera_off_y(0), difficulty(1), played(0), style
 {
 	STACK_TRACE();
 	ai = new Controls(this);
+	glyph = '@';
 }
 
 Hero::~Hero()
@@ -27,9 +28,10 @@ Hero::~Hero()
 }
 
 // Loads the Hero's data from disk.
-void Hero::load()
+void Hero::load(unsigned int actor_id, unsigned int dungeon_id)
 {
 	STACK_TRACE();
+	actor_id = actor_id; dungeon_id = dungeon_id;	// These will always be 0, so this line is just to silence compiler warnings.
 	try
 	{
 		SQLite::Statement query(*world()->save_db(), "SELECT * FROM hero");
@@ -37,11 +39,9 @@ void Hero::load()
 		{
 			difficulty = query.getColumn("difficulty").getUInt();
 			style = query.getColumn("style").getUInt();
-			name = query.getColumn("name").getString();
-			x = query.getColumn("x").getUInt();
-			y = query.getColumn("y").getUInt();
 			played = query.getColumn("played").getUInt();
 		}
+		Actor::load(0, 0);
 	}
 	catch(std::exception &e)
 	{
@@ -72,29 +72,26 @@ void Hero::recenter_camera_vert()
 }
 
 // Saves the Hero's data to disk, along with the rest of the game world.
-void Hero::save()
+void Hero::save(unsigned int actor_id, unsigned int dungeon_id)
 {
 	STACK_TRACE();
+	actor_id = actor_id; dungeon_id = dungeon_id;	// These will always be 0, so this line is just to silence compiler warnings.
 	try
 	{
-		world()->save_db()->exec("DROP TABLE IF EXISTS hero; CREATE TABLE hero ( id INTEGER PRIMARY KEY AUTOINCREMENT, difficulty INTEGER NOT NULL, style INTEGER NOT NULL, name TEXT NOT NULL, x INTEGER NOT NULL, "
-				"y INTEGER NOT NULL, played INTEGER NOT NULL )");
-		SQLite::Statement query(*world()->save_db(), "INSERT INTO hero (difficulty,style,name,x,y,played) VALUES (?,?,?,?,?,?)");
+		SQLite::Statement query(*world()->save_db(), "INSERT INTO hero (difficulty,style,played) VALUES (?,?,?)");
 		query.bind(1, difficulty);
 		query.bind(2, style);
-		query.bind(3, name);
-		query.bind(4, x);
-		query.bind(5, y);
-		query.bind(6, played);
+		query.bind(3, played);
 		query.exec();
 	}
 	catch(std::exception &e)
 	{
 		guru::halt(e.what());
 	}
+	Actor::save(0, 0);
 
 	std::ofstream tag_file("userdata/save/" + strx::itos(world()->slot()) + "/tag.dat");
-	tag_file << name << std::endl;			// The character's name.
+	tag_file << name << std::endl;	// The character's name.
 
 	// The gameplay timer.
 	unsigned int hours = 0, minutes = 0, seconds = played;

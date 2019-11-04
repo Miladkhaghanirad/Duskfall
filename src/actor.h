@@ -5,6 +5,9 @@
 #include "duskfall.h"
 
 class AI;	// defined in ai.h
+enum class Colour : unsigned char;	// defined in iocore.h
+
+#define ACTOR_FLAG_BLOCKER	(1 << 0)	// Does this Actor block movement?
 
 
 class Actor
@@ -12,9 +15,14 @@ class Actor
 public:
 					Actor();
 	virtual			~Actor();
-	virtual void	load() = 0;	// All Actors should be able to load themselves from disk.
-	virtual void	save() = 0;	// All Actors should be able to save themselves to disk.
+	bool			blocker() { return (flags & ACTOR_FLAG_BLOCKER) == ACTOR_FLAG_BLOCKER; }
+	virtual void	load(unsigned int actor_id, unsigned int dungeon_id);		// Loads this Actor's data from disk.
+	virtual void	save(unsigned int actor_id, unsigned int dungeon_id);		// Saves this Actor's data to disk.
 
 	AI*				ai;	// If this Actor has AI, this is where its 'brain' is.
+	Colour			colour;	// The colour of this Actor's glyph.
+	string			name;	// The Actor's name.
+	unsigned char	flags;	// The Actor's individual flags.
+	unsigned short	glyph;	// The glyph to represent this Actor in the world.
 	unsigned short	x, y;	// X,Y coordinates on the current dungeon level.
 };

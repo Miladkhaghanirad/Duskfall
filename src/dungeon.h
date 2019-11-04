@@ -5,6 +5,7 @@
 #include "duskfall.h"
 #include <set>
 
+class Actor;	// defined in actor.h
 enum class Colour : unsigned char;	// defined in iocore.h
 
 #define TILE_FLAG_IMPASSIBLE	(1 << 0)
@@ -55,12 +56,14 @@ private:
 	Tile			*tiles;			// An array of Tiles which make up this area.
 	s_rgb			*lighting;		// An array of 8-bit integers defining the light level or visibility of tiles.
 	unsigned int	*region;		// The region the current tile belongs to.
+	vector<shared_ptr<Actor>>	actors;	// The Actors stored in this dungeon level.
 	std::set<std::pair<unsigned short, unsigned short>> dynamic_light_temp, dynamic_light_temp_walls;	// Temporary data used by the dynamic lighting system.
 
 	void	carve_room(unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned int new_region);	// Carves out a square room.
 	void	cast_light(unsigned int x, unsigned int y, unsigned int radius, unsigned int row, float start_slope, float end_slope, unsigned int xx, unsigned int xy, unsigned int yx, unsigned int yy,  bool always_visible);
 	s_rgb	diminish_light(s_rgb colour, float distance, float falloff);	// Dims a specified RGB colour.
 	void	explore(unsigned short x, unsigned short y);					// Marks a given tile as explored.
+	bool	find_empty_tile(unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned short &rx, unsigned short &ry);	// Attempts to find an empty tile within the specified space.
 	bool	is_dead_end(unsigned short x, unsigned short y);				// Check to see if this tile is a dead-end.
 	s_rgb	light_surface(s_rgb surface_colour, s_rgb light_colour);		// Applies a light source to a surface, affecting its colour.
 	void	light_tile(unsigned short x, unsigned short y, s_rgb colour);	// Applies light to a specified tile.
