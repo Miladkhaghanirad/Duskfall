@@ -5,6 +5,7 @@
 #include "duskfall.h"
 #include "guru.h"
 #include "iocore.h"
+#include "mathx.h"
 #include "prefs.h"
 #include "static-data.h"
 #include "title.h"
@@ -17,6 +18,7 @@ int main(int argc, char* argv[])
 	vector<string> parameters(argv, argv + argc);
 
 	guru::open_syslog();
+	mathx::init();
 	prefs::init();
 	iocore::init();
 	static_data();
