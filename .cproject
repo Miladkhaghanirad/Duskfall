@@ -48,10 +48,14 @@
 									<listOptionValue builtIn="false" value="../lib"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.libs.663160154" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
-									<listOptionValue builtIn="false" value="BearLibTerminal.dll"/>
+									<listOptionValue builtIn="false" value="mingw32"/>
 									<listOptionValue builtIn="false" value="sqlite3.dll"/>
+									<listOptionValue builtIn="false" value="jpeg"/>
+									<listOptionValue builtIn="false" value="SDL2main"/>
+									<listOptionValue builtIn="false" value="SDL2.dll"/>
+									<listOptionValue builtIn="false" value="SDL2_image.dll"/>
 								</option>
-								<option id="gnu.cpp.link.option.flags.770952122" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-mwindows -static-libgcc -static-libstdc++ -static" valueType="string"/>
+								<option id="gnu.cpp.link.option.flags.770952122" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-mwindows" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.400149052" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -59,9 +63,6 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.670919062" name="CODE_OF_CONDUCT.md" rcbsApplicability="disable" resourcePath="CODE_OF_CONDUCT.md" toolsToInvoke=""/>
-					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.987051924" name="merge.sh" rcbsApplicability="disable" resourcePath="merge.sh" toolsToInvoke=""/>
-					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.370498965" name="CONTRIBUTING.md" rcbsApplicability="disable" resourcePath="CONTRIBUTING.md" toolsToInvoke=""/>
 					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.437169471" name="app-icon.rc" rcbsApplicability="override" resourcePath="src/app-icon.rc" toolsToInvoke="org.eclipse.cdt.managedbuilder.ui.rcbs.948367750">
 						<tool announcement="Invoking: Resource Custom Build Step" command="windres ../src/app-icon.rc -o src/app-icon.o" customBuildStep="true" id="org.eclipse.cdt.managedbuilder.ui.rcbs.948367750" name="Resource Custom Build Step">
 							<inputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.inputtype.327612269" name="Resource Custom Build Step Input Type">
@@ -70,17 +71,15 @@
 							<outputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.outputtype.737358248" name="Resource Custom Build Step Output Type" outputNames="app-icon.o"/>
 						</tool>
 					</fileInfo>
-					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.864044851" name="mathx.cpp" rcbsApplicability="disable" resourcePath="src/mathx.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.1912887114.821635122">
-						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.1912887114.821635122" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.1912887114">
-							<option id="gnu.cpp.compiler.option.other.other.1568625180" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -fmessage-length=0 -Wno-unused-but-set-parameter" valueType="string"/>
-							<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.2106467155" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.1819485483" name="mathx.cpp" rcbsApplicability="disable" resourcePath="src/mathx.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.1912887114.1822806053">
+						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.1912887114.1822806053" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.1912887114">
+							<option id="gnu.cpp.compiler.option.other.other.909456211" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -fmessage-length=0 -Wno-unused-but-set-parameter" valueType="string"/>
+							<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.852622170" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 						</tool>
 					</fileInfo>
-					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.1339278714" name="Makefile" rcbsApplicability="disable" resourcePath="Makefile" toolsToInvoke=""/>
 					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.671862854" name="LICENSE" rcbsApplicability="disable" resourcePath="LICENSE" toolsToInvoke=""/>
-					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.1597084340" name="README.md" rcbsApplicability="disable" resourcePath="README.md" toolsToInvoke=""/>
 					<sourceEntries>
-						<entry excluding="docs|CODE_OF_CONDUCT.md|CONTRIBUTING.md|Makefile|merge.sh|README.md|win64|LICENSE" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="LICENSE" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

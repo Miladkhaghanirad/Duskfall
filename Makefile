@@ -32,7 +32,7 @@ PROGRAM                = duskfall
 EXTRA_CFLAGS           = -O3
 
 # The extra linker options, e.g. "-lmysqlclient -lz"
-EXTRA_LDFLAGS          = -lBearLibTerminal.dll -lsqlite3.dll
+EXTRA_LDFLAGS          = -lsqlite3.dll -ljpeg -lmingw32 -lSDL2main -lSDL2.dll -lSDL2_image.dll
 
 # Specify the include dirs, e.g. "-I/usr/include/mysql -I./include -I/usr/include -I/usr/local/include".
 INCLUDE                = -Isrc
@@ -41,11 +41,11 @@ INCLUDE                = -Isrc
 CPPFLAGS               = -Wall -Wextra -std=c++1y
 
 # The options used in linking as well as in any direct use of ld. 
-LDFLAGS                = -s -Llib -static-libgcc -static-libstdc++ -static
+LDFLAGS                = -s -Llib
 
 # The directories in which source files reside.
 # If not specified, all subdirectories of the current directory will be added recursively. 
-SRCDIRS               := src src/jsoncpp src/pcg src/SQLiteCpp
+SRCDIRS               := src src/jsoncpp src/lodepng src/pcg src/sdl_savejpeg src/snes_ntsc src/SQLiteCpp
 
 # OS specific. 
 EXTRA_CFLAGS_MACOS     = 

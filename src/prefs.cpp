@@ -21,31 +21,38 @@ namespace prefs
 #define FILENAME_PREFS	"userdata/prefs.dat"
 #define PREFS_KEYBINDS	23
 
-#define KEYMOD_SHIFT		1000
-#define KEYMOD_CTRL			10000
-#define KEYMOD_ALT			100000
-#define KEYMOD_SHIFT_CTRL	(KEYMOD_SHIFT + KEYMOD_CTRL)
-#define KEYMOD_SHIFT_ALT	(KEYMOD_SHIFT + KEYMOD_ALT)
-#define KEYMOD_CTRL_ALT		(KEYMOD_CTRL + KEYMOD_ALT)
+// Shift			letter
+// Ctrl				letter - 64
+// Alt				131104 + letter
+// Shift-Ctrl		65504 + letter
+// Shift-Alt		131072 + letter
+// Ctrl-Alt			32768 + letter
+// Shift-Ctrl-Alt	32768 + letter
+#define KEYMOD_CTRL			-64
+#define KEYMOD_ALT			131104
+#define KEYMOD_SHIFT_CTRL	65536
+#define KEYMOD_SHIFT_ALT	131072
+#define KEYMOD_CTRL_ALT		32768
 
 #define KEY_EAST_DEFAULT			'd'
-#define KEY_MENU_CANCEL_DEFAULT		KEY_ESCAPE
-#define KEY_MENU_OK_DEFAULT			KEY_ENTER
+#define KEY_MENU_CANCEL_DEFAULT		SDLK_ESCAPE
+#define KEY_MENU_OK_DEFAULT			SDLK_RETURN
 #define KEY_MENU_OK_2_DEFAULT		' '
 #define KEY_NORTH_DEFAULT			'w'
 #define KEY_NORTHEAST_DEFAULT		'e'
 #define KEY_NORTHWEST_DEFAULT		'q'
-#define KEY_OPTIONS_WINDOW_DEFAULT	(KEYMOD_SHIFT_CTRL + 'o')
-#define KEY_QUIT_GAME_DEFAULT		(KEYMOD_SHIFT_CTRL + 'x')
-#define KEY_SAVE_DEFAULT			(KEYMOD_CTRL + 's')
-#define KEY_SCROLL_BOTTOM_DEFAULT	KEY_END
-#define KEY_SCROLL_DOWN_DEFAULT		KEY_DOWN
-#define KEY_SCROLL_LEFT_DEFAULT		KEY_LEFT
-#define KEY_SCROLL_PAGEDOWN_DEFAULT	KEY_PAGEDOWN
-#define KEY_SCROLL_PAGEUP_DEFAULT	KEY_PAGEUP
-#define KEY_SCROLL_RIGHT_DEFAULT	KEY_RIGHT
-#define KEY_SCROLL_TOP_DEFAULT		KEY_HOME
-#define KEY_SCROLL_UP_DEFAULT		KEY_UP
+#define KEY_OPTIONS_WINDOW_DEFAULT	(KEYMOD_SHIFT_CTRL + 'O')
+#define KEY_QUIT_GAME_DEFAULT		(KEYMOD_SHIFT_CTRL + 'X')
+#define KEY_SAVE_DEFAULT			(KEYMOD_CTRL + 'S')
+#define KEY_SCREENSHOT_DEFAULT		SDLK_PRINTSCREEN
+#define KEY_SCROLL_BOTTOM_DEFAULT	SDLK_END
+#define KEY_SCROLL_DOWN_DEFAULT		SDLK_DOWN
+#define KEY_SCROLL_LEFT_DEFAULT		SDLK_LEFT
+#define KEY_SCROLL_PAGEDOWN_DEFAULT	SDLK_PAGEDOWN
+#define KEY_SCROLL_PAGEUP_DEFAULT	SDLK_PAGEUP
+#define KEY_SCROLL_RIGHT_DEFAULT	SDLK_RIGHT
+#define KEY_SCROLL_TOP_DEFAULT		SDLK_HOME
+#define KEY_SCROLL_UP_DEFAULT		SDLK_UP
 #define KEY_SOUTH_DEFAULT			's'
 #define KEY_SOUTHEAST_DEFAULT		'c'
 #define KEY_SOUTHWEST_DEFAULT		'z'
@@ -54,11 +61,15 @@ namespace prefs
 #define DEATH_REPORTS_DEFAULT		true	// Generate death report text files?
 #define FULLSCREEN_DEFAULT			false	// Run the game in full-screen mode?
 #define MESSAGE_LOG_DIM_DEFAULT		true	// Dim the colours in the message log?
+#define NTSC_MODE_DEFAULT			2		// Different post-processing modes (0 is least, 2 is most)
 #define PALETTE_DEFAULT				0		// Which colour palette to use?
+#define SCALE_MOD_DEFAULT			0		// Experimental surface scaling.
 #define SCREEN_X_DEFAULT			1024	// Horizontal screen resolution (minimum: 1024)
 #define SCREEN_Y_DEFAULT			600		// Vertical screen resolution (minimum: 600)
+#define SCREENSHOT_TYPE_DEFAULT		2		// The format of screenshots (0 = BMP, 1 = PNG, 2 = JPEG)
+#define VISUAL_GLITCHES_DEFAULT		0		// Do we want visual glitches?
 
-enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_PALETTE, ID_DEATH_REPORT, ID_MESSAGE_LOG_DIM };
+enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_PALETTE, ID_GLITCHES, ID_SS_FORMAT, ID_TEX_SCALING, ID_DEATH_REPORT, ID_MESSAGE_LOG_DIM };
 
 }	// namespace prefs
 
@@ -101,9 +112,9 @@ void Prefs::render()
 	STACK_TRACE();
 	const int midcol = iocore::midcol(), midrow = iocore::midrow();
 	iocore::cls();
-	iocore::box(midcol - 27, midrow - 18, 55, 37, UI_COLOUR_BOX);
-	const int name_pos = iocore::midcol() - ((name.size() * 3) / 2);
-	iocore::alagard_print(name, name_pos, midrow - 16, Colour::CGA_WHITE);
+	iocore::box(midcol - 27, midrow - 18, 55, 38, UI_COLOUR_BOX);
+	const int name_pos = (iocore::get_cols() * 4) - (name.size() * 12);
+	iocore::alagard_print(name, name_pos, (midrow - 16) * 8, Colour::CGA_WHITE);
 
 	for (unsigned int i = 0; i < entries.size(); i++)
 	{
@@ -122,8 +133,8 @@ void Prefs::render()
 		if (i == selected) line_str = "{5F}[" + line_str + ": {5B}"; else line_str = "{57} " + line_str + ": {53}";
 		if (entry.is_boolean)
 		{
-			if (entry.selected) line_str += "+";
-			else line_str += "-";
+			if (entry.selected) line_str += "^326^";
+			else line_str += "X";
 		}
 		else if (entry.is_slider)
 		{
@@ -138,15 +149,15 @@ void Prefs::render()
 		const unsigned int x_pos = midcol - (strx::ansi_strlen(line_str) / 2);
 		iocore::ansi_print(line_str, x_pos, midrow + entry.y_pos);
 	}
-	string back_str = " ^028^ Back" ;
-	if (selected == entries.size()) back_str = "[^028^ Back]";
+	string back_str = " ^325^ Back" ;
+	if (selected == entries.size()) back_str = "[^325^ Back]";
 	iocore::print(back_str, midcol - 4, midrow + entries.at(entries.size() -1).y_pos + 2, (selected == entries.size() ? Colour::CGA_WHITE : Colour::CGA_LGRAY));
-	if (has_must_restart) iocore::ansi_print("{54}^015^{58} Must restart for change to take effect.", midcol - 20, midrow + 17);
-	if (has_experimental) iocore::ansi_print("{55}^019^{58} Experimental option - use with caution!", midcol - 20, midrow + 16);
+	if (has_must_restart) iocore::ansi_print("{54}^015^{58} Must restart for change to take effect.", midcol - 20, midrow + 18);
+	if (has_experimental) iocore::ansi_print("{55}^019^{58} Experimental option - use with caution!", midcol - 20, midrow + 17);
 	if (selected < entries.size())
 	{
-		if (entries.at(selected).must_restart) iocore::ansi_print("{5C}^015^{5F} Must restart for change to take effect.", midcol - 20, midrow + 17);
-		if (entries.at(selected).experimental) iocore::ansi_print("{5D}^019^{5F} Experimental option - use with caution!", midcol - 20, midrow + 16);
+		if (entries.at(selected).must_restart) iocore::ansi_print("{5C}^015^{5F} Must restart for change to take effect.", midcol - 20, midrow + 18);
+		if (entries.at(selected).experimental) iocore::ansi_print("{5D}^019^{5F} Experimental option - use with caution!", midcol - 20, midrow + 17);
 	}
 	iocore::flip();
 
@@ -205,10 +216,10 @@ namespace prefs
 unsigned int	keybinds[PREFS_KEYBINDS];	// Keybind definitions.
 
 uint32_t key_defaults[PREFS_KEYBINDS] = { KEY_NORTH_DEFAULT, KEY_SOUTH_DEFAULT, KEY_EAST_DEFAULT, KEY_WEST_DEFAULT, KEY_NORTHEAST_DEFAULT, KEY_NORTHWEST_DEFAULT, KEY_SOUTHEAST_DEFAULT, KEY_SOUTHWEST_DEFAULT, KEY_QUIT_GAME_DEFAULT,
-		KEY_OPTIONS_WINDOW_DEFAULT, KEY_MENU_OK_DEFAULT, KEY_MENU_OK_2_DEFAULT, KEY_MENU_CANCEL_DEFAULT, KEY_SAVE_DEFAULT, KEY_SCROLL_TOP_DEFAULT, KEY_SCROLL_BOTTOM_DEFAULT, KEY_SCROLL_PAGEUP_DEFAULT,
+		KEY_OPTIONS_WINDOW_DEFAULT, KEY_MENU_OK_DEFAULT, KEY_MENU_OK_2_DEFAULT, KEY_MENU_CANCEL_DEFAULT, KEY_SCREENSHOT_DEFAULT, KEY_SAVE_DEFAULT, KEY_SCROLL_TOP_DEFAULT, KEY_SCROLL_BOTTOM_DEFAULT, KEY_SCROLL_PAGEUP_DEFAULT,
 		KEY_SCROLL_PAGEDOWN_DEFAULT, KEY_SCROLL_UP_DEFAULT, KEY_SCROLL_DOWN_DEFAULT, KEY_SCROLL_LEFT_DEFAULT, KEY_SCROLL_RIGHT_DEFAULT };
 const string key_names[PREFS_KEYBINDS] = { "key_north", "key_south", "key_east", "key_west", "key_northeast", "key_northwest", "key_southeast", "key_southwest", "key_quit_game", "key_options_window", "key_menu_ok", "key_menu_ok_2",
-		"key_menu_cancel", "key_save", "key_scroll_top", "key_scroll_bottom", "key_scroll_pageup", "key_scroll_pagedown", "key_scroll_up", "key_scroll_down", "key_scroll_left", "key_scroll_right" };
+		"key_menu_cancel", "key_screenshot", "key_save", "key_scroll_top", "key_scroll_bottom", "key_scroll_pageup", "key_scroll_pagedown", "key_scroll_up", "key_scroll_down", "key_scroll_left", "key_scroll_right" };
 
 // Used by the keybinds window.
 vector<string>			key_longname;
@@ -217,7 +228,15 @@ vector<unsigned int>	key_current;
 
 short			screen_x = SCREEN_X_DEFAULT, screen_y = SCREEN_Y_DEFAULT;	// The starting screen X,Y size.
 bool			fullscreen = FULLSCREEN_DEFAULT;	// Fullscreen mode.
+unsigned char	ntsc_mode = NTSC_MODE_DEFAULT;	// NTSC post-processing level.
+unsigned char	screenshot_type = SCREENSHOT_TYPE_DEFAULT;	// The type of screenshots to take (BMP/UPNG/CPNG)
+unsigned char	visual_glitches = VISUAL_GLITCHES_DEFAULT;	// Visual glitches enabled/disabled.
+bool			no_audio_fox = false;	// Does the audio data file exist?
+bool			no_music_fox = false;	// Does the music data file exist?
+unsigned char	joy_type_detected = 0;	// The type of game controller or joystick auto-detected.
 unsigned char	palette = PALETTE_DEFAULT;	// Which colour palette to use?
+unsigned char	scale_mod = SCALE_MOD_DEFAULT;		// Experimental surface scaling.
+bool			glitch_warn = false;	// Have we shown the user the glitch warning screen?
 bool			death_reports = DEATH_REPORTS_DEFAULT;	// Generate death report text files?
 bool			message_log_dim = MESSAGE_LOG_DIM_DEFAULT;	// Dim the colours in the message log?
 
@@ -262,7 +281,12 @@ void init()
 				if (id == "screen_x") screen_x = value;
 				else if (id == "screen_y") screen_y = value;
 				else if (id == "fullscreen") fullscreen = value;
+				else if (id == "ntsc_mode") ntsc_mode = value;
+				else if (id == "screenshot_type") screenshot_type = value;
+				else if (id == "visual_glitches") visual_glitches = value;
 				else if (id == "palette") palette = value;
+				else if (id == "scale_mod") scale_mod = value;
+				else if (id == "glitch_warn") glitch_warn = value;
 				else if (id == "death_reports") death_reports = value;
 				else if (id == "message_log_dim") message_log_dim = value;
 				else guru::log("Unknown preference found in prefs.dat: " + id, GURU_WARN);
@@ -318,7 +342,7 @@ void keybinds_window()
 
 	while(true)
 	{
-		iocore::box(midcol - 27, midrow - 18, 55, 37, UI_COLOUR_BOX);
+		iocore::box(midcol - 27, midrow - 18, 55, 38, UI_COLOUR_BOX);
 		iocore::box(midcol - 26, midrow - 17, 53, 4, Colour::CGA_LCYAN);
 		iocore::print("ArrowKeys: Select Key - Enter: Remap Key", midcol - 20, midrow - 16, Colour::CGA_WHITE);
 		iocore::print("Escape: Clear Key - D: Revert to Default", midcol - 20, midrow - 15, Colour::CGA_WHITE);
@@ -328,7 +352,7 @@ void keybinds_window()
 		{
 			const int pos_y = midrow - 12 + i + offset;
 			if (pos_y < midrow - 12) continue;
-			if (pos_y > midrow + 15) break;
+			if (pos_y > midrow + 16) break;
 
 			if (key_id.at(i) == UINT_MAX)
 			{
@@ -360,9 +384,9 @@ void keybinds_window()
 		}
 
 		if (selected == key_id.size()) line_str = "{5F}["; else line_str = "{5F} ";
-		line_str += "^028^ Back";
+		line_str += "^325^ Back";
 		if (selected == key_id.size()) line_str += "{5F}]"; else line_str += " ";
-		iocore::ansi_print(line_str, midcol - (strx::ansi_strlen(line_str) / 2), midrow + 17);
+		iocore::ansi_print(line_str, midcol - (strx::ansi_strlen(line_str) / 2), midrow + 18);
 
 		iocore::flip();
 		unsigned int key = iocore::wait_for_key();
@@ -386,7 +410,7 @@ void keybinds_window()
 				prefs::default_keybind(static_cast<Keys>(key_id.at(selected)));
 				update_key = true;
 			}
-			else if (key == KEY_ESCAPE && selected < key_longname.size())
+			else if (key == SDLK_ESCAPE && selected < key_longname.size())
 			{
 				prefs::set_keybind(static_cast<Keys>(key_id.at(selected)), 0);
 				update_key = true;
@@ -458,14 +482,14 @@ void prefs_window()
 	bool done = false;
 	while(!done)
 	{
-		const int midcol = iocore::midcol(), midrow = iocore::midrow();
+		const int midcol = iocore::midcol(), midrow = iocore::midrow(), cols = iocore::get_cols();
 		iocore::cls();
-		iocore::box(midcol - 27, midrow - 18, 55, 37, UI_COLOUR_BOX);
+		iocore::box(midcol - 27, midrow - 18, 55, 38, UI_COLOUR_BOX);
 
-		iocore::alagard_print("GRAPHICS", midcol - 12, midrow - 12, (selected == 0 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
-		iocore::alagard_print("GAMEPLAY", midcol - 12, midrow - 6, (selected == 1 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
-		iocore::alagard_print("KEYBINDS", midcol - 12, midrow, (selected == 2 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
-		iocore::alagard_print("BACK", midcol - 6, midrow + 12, (selected == 3 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
+		iocore::alagard_print("GRAPHICS", (cols * 4) - (8 * 12), (midrow - 12) * 8, (selected == 0 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
+		iocore::alagard_print("GAMEPLAY", (cols * 4) - (8 * 12), (midrow - 6) * 8, (selected == 1 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
+		iocore::alagard_print("KEYBINDS", (cols * 4) - (8 * 12), midrow * 8, (selected == 2 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
+		iocore::alagard_print("BACK", (cols * 4) - (4 * 12), (midrow + 12) * 8, (selected == 3 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
 
 		iocore::flip();
 		unsigned int key = iocore::wait_for_key();
@@ -581,6 +605,26 @@ void prefs_window_graphics()
 	pe_screen_res.options_str.push_back("2560x1440");
 	prefs_screen.add_item(pe_screen_res);
 
+	pe_tex_scaling.id = ID_TEX_SCALING;
+	pe_tex_scaling.name = "Texture Scaling";
+	pe_tex_scaling.selected = prefs::scale_mod;
+	pe_tex_scaling.options_str.push_back("NORMAL");
+	pe_tex_scaling.options_str.push_back("4:3");
+	pe_tex_scaling.options_str.push_back("DOUBLE");
+	pe_tex_scaling.options_str.push_back("TO WINDOW");
+	pe_tex_scaling.must_restart = true;
+	pe_tex_scaling.experimental = true;
+	prefs_screen.add_item(pe_tex_scaling);
+
+	pe_shader.id = ID_SHADER;
+	pe_shader.name = "NTSC Shader";
+	pe_shader.selected = prefs::ntsc_mode;
+	pe_shader.options_str.push_back("RGB");
+	pe_shader.options_str.push_back("S-VIDEO");
+	pe_shader.options_str.push_back("COMPOSITE");
+	pe_shader.options_str.push_back("MONOCHROME");
+	prefs_screen.add_item(pe_shader);
+
 	pe_palette.id = ID_PALETTE;
 	pe_palette.name = "Colour Palette";
 	pe_palette.selected = prefs::palette;
@@ -590,6 +634,21 @@ void prefs_window_graphics()
 	pe_palette.options_str.push_back("COLOURBLIND R/G");
 	pe_palette.options_str.push_back("COLOURBLIND B");
 	prefs_screen.add_item(pe_palette);
+
+	pe_glitches.id = ID_GLITCHES;
+	pe_glitches.name = "Visual Glitches";
+	pe_glitches.is_slider = true;
+	pe_glitches.slider_size = 3;
+	pe_glitches.selected = prefs::visual_glitches;
+	prefs_screen.add_item(pe_glitches);
+
+	pe_ss_format.id = ID_SS_FORMAT;
+	pe_ss_format.name = "Screenshot Format";
+	pe_ss_format.selected = prefs::screenshot_type;
+	pe_ss_format.options_str.push_back("BMP");
+	pe_ss_format.options_str.push_back("PNG");
+	pe_ss_format.options_str.push_back("JPG");
+	prefs_screen.add_item(pe_ss_format);
 
 	pe_ml_dim.id = ID_MESSAGE_LOG_DIM;
 	pe_ml_dim.name = "Dim Message Log";
@@ -607,7 +666,11 @@ void prefs_window_graphics()
 			{
 				case ID_SCREEN_RES: resolution_choice = val; break;
 				case ID_FULL_SCREEN: prefs::fullscreen = val; break;
+				case ID_SHADER: prefs::ntsc_mode = val; iocore::update_ntsc_mode(); break;
 				case ID_PALETTE: prefs::palette = val; break;
+				case ID_GLITCHES: prefs::visual_glitches = val; break;
+				case ID_SS_FORMAT: prefs::screenshot_type = val; break;
+				case ID_TEX_SCALING: prefs::scale_mod = val; break;
 				case ID_MESSAGE_LOG_DIM: prefs::message_log_dim = val; break;
 			}
 			if (prefs_screen.selected_id() == ID_SCREEN_RES)
@@ -666,7 +729,12 @@ void save(SQLite::Database *prefs_db)
 		sql_insert_pref("screen_x", screen_x);
 		sql_insert_pref("screen_y", screen_y);
 		sql_insert_pref("fullscreen", fullscreen);
+		sql_insert_pref("ntsc_mode", ntsc_mode);
+		sql_insert_pref("screenshot_type", screenshot_type);
+		sql_insert_pref("visual_glitches", visual_glitches);
 		sql_insert_pref("palette", palette);
+		sql_insert_pref("scale_mod", scale_mod);
+		sql_insert_pref("glitch_warn", glitch_warn);
 		sql_insert_pref("death_reports", death_reports);
 		sql_insert_pref("message_log_dim", message_log_dim);
 
@@ -745,6 +813,7 @@ void ui_init_keybinds()
 	ui_add_keybind("Menu: Cancel", Keys::MENU_CANCEL);
 	ui_add_keybind("Save Game", Keys::SAVE);
 	ui_add_keybind("Quit Game", Keys::QUIT_GAME);
+	ui_add_keybind("Screenshot", Keys::SCREENSHOT);
 	ui_add_keybind("Game Settings", Keys::OPTIONS_WINDOW);
 }
 

@@ -18,6 +18,11 @@ std::chrono::time_point<std::chrono::system_clock> dev_timer;	// Timer used for 
 pcg32			*pcg = nullptr;	// PCG random number generator.
 unsigned int	prand_seed = 0;		// Pseudorandom number seed.
 
+// Checks to see if a flag is set.
+bool check_flag(unsigned int flags, unsigned int flag_to_check)
+{
+	return ((flags & flag_to_check) == flag_to_check);
+}
 
 // Starts a timer for debugging/testing purposes.
 void dev_timer_start()

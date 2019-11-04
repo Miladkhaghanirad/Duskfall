@@ -118,7 +118,6 @@ void World::main_loop()
 		else if (key == prefs::keybind(Keys::QUIT_GAME))
 		{
 			iocore::exit_functions();
-			guru::close_syslog();
 			exit(0);
 		}
 	}

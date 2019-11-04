@@ -1,6 +1,7 @@
 // iocore.cpp -- The render core, handling display and user interaction, as well as program initialization, shutdown and cleanup functionality.
 // Copyright (c) 2016-2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
+#include "filex.h"
 #include "guru.h"
 #include "iocore.h"
 #include "mathx.h"
@@ -8,11 +9,26 @@
 #include "strx.h"
 #include "version.h"
 
-#include "BearLibTerminal/BearLibTerminal.h"
+#include "lodepng/bmp2png.h"
+#include "sdl_savejpeg/SDL_savejpeg.h"
+#include "SDL2/SDL_image.h"
 
-#include <chrono>
 #include <cmath>
-#include <unordered_map>
+#include <cstdlib>
+#include <ctime>
+#include <thread>
+
+#define	SCREEN_MIN_X		1024	// Minimum X-resolution of the screen. Should not be lower than 1024.
+#define SCREEN_MIN_Y		600		// Minimum Y-resolution of the screen. Should not be lower than 600.
+#define SCREEN_MAX_X		4080	// Maximum X-resolution.
+#define SCREEN_MAX_Y		4080	// Maximum Y-resolution.
+#define SDL_RETRIES			100		// Amount of times to try re-acquiring the SDL window surface before giving up.
+#define GLITCH_CHANCE		200		// The lower this number, the more often visual glitches occur.
+#define NTSC_GLITCH_CHANCE	500		// The lower this number, the more often NTSC mode glitches occur.
+#define NTSC_RESET_CHANCE	50		// The lower this number, the faster NTSC glitches go back to normal.
+#define EXTRA_NES_COLOURS			53	// How many extra colours are added from the NES palette.
+#define EXTRA_COLOURBLIND_COLOURS	32	// How many extra colours are added from the colourblind palettes.
+#define FOLDER_SCREENS		"userdata/screenshots"
 
 
 /****************************
@@ -70,20 +86,39 @@ unsigned int build_version() { return atoi(cc_date); }
  ***********************************/
 
 
-#define EXTRA_NES_COLOURS			53	// How many extra colours are added from the NES palette.
-#define EXTRA_COLOURBLIND_COLOURS	32	// How many extra colours are added from the colourblind palettes.
-
-
 namespace iocore
 {
 
-bool			cleaned_up;							// Have we run the exit functions already?
-unsigned short	cols, rows, mid_col, mid_row;		// The number of columns and rows available, and the middle column/row.
-unsigned char	exit_func_level;					// Keep track of what to clean up at exit.
-unsigned short	mouse_clicked_x, mouse_clicked_y;	// Last clicked location for a mouse event.
+SDL_Surface		*alagard = nullptr;		// The texture for the large bitmap font.
+bool			cleaned_up = false;		// Have we run the exit functions already?
+unsigned short	cols = 0, rows = 0, mid_col = 0, mid_row = 0;	// The number of columns and rows available, and the middle column/row.
+unsigned char	exit_func_level = 0;	// Keep track of what to clean up at exit.
+SDL_Surface		*font = nullptr;		// The bitmap font texture.
+unsigned short	font_sheet_size = 0;	// The size of the font texture sheet, in glyphs.
+unsigned int 	glitch_clear_countdown = 0;
+SDL_Surface		*glitch_hz_surface = nullptr;	// Horizontal glitch surface.
+unsigned char	glitch_multi = 0;		// Glitch intensity multiplier.
+SDL_Surface		*glitch_sq_surface = nullptr;	// Square glitch surface.
+std::vector<s_glitch>	glitch_vec;
+SDL_Surface 	*glitched_main_surface = nullptr;	// A glitched version of the main render surface.
+unsigned char	glitches_queued = 0;
+bool			hold_glyph_glitches = false;	// Hold off on glyph glitching right now.
+SDL_Surface		*main_surface = nullptr;	// The main render surface.
+SDL_Window		*main_window = nullptr;		// The main (and only) SDL window.
+unsigned short	mouse_clicked_x = 0, mouse_clicked_y = 0;	// Last clicked location for a mouse event.
 std::unordered_map<std::string, s_rgb>	nebula_cache;	// Cache for the nebula() function.
-unsigned short	nebula_cache_seed;					// The seed for the nebula cache.
-int				screen_x, screen_y;					// Chosen screen resolution.
+unsigned short	nebula_cache_seed = 0;	// The seed for the nebula cache.
+snes_ntsc_t		*ntsc = nullptr;		// Used by the NTSC filter.
+bool			ntsc_glitched = false;
+vector<unsigned int>	queued_keys;	// Keypresses waiting to be processed.
+int				screen_x = 0, screen_y = 0;	// Chosen screen resolution.
+int				shade_mode = false;		// Are we rendering in shade mode?
+SDL_Surface		*snes_surface = nullptr;	// The SNES surface, for rendering the CRT effect.
+SDL_Surface		*sprites = nullptr;		// The texture for larger sprites.
+unsigned char	surface_scale = 0;		// The surface scale modifier.
+SDL_Surface		*temp_surface = nullptr;	// Temporary surface used for blitting glyphs.
+int				unscaled_x = 0, unscaled_y = 0;	// The unscaled resolution.
+SDL_Surface		*window_surface = nullptr;	// The actual window's surface.
 
 
 // Adjusts the colour palette, if needed.
@@ -136,25 +171,40 @@ Colour adjust_palette(Colour colour)
 }
 
 // Prints a string in the Alagard font at the specified coordinates.
-void alagard_print(string message, int x, int y, Colour colour, unsigned int flags)
+void alagard_print(string message, int x, int y, Colour colour)
 {
 	STACK_TRACE();
+	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
+
 	for (unsigned int i = 0; i < message.size(); i++)
-		alagard_print_at(message.at(i), x + (i * 3), y, colour, flags);
+		alagard_print_at(message.at(i), x + (i * 24), y, colour);
 }
 
 // Prints an Alagard font character at the specified coordinates.
-void alagard_print_at(char letter, int x, int y, Colour colour, unsigned int flags)
+void alagard_print_at(char letter, int x, int y, Colour colour)
 {
+	STACK_TRACE();
 	if (letter == ' ' || letter == '_') return;
 	if (letter >= 'A' && letter <= 'Z') letter -= 65;
 	else if (letter == '/') letter = 27;
 	else if (letter == '.') letter = 28;
 	else letter = 26;
 	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
-	const bool minus_eight_y = (flags & ALAGARD_FLAG_MINUS_EIGHT_Y) == ALAGARD_FLAG_MINUS_EIGHT_Y;
-	terminal_color(rgb_string(colour).c_str());
-	terminal_put(x, y - (minus_eight_y ? 8 : 0), 0x2000 + letter);
+
+	unsigned char r, g, b;
+	parse_colour(colour, r, g, b);
+
+	// Parse the colour into SDL's native format.
+	const unsigned int sdl_col = SDL_MapRGB(main_surface->format, r, g, b);
+
+	// Determine the location of the character.
+	const unsigned short loc_x = static_cast<unsigned short>(letter) * 24;
+	SDL_Rect font_rect = { loc_x, 0, 24, 26 };
+
+	// Draw a coloured square, then 'stamp' it with the font.
+	SDL_Rect scr_rect = { x, y, 24, 26 };
+	if (SDL_FillRect(main_surface, &scr_rect, sdl_col) < 0) guru::halt(SDL_GetError());
+	if (SDL_BlitSurface(alagard, &font_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
 }
 
 // Prints an ANSI string at the specified position.
@@ -203,16 +253,6 @@ void box(int x, int y, int w, int h, Colour colour, unsigned char flags, string 
 	const bool dline = ((flags & BOX_FLAG_DOUBLE) == BOX_FLAG_DOUBLE);
 	unsigned int print_flags = 0;
 	if ((flags & BOX_FLAG_ALPHA) == BOX_FLAG_ALPHA) print_flags = PRINT_FLAG_ALPHA;
-	else
-	{
-		unsigned int current_layer = get_layer();
-		for (unsigned int i = 0; i <= 255; i++)
-		{
-			layer(i);
-			clear(x, y, w, h);
-		}
-		layer(current_layer);
-	}
 	if ((flags & BOX_FLAG_OUTER_BORDER) == BOX_FLAG_OUTER_BORDER) rect(x - 1, y - 1, w + 2, h + 2, Colour::CGA_BLACK);
 
 
@@ -240,26 +280,74 @@ void box(int x, int y, int w, int h, Colour colour, unsigned char flags, string 
 	print_at(Glyph::LINE_VR, title_x + title_len, y, colour);
 }
 
-// Clears a specified area of the current layer.
-void clear(unsigned int x, unsigned int y, unsigned int w, unsigned int h)
+// Calculates glitch positions.
+void calc_glitches()
 {
 	STACK_TRACE();
-	terminal_clear_area(x, y, w, h);
+	glitch_vec.clear();
+	for (unsigned int i = 0; i < mathx::rnd(25); i++)
+		if (mathx::rnd(5) == 1) glitch_square(); else glitch_horizontal();
+}
+
+// Clears 'shade mode' entirely.
+void clear_shade()
+{
+	shade_mode = 0;
 }
 
 // Clears the screen.
 void cls()
 {
 	STACK_TRACE();
-	terminal_layer(0);
-	terminal_clear();
+	if (SDL_FillRect(main_surface, &main_surface->clip_rect, SDL_MapRGBA(main_surface->format, 0, 0, 0, 255)) < 0) guru::halt(SDL_GetError());
 }
 
-// Waits for a few milliseconds.
+// Calls SDL_Delay but also handles visual glitches.
 void delay(unsigned int ms)
 {
 	STACK_TRACE();
-	terminal_delay(ms);
+	SDL_Delay(ms);
+
+	// Check to see if we're still on a countdown for the glitch-clear.
+	if (glitch_clear_countdown)
+	{
+		if (ms >= glitch_clear_countdown)	// Glitches are done, revert to normal display.
+		{
+			glitch_clear_countdown = 0;
+			glitch_vec.clear();
+			if (!glitches_queued) flip();
+		}
+		else glitch_clear_countdown -= ms;	// Just count the timer down for now.
+		return;
+	}
+
+	// If glitches are disabled, then just exit quietly now. It's okay to leave the code above, as that counts down to *removing* glitches.
+	if (!prefs::visual_glitches || !glitch_multi) return;
+
+	// If we're due for more glitches, get 'em started.
+	if (glitches_queued)
+	{
+		glitches_queued--;
+		glitch_clear_countdown = mathx::rnd(75) + 25;
+		calc_glitches();
+		flip();
+		return;
+	}
+
+	// See if any new glitches are due to start.
+	int glitch_chance = 0;
+	if (glitch_multi) glitch_chance = GLITCH_CHANCE / glitch_multi;
+	if (prefs::visual_glitches == 1) glitch_chance *= 3;
+	if (mathx::rnd(glitch_chance) == 1)
+	{
+		glitches_queued = 1;
+		if (mathx::rnd(1000) == 1) glitches_queued = 5;
+		else if (mathx::rnd(20) == 1) glitches_queued = 3;
+		else if (mathx::rnd(3) == 1) glitches_queued = 2;
+		glitch_clear_countdown = mathx::rnd(75) + 25;
+		calc_glitches();
+		flip();
+	}
 }
 
 // Checks if the player clicked in a specified area.
@@ -281,10 +369,48 @@ void exit_functions()
 	cleaned_up = true;
 	guru::log("Running cleanup at level " + strx::itos(exit_func_level) + ".", GURU_INFO);
 
+	if (exit_func_level >= 3)
+	{
+		SDL_FreeSurface(main_surface);
+		SDL_FreeSurface(glitched_main_surface);
+		SDL_FreeSurface(window_surface);
+		SDL_FreeSurface(snes_surface);
+		SDL_FreeSurface(temp_surface);
+#ifndef TARGET_LINUX	// Not sure why, but these cause some nasty console errors on Linux.
+		SDL_FreeSurface(glitch_hz_surface);
+		SDL_FreeSurface(glitch_sq_surface);
+#endif
+		free(ntsc);
+		main_surface = window_surface = snes_surface = temp_surface = glitch_hz_surface = glitch_sq_surface = glitched_main_surface = nullptr;
+		ntsc = nullptr;
+		guru::console_ready(false);
+
+		if (exit_func_level >= 4) SDL_FreeSurface(font);
+
+		if (filex::directory_exists(FOLDER_SCREENS))
+		{
+			vector<string> files = filex::files_in_dir(FOLDER_SCREENS);
+			int converted = 0;
+			for (auto file : files)
+			{
+				const string filename = (string)FOLDER_SCREENS + "/" + file.substr(0, file.length() - 4);
+				const string ext = file.substr(file.length() - 3);
+				if (ext == "tmp")
+				{
+					converted++;
+					rename((filename + ".tmp").c_str(), (filename + ".bmp").c_str());
+				}
+			}
+			if (converted) guru::log("Rescued " + strx::itos(converted) + " unconverted screenshots as BMP format.", GURU_INFO);
+		}
+	}
+
 	if (exit_func_level >= 2)
 	{
-		terminal_close();
-		guru::console_ready(false);
+#ifndef TARGET_LINUX	// Also not sure why, but this can be problematic on Linux.
+		guru::log("Shutting SDL down cleanly.", GURU_INFO);
+		SDL_Quit();
+#endif
 	}
 	exit_func_level = 0;
 }
@@ -293,7 +419,103 @@ void exit_functions()
 void flip()
 {
 	STACK_TRACE();
-	terminal_refresh();
+	bool glitching = (prefs::visual_glitches && glitch_multi > 0);
+
+	if (glitching && mathx::rnd(NTSC_GLITCH_CHANCE * glitch_multi) == 1 && prefs::ntsc_mode != 3 && prefs::visual_glitches >= 3 && !ntsc_glitched)
+	{
+		update_ntsc_mode(mathx::rnd(3));	// Don't do shader mode 0, it's too 'clean' for a glitch.
+		ntsc_glitched = true;
+	}
+	else if (ntsc_glitched && mathx::rnd(NTSC_RESET_CHANCE) == 1)
+	{
+		update_ntsc_mode();
+		ntsc_glitched = false;
+	}
+
+	SDL_Surface *render_surf = main_surface;
+	if (prefs::visual_glitches && glitch_clear_countdown)
+	{
+		render_surf = glitched_main_surface;
+		SDL_BlitSurface(main_surface, nullptr, glitched_main_surface, nullptr);
+		render_glitches();
+	}
+
+	if (SDL_LockSurface(snes_surface) < 0)
+	{
+		guru::console_ready(false);
+		guru::halt(SDL_GetError());
+	}
+	unsigned char *output_pixels = (unsigned char*)snes_surface->pixels;
+	const long output_pitch = snes_surface->pitch;
+	snes_ntsc_blit(ntsc, (unsigned short*)render_surf->pixels, render_surf->pitch / 2, 0, render_surf->w, render_surf->h, output_pixels, output_pitch);
+	for (int y = snes_surface->h / 2; --y >= 0; )
+	{
+		unsigned char const* in = output_pixels + y * output_pitch;
+		unsigned char* out = output_pixels + y * 2 * output_pitch;
+		int n;
+		for (n = render_surf->w; n; --n)
+		{
+			const unsigned prev = *(unsigned short*) in;
+			const unsigned next = *(unsigned short*) (in + output_pitch);
+			// mix 16-bit rgb without losing low bits
+			const unsigned mixed = prev + next + ((prev ^ next) & 0x0821);
+			// darken by 12%
+			*(unsigned short*) out = prev;
+			*(unsigned short*) (out + output_pitch) = (mixed >> 1) - (mixed >> 4 & 0x18E3);
+			in += 2;
+			out += 2;
+		}
+	}
+	SDL_UnlockSurface(snes_surface);
+	if (!(window_surface = SDL_GetWindowSurface(main_window)))
+	{
+		guru::console_ready(false);
+		guru::halt(SDL_GetError());
+	}
+
+	if (surface_scale)
+	{
+		SDL_Rect the_rect = { 0, 0, 0, 0 };
+		switch(surface_scale)
+		{
+			case 1: the_rect = { 0, 0, snes_surface->w, static_cast<int>(snes_surface->h * 1.333f) }; break;
+			case 2: the_rect = { 0, 0, snes_surface->w * 2, snes_surface->h * 2 }; break;
+			case 3: the_rect = { 0, 0, window_surface->w, window_surface->h }; break;
+		}
+		if (SDL_BlitScaled(snes_surface, nullptr, window_surface, &the_rect) < 0)
+		{
+			guru::console_ready(false);
+			guru::halt(SDL_GetError());
+		}
+	}
+	else if (SDL_BlitSurface(snes_surface, nullptr, window_surface, nullptr) < 0)
+	{
+		guru::console_ready(false);
+		guru::halt(SDL_GetError());
+	}
+
+	if (SDL_UpdateWindowSurface(main_window) < 0)	// This can fail once in a blue moon. We'll retry a few times, then give up.
+	{
+		guru::log("Having trouble updating the main window surface. Trying to fix this...", GURU_WARN);
+		bool got_there_in_the_end = false;
+		int tries = 0;
+		for (int i = 0; i < SDL_RETRIES; i++)
+		{
+			if (!(window_surface = SDL_GetWindowSurface(main_window)))
+			{
+				guru::console_ready(false);
+				guru::halt(SDL_GetError());
+			}
+			if (!SDL_UpdateWindowSurface(main_window)) { got_there_in_the_end = true; tries = i + 1; break; }
+			delay(10);
+		}
+		if (!got_there_in_the_end)
+		{
+			guru::console_ready(false);
+			guru::halt(SDL_GetError());
+		}
+		else guru::log("...Reacquired access to the window surface after " + strx::itos(tries) + (tries == 1 ? " try." : " tries."), GURU_WARN);
+	}
 }
 
 // Returns the number of columns on the screen.
@@ -302,44 +524,144 @@ unsigned short get_cols()
 	return cols;
 }
 
-// Gets the current render layer.
-unsigned char get_layer()
-{
-	STACK_TRACE();
-	return terminal_state(TK_LAYER);
-}
-
 // Returns the number of rows on the screen.
 unsigned short get_rows()
 {
 	return rows;
 }
 
-// Initializes the main terminal window.
+// Offsets part of the display.
+void glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf)
+{
+	STACK_TRACE();
+	if ((surf == glitch_hz_surface && (glitch_w > glitched_main_surface->w || glitch_h > 8)) || (surf == glitch_sq_surface && (glitch_w > 70 || glitch_h > 70))) guru::halt("Invalid parameters given to glitch()");
+	SDL_Rect clear = { 0, 0, surf->w, surf->h };
+	SDL_FillRect(surf, &clear, SDL_MapRGB(surf->format, 1, 1, 1));
+	SDL_Rect source = { glitch_x, glitch_y, glitch_w, glitch_h };
+	SDL_Rect dest = { glitch_x + glitch_off_x, glitch_y + glitch_off_y, glitch_w, glitch_h };
+	SDL_BlitSurface(glitched_main_surface, &source, surf, nullptr);
+	if (black) SDL_FillRect(glitched_main_surface, &source, SDL_MapRGB(glitched_main_surface->format, 0, 0, 0));
+	SDL_BlitSurface(surf, nullptr, glitched_main_surface, &dest);
+}
+
+// Horizontal displacement visual glitch.
+void glitch_horizontal()
+{
+	STACK_TRACE();
+	s_glitch horiz_glitch;
+	horiz_glitch.x = 0; horiz_glitch.w = glitched_main_surface->w;	// Horizontal glitches always fill the entire screen, left to right.
+	horiz_glitch.y = mathx::rnd(glitched_main_surface->h);	// Random Y coordinate.
+	horiz_glitch.h = mathx::rnd(8);	// Varying glitch sizes.
+	horiz_glitch.off_x = mathx::rnd(30) - 15;	// The horizontal direction can glitch either way.
+	horiz_glitch.off_y = 0;	// It doesn't glitch vertically.
+	horiz_glitch.black = (mathx::rnd(2) == 1);
+	horiz_glitch.surf = glitch_hz_surface;
+	glitch_vec.push_back(horiz_glitch);
+}
+
+// Sets the glitch intensity level.
+void glitch_intensity(unsigned char value)
+{
+	glitch_multi = value;
+}
+
+// Square displacement glitch.
+void glitch_square()
+{
+	STACK_TRACE();
+	s_glitch square_glitch;
+	square_glitch.x = mathx::rnd(glitched_main_surface->w); square_glitch.y = mathx::rnd(glitched_main_surface->h);	// Random X,Y coordinates.
+	square_glitch.w = mathx::rnd(60) + 10; square_glitch.h = mathx::rnd(60) + 10;	// Random width and height.
+	square_glitch.off_x = mathx::rnd(30) - 15; square_glitch.off_y = mathx::rnd(30) - 15;	// Can glitch either horizontally, vertically, or both.
+	square_glitch.black = false;
+	square_glitch.surf = glitch_sq_surface;
+	glitch_vec.push_back(square_glitch);
+}
+
+// Initializes SDL and gets the ball rolling.
 void init()
 {
 	STACK_TRACE();
 	guru::log("Duskfall v" + DUSKFALL_VERSION_STRING + " [build " + strx::itos(build_version()) + "]", GURU_STACK);
 	guru::log("Main program entry. Let's do this.", GURU_INFO);
-	exit_func_level = 1;
 
-	if (!terminal_open()) guru::halt("Could not initialize terminal window.");
+	// Check for necessary CPU features.
+	bool has_mmx = SDL_HasMMX(), has_sse = SDL_HasSSE(), has_sse2 = SDL_HasSSE2(), has_sse3 = SDL_HasSSE3(), has_multicore = (SDL_GetCPUCount() > 1);
+	vector<string> missing_cpu;
+	if (!has_mmx) missing_cpu.push_back("MMX");
+	if (!has_sse) missing_cpu.push_back("SSE");
+	if (!has_sse2) missing_cpu.push_back("SSE2");
+	if (!has_sse3) missing_cpu.push_back("SSE3");
+	if (!has_multicore) missing_cpu.push_back("multi-core");
+	if (missing_cpu.size()) guru::log("Missing CPU features may degrade performance: " + strx::comma_list(missing_cpu), GURU_WARN);
+
+	// Start the ball rolling.
+	guru::log("Initializing SDL core systems: video, timer, events.", GURU_INFO);
+	const unsigned int sdl_flags = SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS;
+	if (SDL_Init(sdl_flags) < 0) guru::halt(SDL_GetError());
+	if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) != IMG_INIT_PNG) guru::halt(IMG_GetError());
 	exit_func_level = 2;
 
-	screen_x = prefs::screen_x;
-	screen_y = prefs::screen_y;
+	// This is messy. Set up all the surfaces we'll be using for rendering, and exit out if anything goes wrong.
+	guru::log("Initializing SDL window and surfaces.", GURU_INFO);
+	screen_x = unscaled_x = prefs::screen_x;
+	screen_y = unscaled_y = prefs::screen_y;
 	const bool fullscreen = prefs::fullscreen;
+	surface_scale = prefs::scale_mod;
+	if (surface_scale == 1) screen_y = static_cast<int>(screen_y * 1.3333) + 1;
+	else if (surface_scale == 2) { screen_x *= 2; screen_y *= 2; }
+	if (screen_x < SCREEN_MIN_X) screen_x = SCREEN_MIN_X;
+	else if (screen_x > SCREEN_MAX_X) screen_x = SCREEN_MAX_X;
+	if (screen_y < SCREEN_MIN_Y) screen_y = SCREEN_MIN_Y;
+	else if (screen_y > SCREEN_MAX_Y) screen_y = SCREEN_MAX_Y;
 	string window_title = "Duskfall " + DUSKFALL_VERSION_STRING + " [build " + strx::itos(build_version()) + "]";
-	if (!terminal_set(("window: title = '" + window_title + "', size=" + strx::itos(screen_x / 16) + "x" + strx::itos(screen_y / 16) + ", resizeable=true, fullscreen=" + (fullscreen ? "true" : "false")).c_str()))
-		guru::halt("Could not set up terminal window properties.");
-	if (!terminal_set("input: filter='keyboard, mouse'")) guru::halt("Could not set input filters.");
-	if (!terminal_set("U+0000: data/png/victoria.png, size=16x16")
-			|| !terminal_set("U+1000: data/png/artos-serif.png, size=16x16")
-			|| !terminal_set("U+2000: data/png/alagard.png, size=48x52, align=top-left")
-			|| !terminal_set("U+3000: data/png/sprites.png, size=64x64, align=top-left")
-			) guru::halt("Could not load bitmap fonts.");
-	recalc_screen_size();
+	main_window = SDL_CreateWindow(window_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_x, screen_y, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | (fullscreen ? SDL_WINDOW_FULLSCREEN : 0));
+	if (!main_window) guru::halt(SDL_GetError());
+	SDL_SetWindowMinimumSize(main_window, SCREEN_MIN_X, SCREEN_MIN_Y);
+	cols = SNES_NTSC_IN_WIDTH(unscaled_x) / 8; rows = unscaled_y / 16; mid_col = cols / 2; mid_row = rows / 2;
+	if (!(window_surface = SDL_GetWindowSurface(main_window))) guru::halt(SDL_GetError());
+	if (!(main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (!(glitched_main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, window_surface->h + 16, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	SDL_RaiseWindow(main_window);
+	if (!(temp_surface = SDL_CreateRGBSurface(0, 32, 32, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (!(glitch_hz_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, 8, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (SDL_SetColorKey(glitch_hz_surface, SDL_TRUE, SDL_MapRGB(glitch_hz_surface->format, 1, 1, 1)) < 0) guru::halt(SDL_GetError());
+	if (!(glitch_sq_surface = SDL_CreateRGBSurface(0, 70, 70, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (SDL_SetColorKey(glitch_sq_surface, SDL_TRUE, SDL_MapRGB(glitch_sq_surface->format, 1, 1, 1)) < 0) guru::halt(SDL_GetError());
 	exit_func_level = 3;
+
+	// Sets up the PCG PRNG.
+	guru::log("Initializing pseudorandom number generator.", GURU_INFO);
+	mathx::init();
+
+	// Set up the SNES renderer.
+	if (!(ntsc = static_cast<snes_ntsc_t*>(calloc(1, sizeof(snes_ntsc_t))))) guru::halt("Unable to initialize NTSC shader.");
+	update_ntsc_mode();
+
+	// Blank the screen.
+	cls();
+	flip();
+
+	// Load the bitmap fonts and other PNGs into memory.
+	guru::log("Attempting to load bitmap fonts.", GURU_INFO);
+	auto load_and_optimize_png = [] (string filename, SDL_Surface **dest, SDL_Surface *main_surface)
+	{
+		SDL_Surface *surf_temp = IMG_Load(("data/png/" + filename).c_str());
+		if (!surf_temp) guru::halt(IMG_GetError());
+		*dest = SDL_ConvertSurface(surf_temp, main_surface->format, 0);
+		if (!dest) guru::halt(SDL_GetError());
+		SDL_FreeSurface(surf_temp);
+		if (SDL_SetColorKey(*dest, SDL_TRUE, SDL_MapRGB((*dest)->format, 255, 255, 255)) < 0) guru::halt(SDL_GetError());
+	};
+
+	load_and_optimize_png("fonts.png", &font, main_surface);
+	load_and_optimize_png("alagard.png", &alagard, main_surface);
+	load_and_optimize_png("sprites.png", &sprites, main_surface);
+	font_sheet_size = (font->w * font->h) / 8;
+	exit_func_level = 4;
+
+	// Now that the font is loaded and SDL is initialized, we can activate Guru's error screen.
 	guru::console_ready(true);
 }
 
@@ -347,7 +669,7 @@ void init()
 bool is_cancel(unsigned int key)
 {
 	STACK_TRACE();
-	if (key == prefs::keybind(MENU_CANCEL) || key == KEY_ESCAPE) return true;
+	if (key == prefs::keybind(MENU_CANCEL) || key == SDLK_ESCAPE) return true;
 	return false;
 }
 
@@ -355,7 +677,7 @@ bool is_cancel(unsigned int key)
 bool is_down(unsigned int key)
 {
 	STACK_TRACE();
-	if (key == KEY_DOWN || key == KEY_KP_2 || key == prefs::keybind(SOUTH)) return true;
+	if (key == SDLK_DOWN || key == SDLK_KP_2 || key == prefs::keybind(SOUTH)) return true;
 	return false;
 }
 
@@ -363,7 +685,7 @@ bool is_down(unsigned int key)
 bool is_left(unsigned int key)
 {
 	STACK_TRACE();
-	if (key == KEY_LEFT || key == KEY_KP_4 || key == prefs::keybind(WEST)) return true;
+	if (key == SDLK_LEFT || key == SDLK_KP_4 || key == prefs::keybind(WEST)) return true;
 	return false;
 }
 
@@ -371,7 +693,7 @@ bool is_left(unsigned int key)
 bool is_right(unsigned int key)
 {
 	STACK_TRACE();
-	if (key == KEY_RIGHT || key == KEY_KP_6 || key == prefs::keybind(EAST)) return true;
+	if (key == SDLK_RIGHT || key == SDLK_KP_6 || key == prefs::keybind(EAST)) return true;
 	return false;
 }
 
@@ -387,7 +709,7 @@ bool is_select(unsigned int key)
 bool is_up(unsigned int key)
 {
 	STACK_TRACE();
-	if (key == KEY_UP || key == KEY_KP_8 || key == prefs::keybind(NORTH)) return true;
+	if (key == SDLK_UP || key == SDLK_KP_8 || key == prefs::keybind(NORTH)) return true;
 	return false;
 }
 
@@ -395,56 +717,26 @@ bool is_up(unsigned int key)
 string key_to_name(unsigned int key)
 {
 	STACK_TRACE();
-
-	switch(key)
-	{
-		case 0: return "{5C}[unbound]";
-		case ' ': return "Space Bar";
-		case KEY_BACKSPACE: return "Backspace";
-		case KEY_BREAK: return "Break";
-		case KEY_DOWN: return "Arrow Down";
-		case KEY_END: return "End";
-		case KEY_ENTER: return "Enter";
-		case KEY_ESCAPE: return "Escape";
-		case KEY_HOME: return "Home";
-		case KEY_INSERT: return "Insert";
-		case KEY_KP_DIVIDE: return "Keypad /";
-		case KEY_KP_ENTER: return "Keypad Enter";
-		case KEY_KP_MINUS: return "Keypad -";
-		case KEY_KP_MULTIPLY: return "Keypad *";
-		case KEY_KP_PERIOD: return "Keypad .";
-		case KEY_KP_PLUS: return "Keypad +";
-		case KEY_LEFT: return "Arrow Left";
-		case KEY_PAGEDOWN: return "Page Down";
-		case KEY_PAGEUP: return "Page Up";
-		case KEY_RIGHT: return "Arrow Right";
-		case KEY_TAB: return "Tab";
-		case KEY_UP: return "Arrow Up";
-		case LMB_KEY: return "Left Mouse Button";
-		case MOUSEWHEEL_DOWN_KEY: return "Mousewheel Up";
-		case MOUSEWHEEL_UP_KEY: return "Mousewheel Up";
-		case RMB_KEY: return "Right Mouse Button";
-	}
-	if (key >= KEY_F1 && key <= KEY_F12) return "F" + strx::itos(key - KEY_F1 + 1);
-	else if (key >= KEY_KP_0 && key <= KEY_KP_9) return "Keypad " + strx::itos(key - KEY_KP_0);
+	if (!key) return "{5C}[unbound]";
+	else if (key == 8) return "Backspace";
+	else if (key == 9) return "Tab";
+	else if (key == 13) return "Enter";
 	else if ((key >= '!' && key <= '@') || key == '`') return string(1, static_cast<char>(key));
 	else if (key >= 'a' && key <= 'z') return string(1, static_cast<char>(key - 32));
 	else if (key >= 'A' && key <= 'Z') return "Shift-" +string(1, static_cast<char>(key));
-	else if (key >= 1000 && key < 10000) return "Shift-" + key_to_name(key - 1000);
-	else if (key >= 10000 && key < 11000) return "Ctrl-" + key_to_name(key - 10000);
-	else if (key >= 11000 && key < 20000) return "Ctrl-Shift-" + key_to_name(key - 11000);
-	else if (key >= 100000 && key < 101000) return "Alt-" + key_to_name(key - 100000);
-	else if (key >= 101000 && key < 110000) return "Shift-Alt-" + key_to_name(key - 101000);
-	else if (key >= 110000 && key < 111000) return "Ctrl-Alt-" + key_to_name(key - 110000);
-	else if (key >= 111000) return "Shift-Ctrl-Alt-" + key_to_name(key - 111000);
-	else return "[unknown]";
-}
+	else if (key >= 1 && key <= 26) return "Ctrl-" + string(1, static_cast<char>(key + 64));
+	else if (key >= ((1 << 17) + 'a') && key <= ((1 << 17) + 'z')) return "Alt-" + string(1, static_cast<char>(key - (1 << 17) - 32));
+	else if (key >= ((1 << 15) + 'A') && key <= ((1 << 15) + 'Z')) return "Shift-Ctrl-Alt-" + string(1, static_cast<char>(key - (1 << 15)));
+	else if (key >= ((1 << 15) + 'a') && key <= ((1 << 15) + 'z')) return "Ctrl-Alt-" + string(1, static_cast<char>(key - (1 << 15) - 32));
+	else if (key >= ((1 << 16) + 'A') && key <= ((1 << 16) + 'Z')) return "Shift-Ctrl-" + string(1, static_cast<char>(key - (1 << 16)));
+	else if (key >= ((1 << 17) + 'A') && key <= ((1 << 17) + 'Z')) return "Shift-Alt-" + string(1, static_cast<char>(key - (1 << 17)));
+	else if (key == MOUSEWHEEL_UP_KEY) return "Mousewheel Up";
+	else if (key == MOUSEWHEEL_DOWN_KEY) return "Mousewheel Up";
+	else if (key == LMB_KEY) return "Left Mouse Button";
+	else if (key == RMB_KEY) return "Right Mouse Button";
 
-// Select the rendering layer.
-void layer(unsigned char new_layer)
-{
-	STACK_TRACE();
-	terminal_layer(new_layer);
+	if ((key > 0x7F && key < 0x40000039) || key > 0x4000011A) return "{5C}[unknown]";
+	return SDL_GetKeyName(key);
 }
 
 // Retrieves the middle column on the screen.
@@ -459,6 +751,7 @@ unsigned short midrow()
 	return mid_row;
 }
 
+// Determines the colour of a specific point in a nebula, based on X,Y coordinates.
 s_rgb nebula(int x, int y)
 {
 	STACK_TRACE();
@@ -510,7 +803,6 @@ void ok_box(int offset, Colour colour)
 	print_at(Glyph::LINE_VR, mid_col + 1, mid_row + offset, colour);
 }
 
-// Parses a colour code into RGB.
 void parse_colour(Colour colour, unsigned char &r, unsigned char &g, unsigned char &b)
 {
 	STACK_TRACE();
@@ -549,6 +841,15 @@ void parse_colour(Colour colour, unsigned char &r, unsigned char &g, unsigned ch
 	b = colour_table[(static_cast<unsigned int>(colour) * 3) + 2];
 }
 
+// Prints a message at the specified coordinates.
+int print(string message, int x, int y, Colour colour, unsigned int print_flags)
+{
+	STACK_TRACE();
+	unsigned char r, g, b;
+	parse_colour(colour, r, g, b);
+	return print(message, x, y, r, g, b, print_flags);
+}
+
 // Prints a message at the specified coordinates, in RGB colours.
 int print(string message, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags)
 {
@@ -579,145 +880,145 @@ int print(string message, int x, int y, unsigned char r, unsigned char g, unsign
 	return offset;
 }
 
-// Prints a message at the specified coordinates.
-int print(string message, int x, int y, Colour colour, unsigned int print_flags)
+// Prints a character at a given coordinate on the screen.
+void print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flags)
 {
 	STACK_TRACE();
+	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
+
+	// Parse the colour into RGB values.
 	unsigned char r, g, b;
 	parse_colour(colour, r, g, b);
-	return print(message, x, y, r, g, b, print_flags);
+	print_at(letter, x, y, r, g, b, print_flags);
+}
+
+// As above, but with a char instead of a glyph.
+void print_at(char letter, int x, int y, Colour colour, unsigned int print_flags)
+{
+	STACK_TRACE();
+	print_at(static_cast<Glyph>(letter), x, y, colour, print_flags);
 }
 
 // Prints a character at a given coordinate on the screen, in specific RGB colours.
 void print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags)
 {
 	STACK_TRACE();
-	// Special cases for faux glyphs, which use other glyphs to draw special symbols.
-	if (letter > static_cast<Glyph>(256) || letter == static_cast<Glyph>(0))
+	// Just exit quietly if drawing off-screen. This shouldn't normally happen.
+	if (mathx::check_flag(print_flags, PRINT_FLAG_ABSOLUTE))
 	{
-		if (letter == static_cast<Glyph>(257))
-		{
-			print_at(Glyph::CORNER_BLOCK, x, y, r, g, b, print_flags | PRINT_FLAG_PLUS_EIGHT_Y_B);
-			return;
-		}
-		else if (letter == static_cast<Glyph>(258))
-		{
-			print_at(Glyph::CORNER_BLOCK, x, y, r, g, b, print_flags);
-			print_at(Glyph::CORNER_BLOCK, x, y, r, g, b, print_flags | PRINT_FLAG_PLUS_EIGHT_Y_B | PRINT_FLAG_ALPHA);
-			print_at(Glyph::CORNER_BLOCK, x, y, r, g, b, print_flags | PRINT_FLAG_PLUS_EIGHT_X_B | PRINT_FLAG_PLUS_EIGHT_Y_B  | PRINT_FLAG_ALPHA);
-			return;
-		}
-		else if (letter == static_cast<Glyph>(259))
-		{
-			print_at(Glyph::CORNER_BLOCK, x, y, r, g, b, print_flags | PRINT_FLAG_PLUS_EIGHT_X_B | PRINT_FLAG_PLUS_EIGHT_Y_B  | PRINT_FLAG_ALPHA);
-			return;
-		}
-		else if (letter == static_cast<Glyph>(260))
-		{
-			print_at(Glyph::CORNER_BLOCK, x, y, r, g, b, print_flags);
-			print_at(Glyph::CORNER_BLOCK, x, y, r, g, b, print_flags | PRINT_FLAG_PLUS_EIGHT_X_B | PRINT_FLAG_ALPHA);
-			print_at(Glyph::CORNER_BLOCK, x, y, r, g, b, print_flags | PRINT_FLAG_PLUS_EIGHT_X_B | PRINT_FLAG_PLUS_EIGHT_Y_B | PRINT_FLAG_ALPHA);
-			return;
-		}
-		else if (letter == static_cast<Glyph>(261))
-		{
-			print_at(Glyph::CORNER_BLOCK, x, y, r, g, b, print_flags);
-			print_at(Glyph::CORNER_BLOCK, x, y, r, g, b, print_flags | PRINT_FLAG_PLUS_EIGHT_X_B | PRINT_FLAG_ALPHA);
-			print_at(Glyph::CORNER_BLOCK, x, y, r, g, b, print_flags | PRINT_FLAG_PLUS_EIGHT_Y_B | PRINT_FLAG_ALPHA);
-			return;
-		}
-		else if (letter == static_cast<Glyph>(262))
-		{
-			print_at(Glyph::CORNER_BLOCK, x, y, r, g, b, print_flags | PRINT_FLAG_PLUS_EIGHT_X_B | PRINT_FLAG_ALPHA);
-			return;
-		}
-		else guru::log("Attempt to print invalid glyph: " + strx::itos(static_cast<unsigned int>(letter)), GURU_WARN);
-	}
-
-	const bool no_nbsp = (print_flags & PRINT_FLAG_NO_NBSP) == PRINT_FLAG_NO_NBSP;
-	if (!no_nbsp && letter == static_cast<Glyph>('`')) letter = static_cast<Glyph>(' ');
-	const bool alpha = (print_flags & PRINT_FLAG_ALPHA) == PRINT_FLAG_ALPHA;
-	const bool alpha_state = terminal_state(TK_COMPOSITION);
-	if (alpha != alpha_state) terminal_composition(alpha);
-	const bool sans = (print_flags & PRINT_FLAG_SANS) == PRINT_FLAG_SANS;
-	if (sans) letter = static_cast<Glyph>(static_cast<unsigned int>(letter) + 0x1000);
-	const bool plus_four_x = (print_flags & PRINT_FLAG_PLUS_FOUR_X) == PRINT_FLAG_PLUS_FOUR_X;
-	const bool plus_four_y = (print_flags & PRINT_FLAG_PLUS_FOUR_Y) == PRINT_FLAG_PLUS_FOUR_Y;
-	const bool plus_eight_x = (print_flags & PRINT_FLAG_PLUS_EIGHT_X) == PRINT_FLAG_PLUS_EIGHT_X;
-	const bool plus_eight_y = (print_flags & PRINT_FLAG_PLUS_EIGHT_Y) == PRINT_FLAG_PLUS_EIGHT_Y;
-	const bool plus_eight_x_b = (print_flags & PRINT_FLAG_PLUS_EIGHT_X_B) == PRINT_FLAG_PLUS_EIGHT_X_B;
-	const bool plus_eight_y_b = (print_flags & PRINT_FLAG_PLUS_EIGHT_Y_B) == PRINT_FLAG_PLUS_EIGHT_Y_B;
-	int off_x = 0, off_y = 0;
-	if (plus_four_x) off_x += 4;
-	if (plus_eight_x) off_x += 8;
-	if (plus_eight_x_b) off_x += 8;
-	if (plus_four_y) off_y += 4;
-	if (plus_eight_y) off_y += 8;
-	if (plus_eight_y_b) off_y += 8;
-	terminal_color(rgb_string(r, g, b).c_str());
-	if (!off_x && !off_y) terminal_put(x, y, static_cast<unsigned int>(letter));
-	else terminal_put_ext(x, y, off_x, off_y, static_cast<unsigned int>(letter));
-}
-
-// As above, but given a char rather than a Glyph.
-void print_at(char letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags)
-{
-	print_at(static_cast<Glyph>(letter), x, y, r, g, b, print_flags);
-}
-
-// Prints a character at a given coordinate on the screen.
-void print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flags)
-{
-	STACK_TRACE();
-	if ((print_flags & PRINT_FLAG_NO_SPACES) == PRINT_FLAG_NO_SPACES && letter == static_cast<Glyph>(' ')) return;
-	unsigned char r, g, b;
-	parse_colour(colour, r, g, b);
-	print_at(letter, x, y, r, g, b, print_flags);
-}
-
-// As above, but given a char rather than a glyph.
-void print_at(char letter, int x, int y, Colour colour, unsigned int print_flags)
-{
-	print_at(static_cast<Glyph>(letter), x, y, colour, print_flags);
-}
-
-// Recalculates the screen size variables.
-void recalc_screen_size()
-{
-	STACK_TRACE();
-	cols = terminal_state(TK_WIDTH);
-	rows = terminal_state(TK_HEIGHT);
-	screen_x = cols * 16;
-	screen_y = rows * 16;
-	mid_col = round(cols / 2.0f);
-	mid_row = round(rows / 2.0f) - 1;
-}
-
-// Draws a coloured rectangle
-void rect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, Colour colour)
-{
-	STACK_TRACE();
-	unsigned char r, g, b;
-	parse_colour(colour, r, g, b);
-	rect(x, y, w, h, r, g, b);
-}
-
-// As above, with RGB colour.
-void rect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned char r, unsigned char g, unsigned char b)
-{
-	STACK_TRACE();
-	if (get_layer() == 0)
-	{
-		terminal_bkcolor(rgb_string(r, g, b).c_str());
-		terminal_clear_area(x, y, w, h);
-		terminal_bkcolor(0U);
+		if (x < 0 || y < 0 || x > cols * 8 || y > rows * 8) return;
 	}
 	else
 	{
-		for (unsigned int cx = x; cx < x + w; cx++)
-			for (unsigned int cy = y; cy < y + h; cy++)
-				print_at(Glyph::BLOCK_SOLID, cx, cy, r, g, b);
+		if (x < 0 || y < 0 || x > cols || y > rows) return;
 	}
+
+	// If we're using the alternate font, adjust the glyph now.
+	if (mathx::check_flag(print_flags, PRINT_FLAG_ALT_FONT))
+	{
+		const unsigned int letter_int = static_cast<unsigned int>(letter);
+		if ((letter_int >= 'A' && letter_int <= 'Z') || (letter_int >= 'a' && letter_int <= 'z'))
+			letter = static_cast<Glyph>(letter_int + 192);
+	}
+
+	// Are we in shade mode? If so, dim the colours.
+	if (shade_mode > 0)
+	{
+		r /= 2;
+		g /= 2;
+		b /= 2;
+	}
+
+	// Check for no-NBSP print flag.
+	bool no_nbsp = false;
+	if (mathx::check_flag(print_flags, PRINT_FLAG_NO_NBSP)) no_nbsp = true;
+
+	// Check for no-spaces print flag.
+	if (mathx::check_flag(print_flags, PRINT_FLAG_NO_SPACES) && letter == static_cast<Glyph>(' ')) return;
+
+	if (letter == static_cast<Glyph>('`') && !no_nbsp) letter = static_cast<Glyph>(' ');	// We can use ` to put non-break spaces in strings.
+
+	// Parse the colour into SDL's native format.
+	const unsigned int sdl_col = SDL_MapRGB(main_surface->format, r, g, b);
+
+	// Determine the location of the character in the grid.
+	if (static_cast<unsigned short>(letter) >= font_sheet_size) letter = static_cast<Glyph>('?');
+	unsigned short loc_x = static_cast<unsigned short>(letter) * 8, loc_y = 0;
+	while (loc_x >= font->w) { loc_y += 8; loc_x -= font->w; }
+	SDL_Rect font_rect = {loc_x, loc_y, 8, 8};
+
+	// Draw a coloured square, then 'stamp' it with the font.
+	int x_pos = x, y_pos = y;
+	if (!mathx::check_flag(print_flags, PRINT_FLAG_ABSOLUTE)) { x_pos *= 8; y_pos *= 8; }
+	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_FOUR_X)) x_pos += 2;
+	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_FOUR_Y)) y_pos += 2;
+	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_EIGHT_X)) x_pos += 4;
+	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_EIGHT_Y)) y_pos += 4;
+	SDL_Rect scr_rect = {x_pos, y_pos, 8, 8};
+	if (mathx::check_flag(print_flags, PRINT_FLAG_ALPHA))
+	{
+		SDL_Rect temp_rect = {0, 0, 8, 8};
+		if (SDL_FillRect(temp_surface, &temp_rect, sdl_col) < 0) guru::halt(SDL_GetError());
+		if (SDL_BlitSurface(font, &font_rect, temp_surface, &temp_rect) < 0) guru::halt(SDL_GetError());
+		if (SDL_SetColorKey(temp_surface, SDL_TRUE, SDL_MapRGB(temp_surface->format, 0, 0, 0)) < 0) guru::halt(SDL_GetError());
+		if (SDL_BlitSurface(temp_surface, &temp_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
+	}
+	else
+	{
+		if (SDL_FillRect(main_surface, &scr_rect, sdl_col) < 0) guru::halt(SDL_GetError());
+		if (SDL_BlitSurface(font, &font_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
+	}
+}
+
+// As above, but with a char instead of a glyph.
+void print_at(char letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags)
+{
+	STACK_TRACE();
+	print_at(static_cast<Glyph>(letter), x, y, r, g, b, print_flags);
+}
+
+// Draws a coloured rectangle.
+void rect(int x, int y, int w, int h, Colour colour)
+{
+	STACK_TRACE();
+	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
+	rect_fine(x * 8, y * 8, w * 8, h * 8, colour);
+}
+
+// Draws a rectangle at very specific coords.
+void rect_fine(int x, int y, int w, int h, Colour colour)
+{
+	STACK_TRACE();
+	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
+
+	s_rgb rgb_col;
+	parse_colour(colour, rgb_col.r, rgb_col.g, rgb_col.b);
+	rect_fine(x, y, w, h, rgb_col);
+}
+
+// As above, but with direct RGB input.
+void rect_fine(int x, int y, int w, int h, s_rgb colour)
+{
+	STACK_TRACE();
+
+	// Are we in shade mode? If so, dim the colours.
+	if (shade_mode > 0)
+	{
+		colour.r /= 2;
+		colour.g /= 2;
+		colour.b /= 2;
+	}
+	SDL_Rect dest = { x, y, w, h };
+	const unsigned int sdl_col = SDL_MapRGB(main_surface->format, colour.r, colour.g, colour.b);
+	if (SDL_FillRect(main_surface, &dest, sdl_col) < 0) guru::halt(SDL_GetError());
+}
+
+// Renders pre-calculated glitches.
+void render_glitches()
+{
+	STACK_TRACE();
+	for (auto g : glitch_vec)
+		glitch(g.x, g.y, g.w, g.h, g.off_x, g.off_y, g.black, g.surf);
 }
 
 // Renders a nebula on the screen.
@@ -736,116 +1037,244 @@ void render_nebula(unsigned short seed, int off_x, int off_y)
 		for (int y = 0; y < rows + 1; y++)
 		{
 			s_rgb rgb = nebula(x + off_x, y + off_y);
-			rect(x, y, 1, 1, rgb.r, rgb.g, rgb.b);
+			print_at(Glyph::BLOCK_SOLID, x, y, rgb.r, rgb.g, rgb.b);
 		}
 	}
 }
 
-// Creates a BLT RGB string from RGB integers.
-string rgb_string(unsigned char r, unsigned char g, unsigned char b)
+// Do absolutely nothing for a little while.
+void sleep_for(unsigned int amount)
 {
 	STACK_TRACE();
-	return strx::itos(r) + "," + strx::itos(g) + "," + strx::itos(b);
-}
-
-// As above, but for a Colour integer.
-string rgb_string(Colour colour)
-{
-	STACK_TRACE();
-	unsigned char r, g, b;
-	parse_colour(colour, r, g, b);
-	return rgb_string(r, g, b);
+	if (!amount) return;
+	const int cycles = amount / 10;
+	for (int i = 0; i < cycles; i++)
+	{
+		const unsigned int key = wait_for_key(10);
+		if (key && cycles < 100) queued_keys.push_back(key);
+	}
 }
 
 // Prints a sprite at the given location.
-void sprite_print(Sprite id, int x, int y, Colour colour)
+void sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
 {
 	STACK_TRACE();
-	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
-	terminal_color(rgb_string(colour).c_str());
-	terminal_put(x, y, 0x3000 + static_cast<unsigned int>(id));
+	const bool plus_four = ((flags & SPRITE_FLAG_PLUS_FOUR) == SPRITE_FLAG_PLUS_FOUR);
+	const bool quad = ((flags & SPRITE_FLAG_QUAD) == SPRITE_FLAG_QUAD);
+	if (quad)
+	{
+		for (unsigned int i = 0; i < 2; i++)
+		{
+			for (unsigned int j = 0; j < 2; j++)
+			{
+				Sprite new_id = id;
+				if (i == 1) new_id = static_cast<Sprite>(static_cast<int>(new_id) + 1);
+				if (j == 1) new_id = static_cast<Sprite>(static_cast<int>(new_id) + 24);
+				sprite_print(new_id, x + (i * 2), y + (j * 2), colour, flags ^ SPRITE_FLAG_QUAD);
+			}
+		}
+		return;
+
+	}
+	unsigned short loc_x = static_cast<unsigned short>(id) * 16, loc_y = 0;
+	while (loc_x >= sprites->w) { loc_y += 16; loc_x -= sprites->w; }
+	SDL_Rect sprite_rect = {loc_x, loc_y, 16, 16};
+
+	// Parse the colour into SDL's native format.
+	unsigned char r, g, b;
+	parse_colour(colour, r, g, b);
+	const unsigned int sdl_col = SDL_MapRGB(main_surface->format, r, g, b);
+
+	// Draw a coloured square, then 'stamp' it with the sprite.
+	SDL_Rect scr_rect = { (x * 8) + (plus_four ? 4 : 0), y * 8, 16, 16 };
+	SDL_Rect temp_rect = {0, 0, 32, 32};
+	if (SDL_FillRect(temp_surface, &temp_rect, sdl_col) < 0) guru::halt(SDL_GetError());
+	if (SDL_BlitSurface(sprites, &sprite_rect, temp_surface, &temp_rect) < 0) guru::halt(SDL_GetError());
+	if (SDL_SetColorKey(temp_surface, SDL_TRUE, SDL_MapRGB(temp_surface->format, 0, 0, 0)) < 0) guru::halt(SDL_GetError());
+	if (SDL_BlitSurface(temp_surface, &temp_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
+}
+
+// Unlocks the mutexes, if they're locked. Only for use by the Guru system.
+void unlock_surfaces()
+{
+	STACK_TRACE();
+	SDL_UnlockSurface(snes_surface);
+}
+
+// Updates the NTSC filter.
+void update_ntsc_mode(int force)
+{
+	STACK_TRACE();
+	snes_ntsc_setup_t setup = snes_ntsc_composite;
+	if (force == -1)
+	{
+		if (prefs::ntsc_mode == 1) setup = snes_ntsc_svideo;
+		else if (prefs::ntsc_mode == 0) setup = snes_ntsc_rgb;
+		else if (prefs::ntsc_mode == 3) setup = snes_ntsc_monochrome;
+	}
+	else
+	{
+		if (force == 1) setup = snes_ntsc_svideo;
+		else if (force == 0) setup = snes_ntsc_rgb;
+		else if (force == 3) setup = snes_ntsc_monochrome;
+	}
+	setup.merge_fields = 1;
+	if (force != -1 && mathx::rnd(3) == 1) setup.merge_fields = 0;
+	snes_ntsc_init(ntsc, &setup);
 }
 
 // Polls SDL until a key is pressed. If a time is specified, it will abort after this time.
 unsigned int wait_for_key(unsigned short max_ms)
 {
 	STACK_TRACE();
-	const std::unordered_map<unsigned int, unsigned int> key_translation_table = { { TK_SPACE, ' ' }, { TK_MINUS, '-' }, { TK_EQUALS, '=' }, { TK_LBRACKET, '[' }, { TK_RBRACKET, ']' }, { TK_BACKSLASH, '\\' }, { TK_SEMICOLON, ';' },
-		{ TK_APOSTROPHE, '\'' }, { TK_GRAVE, '`' }, { TK_COMMA, ',' }, { TK_PERIOD, '.' }, { TK_SLASH, '/' }, { TK_F1, KEY_F1 }, { TK_F2, KEY_F2 }, { TK_F3, KEY_F3 }, { TK_F4, KEY_F4 }, { TK_F5, KEY_F5 }, { TK_F6, KEY_F6 },
-		{ TK_F7, KEY_F7 }, { TK_F8, KEY_F8 }, { TK_F9, KEY_F9 }, { TK_F10, KEY_F10 }, { TK_F11, KEY_F11 }, { TK_F12, KEY_F12 }, { TK_RETURN, KEY_ENTER }, { TK_ESCAPE, KEY_ESCAPE }, { TK_BACKSPACE, KEY_BACKSPACE },
-		{ TK_TAB, KEY_TAB }, { TK_PAUSE, KEY_BREAK }, { TK_INSERT, KEY_INSERT }, { TK_HOME, KEY_HOME }, { TK_PAGEUP, KEY_PAGEUP }, { TK_DELETE, 0x7F }, { TK_END, KEY_END }, { TK_PAGEDOWN, KEY_PAGEDOWN }, { TK_RIGHT, KEY_RIGHT },
-		{ TK_LEFT, KEY_LEFT }, { TK_UP, KEY_UP }, { TK_DOWN, KEY_DOWN }, { TK_KP_0, KEY_KP_0 }, { TK_KP_1, KEY_KP_1 }, { TK_KP_2, KEY_KP_2 }, { TK_KP_3, KEY_KP_3 }, { TK_KP_4, KEY_KP_4 }, { TK_KP_5, KEY_KP_5 },
-		{ TK_KP_6, KEY_KP_6 }, { TK_KP_7, KEY_KP_7 }, { TK_KP_8, KEY_KP_8 }, { TK_KP_9, KEY_KP_9 }, { TK_KP_DIVIDE, KEY_KP_DIVIDE }, { TK_KP_MULTIPLY, KEY_KP_MULTIPLY }, { TK_KP_PLUS, KEY_KP_PLUS }, { TK_KP_MINUS, KEY_KP_MINUS },
-		{ TK_KP_PERIOD, KEY_KP_PERIOD }, { TK_KP_ENTER, KEY_KP_ENTER } };
-
-	auto timer = std::chrono::system_clock::now();
-	unsigned int millis = 0;
-	do
+	if (queued_keys.size())
 	{
-		if (terminal_has_input())
+		const unsigned int result = queued_keys.at(0);
+		queued_keys.erase(queued_keys.begin());
+		return result;
+	}
+
+	SDL_Event e;
+	unsigned int elapsed = 0, key = 0;
+	bool shift = false, ctrl = false, caps = false, alt = false;
+	while (elapsed < max_ms || (!max_ms && !key))
+	{
+		if (SDL_PollEvent(&e))
 		{
-			unsigned int key = terminal_read();
-			bool process_shift_ctrl_alt = false;
-
-			if (key == TK_CLOSE || (key == TK_F4 && terminal_state(TK_ALT)))
+			if (e.type == SDL_QUIT) { exit_functions(); exit(0); }
+			else if (e.type == SDL_KEYDOWN)
 			{
-				exit_functions();
-				guru::close_syslog();
-				exit(0);
-			}
-			else if (key == TK_RESIZED)
-			{
-				recalc_screen_size();
-				return RESIZE_KEY;
-			}
-			else if ((key >= TK_A && key <= TK_Z) || (key >= TK_1 && key <= TK_0))
-			{
-				if (key >= TK_1 && key <= TK_9) key = key - TK_1 + '1';
-				else if (key == TK_0) key = '0';
-				else if (key >= TK_A && key <= TK_Z) key = key - TK_A + 'a';
-				process_shift_ctrl_alt = true;
-			}
-			else if (key == TK_MOUSE_LEFT || key == TK_MOUSE_RIGHT)
-			{
-				mouse_clicked_x = terminal_state(TK_MOUSE_X);
-				mouse_clicked_y = terminal_state(TK_MOUSE_Y);
-				if (key == TK_MOUSE_LEFT) return LMB_KEY;
-				else return RMB_KEY;
-			}
-			else if (key == TK_MOUSE_SCROLL)
-			{
-				if (terminal_state(TK_MOUSE_WHEEL) > 0) return MOUSEWHEEL_UP_KEY;
-				else return MOUSEWHEEL_DOWN_KEY;
-			}
-			else
-			{
-				auto found = key_translation_table.find(key);
-				if (found != key_translation_table.end())
+				const unsigned short mod = e.key.keysym.mod;
+				if (!key)
 				{
-					key = found->second;
-					process_shift_ctrl_alt = true;
+					key = e.key.keysym.sym;
+					if ((mod & KMOD_LSHIFT) || (mod & KMOD_RSHIFT) || (mod & KMOD_SHIFT)) shift = true;
+					if ((mod & KMOD_LCTRL) || (mod & KMOD_RCTRL) || (mod & KMOD_CTRL)) ctrl = true;
+					if ((mod & KMOD_LALT) || (mod & KMOD_RALT) || (mod & KMOD_ALT)) alt = true;
+					if (mod & KMOD_CAPS) caps = true;
 				}
 			}
-
-			if (process_shift_ctrl_alt)
+			// Mouse controls!
+			else if (e.type == SDL_MOUSEBUTTONDOWN)
 			{
-				const bool shift = terminal_state(TK_SHIFT);
-				const bool ctrl = terminal_state(TK_CONTROL);
-				const bool alt = terminal_state(TK_ALT);
-				if (shift)
+				if (e.button.button == SDL_BUTTON_LEFT || e.button.button == SDL_BUTTON_RIGHT)
 				{
-					if (key >= 'a' && key <= 'z' && !alt && !ctrl) key -= 32;
-					else key += 1000;
+					mouse_clicked_x = SNES_NTSC_IN_WIDTH(e.button.x) / 8;
+					mouse_clicked_y = e.button.y / 16;
+					if (e.button.button == SDL_BUTTON_LEFT) return LMB_KEY; else return RMB_KEY;
 				}
-				if (ctrl) key += 10000;
-				if (alt) key += 100000;
-				return key;
+			}
+			else if (e.type == SDL_MOUSEWHEEL)
+			{
+				if (e.wheel.y > 0) return MOUSEWHEEL_UP_KEY;
+				else if (e.wheel.y < 0) return MOUSEWHEEL_DOWN_KEY;
+			}
+			else if (e.type == SDL_WINDOWEVENT)
+			{
+				if (e.window.event == SDL_WINDOWEVENT_RESIZED)
+				{
+					glitch_vec.clear();
+					window_surface = SDL_GetWindowSurface(main_window);
+					if (!window_surface)
+					{
+						guru::console_ready(false);
+						guru::halt(SDL_GetError());
+					}
+					if ((window_surface->w != main_surface->w || window_surface->h != main_surface->h) && surface_scale != 3)
+					{
+						SDL_FreeSurface(main_surface);
+						SDL_FreeSurface(glitched_main_surface);
+						SDL_FreeSurface(snes_surface);
+						SDL_FreeSurface(glitch_hz_surface);
+						if (!(main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
+						{
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
+						}
+						if (!(glitched_main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
+						{
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
+						}
+						if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
+						{
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
+						}
+						if (!(glitch_hz_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, 8, 16, 0, 0, 0, 0)))
+						{
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
+						}
+						if (SDL_SetColorKey(glitch_hz_surface, SDL_TRUE, SDL_MapRGB(glitch_hz_surface->format, 1, 1, 1)) < 0)
+						{
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
+						}
+						if (SDL_SetColorKey(glitch_sq_surface, SDL_TRUE, SDL_MapRGB(glitch_sq_surface->format, 1, 1, 1)) < 0)
+						{
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
+						}
+					}
+					else cls();
+					if (surface_scale != 3)
+					{
+						screen_x = unscaled_x = window_surface->w; screen_y = unscaled_y = window_surface->h;
+						if (surface_scale)
+						{
+							if (surface_scale == 1) screen_y = static_cast<int>(static_cast<float>(screen_y) / 1.333f);
+							else if (surface_scale == 2) { screen_x /= 2; screen_y /= 2; }
+						}
+						cols = SNES_NTSC_IN_WIDTH(screen_x) / 8;
+						rows = screen_y / 16;
+						mid_col = cols / 2;
+						mid_row = rows / 2;
+					}
+					return RESIZE_KEY;
+				}
+				else if (e.window.event == SDL_WINDOWEVENT_CLOSE) { exit_functions(); exit(0); }
 			}
 		}
-		delay(10);
-		millis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - timer).count();
-	} while(millis < max_ms || !max_ms);
-	return 0;
+		if (key == SDLK_LCTRL || key == SDLK_RCTRL || key == SDLK_LALT || key == SDLK_RALT || key == SDLK_LSHIFT || key == SDLK_RSHIFT) key = 0;
+		if (!max_ms || max_ms >= 10) delay(10);
+		elapsed += 10;
+	}
+	if (key >= 'a' && key <= 'z')
+	{
+		if ((shift || caps) && ctrl && alt) key += (1 << 15) - 32;	// shift-ctrl-alt
+		else if (ctrl && alt) key += (1 << 15);						// ctrl-alt
+		else if ((shift || caps) && ctrl) key += (1 << 16) - 32;	// shift-ctrl
+		else if ((shift || caps) && alt) key += (1 << 17) - 32;		// shift-alt
+		else if (shift || caps) key -= 32;							// shift
+		else if (ctrl) key -= 96;									// ctrl
+		else if (alt) key += (1 << 17);								// alt
+	}
+	if ((key == SDLK_LEFT || key == SDLK_KP_4) && shift) key = SHIFT_LEFT;
+	else if ((key == SDLK_RIGHT || key == SDLK_KP_6) && shift) key = SHIFT_RIGHT;
+	else if ((key == SDLK_UP || key == SDLK_KP_8) && shift) key = SHIFT_UP;
+	else if ((key == SDLK_DOWN || key == SDLK_KP_2) && shift) key = SHIFT_DOWN;
+	if (key == prefs::keybind(Keys::SCREENSHOT))
+	{
+		// Create screenshot folder if needed.
+		filex::make_dir(FOLDER_SCREENS);
+
+		// Determine the filename for the screenshot.
+		int sshot = 0;
+		string filename;
+		while(true)
+		{
+			filename = (string)FOLDER_SCREENS + "/duskfall" + strx::itos(++sshot);
+			if (!(filex::file_exists(filename + ".png") || filex::file_exists(filename + ".bmp") || filex::file_exists(filename + ".jpg") || filex::file_exists(filename + ".tmp"))) break;
+			if (sshot > 1000000) return key;	// Just give up if we have an absurd amount of files.
+		}
+		if (prefs::screenshot_type == 2) SDL_SaveJPG(snes_surface, (filename + ".jpg").c_str(), -1);
+		else SDL_SaveBMP(snes_surface, (filename + (prefs::screenshot_type > 0 ? ".tmp" : ".bmp")).c_str());
+		if (prefs::screenshot_type == 1) std::thread(convert_png, filename).detach();
+	}
+
+	SDL_FlushEvent(SDL_KEYDOWN);
+	return key;
 }
 
 // Renders a yes/no popup box and returns the result.
@@ -876,7 +1305,7 @@ bool yes_no_query(string yn_strings, string title, Colour title_colour, unsigned
 	{
 		const string line = message.at(i);
 		if (ansi) ansi_print(line, mid_col - (strx::ansi_strlen(line) / 2), box_start_y + 2 + i);
-		else print(line, mid_col - (strx::ansi_strlen(line) / 2), box_start_y + 2 + i, Colour::CGA_WHITE, PRINT_FLAG_SANS);
+		else print(line, mid_col - (strx::ansi_strlen(line) / 2), box_start_y + 2 + i, Colour::CGA_WHITE, PRINT_FLAG_ALT_FONT);
 	}
 
 	const unsigned int bottom_row = box_start_y + height - 1;

@@ -6,9 +6,8 @@
 #include "iocore.h"
 #include "strx.h"
 
-#include "BearLibTerminal/BearLibTerminal.h"
-
 #include <ctime>
+#include <fstream>
 
 #define FILENAME_LOG	"userdata/log.txt"
 
@@ -78,18 +77,7 @@ void halt(string error)
 			iocore::flip();
 			flash_state = !flash_state;
 		}
-		iocore::delay(10);
-		if (terminal_has_input())
-		{
-			unsigned int key = terminal_read();
-			if (key == TK_RESIZED) iocore::recalc_screen_size();
-			else if (key == TK_CLOSE || (key == TK_F4 && terminal_state(TK_ALT)))
-			{
-				iocore::exit_functions();
-				close_syslog();
-				exit(0);
-			}
-		}
+		iocore::wait_for_key(10);
 	}
 }
 

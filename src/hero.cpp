@@ -16,12 +16,14 @@
 
 Hero::Hero() : camera_off_x(0), camera_off_y(0), difficulty(1), played(0), style(1)
 {
+	STACK_TRACE();
 	ai = new Controls(this);
 	glyph = '@';
 }
 
 Hero::~Hero()
 {
+	STACK_TRACE();
 	if (ai) delete ai;
 }
 

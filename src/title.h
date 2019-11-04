@@ -14,6 +14,7 @@ void	choose_difficulty();	// How much do you hate yourself?
 void	choose_gender();		// Choose your character's gender.
 void	choose_name();			// Picks a name for the character.
 void	copyright_window();		// Display the copyright window.
+void	glitch_warning();		// Displays the first-time glitch warning screen.
 void	load_game(int slot);	// Loads a saved game.
 bool	new_game(int slot, bool start_over);	// Starts a new game!
 void	redraw_animated_logo();	// Redraws the animated logo every frame.

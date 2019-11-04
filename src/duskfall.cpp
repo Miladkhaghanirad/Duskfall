@@ -1,7 +1,7 @@
 // duskfall.cpp -- Program main entry point. Not much to see here, but this is where it starts.
 // Copyright (c) 2016-2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
-//#include "dungeon.h"
+#include "dungeon.h"
 #include "duskfall.h"
 #include "guru.h"
 #include "iocore.h"

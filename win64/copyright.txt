@@ -8,18 +8,28 @@ Alagard font (c) 2013 Pix3M (CC-BY-3.0).
 
 Artos Serif and Victoria bitmap fonts (c) 2012 usr_share (CC-0).
 
-BearLibTerminal (c) 2013-2017 Cfyz.
-
-GCC embedded runtime and library code is copyright (c) Free Software Foundation, Inc., distrubuted under the GCC Runtime Library Exception, version 3.1 of the GNU General Public License v3.
-
 Generic Makefile Template for C/C++ Projects copyright (c) 2016 Pear, (c) 2007, 2008 whyglinux.
 
 JsonCpp (c) 2007-2010 Baptiste Lepilleur and The JsonCpp Authors.
 
+libpng (c) 2000-2002, 2004, 2006-2017 Glenn Randers-Pehrson.
+
+libjpeg (c) 1991-2016 Thomas G. Lane, Guido Vollbeding. This software is based in part on the work of the Independent JPEG Group.
+
+LodePNG (c) 2005-2019 Lode Vandevenne.
+
 PCG (c) 2014 Melissa O'Neill.
+
+SDL2, SDL_image (c) 1997-2019 Sam Lantinga.
+
+SDL_savejpeg (c) 2004 Pluto, Inc.
+
+snes_ntsc (c) Shay Green, used under GNU LGPL 2.1.
 
 SQLite (c) SQLite Consortium.
 
 SQLiteC++ (c) 2012-2019 Sébastien Rombauts.
+
+zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler.
 
 THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

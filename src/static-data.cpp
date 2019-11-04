@@ -157,11 +157,11 @@ Colour StaticData::parse_colour_string(string colour_string)
 unsigned int StaticData::parse_glyph_string(string glyph_string)
 {
 	STACK_TRACE();
-	const std::unordered_map<string, Glyph> glyph_map = { { "FACE", Glyph::FACE }, { "HALF_HEART", Glyph::HALF_HEART }, { "HEART", Glyph::HEART }, { "DIAMOND", Glyph::DIAMOND }, { "CLUB", Glyph::CLUB },
+	const std::unordered_map<string, Glyph> glyph_map = { { "FACE_BLACK", Glyph::FACE_BLACK }, { "FACE_WHITE", Glyph::FACE_WHITE }, { "HEART", Glyph::HEART }, { "DIAMOND", Glyph::DIAMOND }, { "CLUB", Glyph::CLUB },
 		{ "SPADE", Glyph::SPADE }, { "BULLET", Glyph::BULLET }, { "BULLET_INVERT", Glyph::BULLET_INVERT }, { "CIRCLE", Glyph::CIRCLE }, { "CIRCLE_INVERT", Glyph::CIRCLE_INVERT }, { "MALE", Glyph::MALE }, { "FEMALE", Glyph::FEMALE },
 		{ "MUSIC", Glyph::MUSIC }, { "MUSIC_DOUBLE", Glyph::MUSIC_DOUBLE }, { "SUN", Glyph::SUN }, { "TRIANGLE_RIGHT", Glyph::TRIANGLE_RIGHT }, { "TRIANGLE_LEFT", Glyph::TRIANGLE_LEFT }, { "ARROW_UD", Glyph::ARROW_UD },
 		{ "DOUBLE_EXCLAIM", Glyph::DOUBLE_EXCLAIM }, { "PILCROW", Glyph::PILCROW }, { "SECTION", Glyph::SECTION }, { "GEOM_A", Glyph::GEOM_A }, { "ARROW_UD_B", Glyph::ARROW_UD_B }, { "ARROW_UP", Glyph::ARROW_UP },
-		{ "ARROW_DOWN", Glyph::ARROW_DOWN }, { "ARROW_RIGHT", Glyph::ARROW_RIGHT }, { "ARROW_LEFT", Glyph::ARROW_LEFT }, { "RETURN", Glyph::RETURN }, { "ARROW_LR", Glyph::ARROW_LR }, { "TRIANGLE_UP", Glyph::TRIANGLE_UP },
+		{ "ARROW_DOWN", Glyph::ARROW_DOWN }, { "ARROW_RIGHT", Glyph::ARROW_RIGHT }, { "ARROW_LEFT", Glyph::ARROW_LEFT }, { "BRACKET", Glyph::BRACKET }, { "ARROW_LR", Glyph::ARROW_LR }, { "TRIANGLE_UP", Glyph::TRIANGLE_UP },
 		{ "TRIANGLE_DOWN", Glyph::TRIANGLE_DOWN }, { "HOUSE", Glyph::HOUSE }, { "C_CEDILLA_CAPS", Glyph::C_CEDILLA_CAPS }, { "U_DIAERESIS", Glyph::U_DIAERESIS }, { "E_ACUTE", Glyph::E_ACUTE }, { "A_CIRCUMFLEX", Glyph::A_CIRCUMFLEX },
 		{ "A_DIAERESIS", Glyph::A_DIAERESIS }, { "A_GRAVE", Glyph::A_GRAVE }, { "A_OVERRING", Glyph::A_OVERRING }, { "C_CEDILLA", Glyph::C_CEDILLA }, { "E_CIRCUMFLEX", Glyph::E_CIRCUMFLEX }, { "E_DIAERESIS", Glyph::E_DIAERESIS },
 		{ "E_GRAVE", Glyph::E_GRAVE }, { "I_DIAERESIS", Glyph::I_DIAERESIS }, { "I_CIRCUMFLEX", Glyph::I_CIRCUMFLEX }, { "I_GRAVE", Glyph::I_GRAVE }, { "A_DIAERESIS_CAPS", Glyph::A_DIAERESIS_CAPS },
@@ -183,7 +183,11 @@ unsigned int StaticData::parse_glyph_string(string glyph_string)
 		{ "DELTA", Glyph::DELTA }, { "INFINITY", Glyph::INFINITY }, { "PHI", Glyph::PHI }, { "EPSILON", Glyph::EPSILON }, { "INTERSECTION", Glyph::INTERSECTION }, { "TRIPLE_BAR", Glyph::TRIPLE_BAR },
 		{ "PLUS_MINUS", Glyph::PLUS_MINUS }, { "GEQ", Glyph::GEQ }, { "LEQ", Glyph::LEQ }, { "INTEGRAL", Glyph::INTEGRAL }, { "INTEGRAL_INVERTED", Glyph::INTEGRAL_INVERTED }, { "DIVISION", Glyph::DIVISION },
 		{ "APPROXIMATION", Glyph::APPROXIMATION }, { "DEGREE", Glyph::DEGREE }, { "BULLET_SMALL", Glyph::BULLET_SMALL }, { "INTERPUNCT", Glyph::INTERPUNCT }, { "SQUARE_ROOT", Glyph::SQUARE_ROOT }, { "N_SUPER", Glyph::N_SUPER },
-		{ "SQUARE", Glyph::SQUARE }, { "CORNER_BLOCK", Glyph::CORNER_BLOCK }, { "COPYRIGHT", Glyph::COPYRIGHT } };
+		{ "SQUARE", Glyph::SQUARE }, { "MIDBLOCK", Glyph::MIDBLOCK }, { "HALF_HEART", Glyph::HALF_HEART }, { "COPYRIGHT", Glyph::COPYRIGHT }, { "BLOCKS_7", Glyph::BLOCKS_7 }, { "BLOCKS_11", Glyph::BLOCKS_11 },
+		{ "BLOCKS_14", Glyph::BLOCKS_14 }, { "BLOCKS_13", Glyph::BLOCKS_13 }, { "BLOCKS_4", Glyph::BLOCKS_4 }, { "UPSIDE_DOWN_HD", Glyph::UPSIDE_DOWN_HD }, { "BLOCKS_8", Glyph::BLOCKS_8 }, { "BLOCKS_1", Glyph::BLOCKS_1 },
+		{ "BLOCKS_2", Glyph::BLOCKS_2 }, { "CORNER_CLIP_DL", Glyph::CORNER_CLIP_DL }, { "CORNER_CLIP_DR", Glyph::CORNER_CLIP_DR }, { "CURVE_DL", Glyph::CURVE_DL }, { "CURVE_UR", Glyph::CURVE_UR }, { "CURVE_UL", Glyph::CURVE_UL },
+		{ "CURVE_DR", Glyph::CURVE_DR }, { "FLOPPY_DISK_METAL_HOLE", Glyph::FLOPPY_DISK_METAL_HOLE }, { "RETURN", Glyph::RETURN }, { "TICK", Glyph::TICK }, { "MIDDOT", Glyph::MIDDOT }, { "MIDCOMMA", Glyph::MIDCOMMA },
+		{ "SKULL", Glyph::SKULL } };
 
 	if (glyph_string.size() == 1) return glyph_string[0];
 	auto found = glyph_map.find(strx::str_toupper(glyph_string));

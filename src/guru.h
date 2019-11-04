@@ -3,7 +3,6 @@
 
 #pragma once
 #include "duskfall.h"
-#include <fstream>
 
 #define GURU_INFO		0	// General logging information.
 #define GURU_WARN		1	// Warnings, non-fatal stuff.
