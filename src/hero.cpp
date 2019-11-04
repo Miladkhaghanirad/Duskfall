@@ -16,7 +16,7 @@
 
 Hero::Hero() : camera_off_x(0), camera_off_y(0), difficulty(1), played(0), style(1)
 {
-	ai = new AI(this);
+	ai = new Controls(this);
 }
 
 Hero::~Hero()
