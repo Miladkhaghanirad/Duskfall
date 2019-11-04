@@ -37,15 +37,15 @@ void StaticData::init_actor_json(Json::Value jval, string actor_id, shared_ptr<A
 {
 	STACK_TRACE();
 	const string actor_name = jval.get("name", "").asString();
-	if (!actor_name.size()) guru->log("No actor name specified for " + actor_id, GURU_WARN);
+	if (!actor_name.size()) guru::log("No actor name specified for " + actor_id, GURU_WARN);
 	else actor->name = actor_name;
 
 	const string actor_colour_unparsed = jval.get("colour", "").asString();
-	if (!actor_colour_unparsed.size()) guru->log("No actor colour specified  for " + actor_id, GURU_WARN);
+	if (!actor_colour_unparsed.size()) guru::log("No actor colour specified  for " + actor_id, GURU_WARN);
 	actor->colour = parse_colour_string(actor_colour_unparsed);
 
 	const string actor_glyph_unparsed = jval.get("glyph", "").asString();
-	if (!actor_glyph_unparsed.size()) guru->log("No actor glyph specified for " + actor_id, GURU_WARN);
+	if (!actor_glyph_unparsed.size()) guru::log("No actor glyph specified for " + actor_id, GURU_WARN);
 	actor->glyph = parse_glyph_string(actor_glyph_unparsed);
 }
 
