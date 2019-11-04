@@ -16,10 +16,13 @@
 
 Hero::Hero() : camera_off_x(0), camera_off_y(0), difficulty(1), played(0), style(1)
 {
-	ai = std::make_shared<Controls>(shared_ptr<Hero>(this));
+	ai = new AI(this);
 }
 
-Hero::~Hero() { }
+Hero::~Hero()
+{
+	if (ai) delete ai;
+}
 
 // Loads the Hero's data from disk.
 void Hero::load()

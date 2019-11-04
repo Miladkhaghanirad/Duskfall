@@ -286,6 +286,7 @@ void exit_functions()
 		terminal_close();
 		guru::console_ready(false);
 	}
+	exit_func_level = 0;
 }
 
 // Redraws the display.
@@ -841,7 +842,7 @@ unsigned int wait_for_key(unsigned short max_ms)
 				return key;
 			}
 		}
-		terminal_delay(10);
+		delay(10);
 		millis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - timer).count();
 	} while(millis < max_ms || !max_ms);
 	return 0;
