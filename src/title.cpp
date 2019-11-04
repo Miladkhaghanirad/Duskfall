@@ -569,27 +569,28 @@ void redraw_menu()
 void redraw_static_logo(int offset)
 {
 	STACK_TRACE();
-	iocore::layer(5);
 	const int midrow = iocore::midrow(), midcol = iocore::midcol();
 	for (int i = 3; i <= 4; i++)
 	{
 		for (int x = 1; x < 54; x++)
 		{
+			iocore::layer(5);
 			if (i == 3) iocore::print_at(Glyph::BLOCK_U, midcol - 27 + x, midrow - 14 + i + offset, Colour::BLACK_LIGHT, PRINT_FLAG_PLUS_EIGHT_Y);
 			else iocore::print_at(Glyph::BLOCK_D, midcol - 27 + x, midrow - 13 + i + offset, Colour::BLACK_LIGHT, PRINT_FLAG_PLUS_EIGHT_Y);
+			iocore::layer(6);
 			iocore::print_at(Glyph::BLOCK_SOLID, midcol - 27 + x, midrow - 13 + i + offset, Colour::TERM_BLUE);
 		}
 	}
 	for (int i = 0; i < 8; i++)
 	{
-		iocore::layer(6);
+		iocore::layer(7);
 		iocore::print(static_title[i], midcol - 23, midrow - 13 + i + offset, Colour::BLACK_LIGHT, PRINT_FLAG_NO_SPACES | PRINT_FLAG_ALPHA);
 		iocore::print(static_title[i], midcol - 22, midrow - 13 + i + offset, Colour::BLACK_LIGHT, PRINT_FLAG_NO_SPACES | PRINT_FLAG_ALPHA);
-		iocore::layer(7);
+		iocore::layer(8);
 		iocore::print(static_title[i], midcol - 23, midrow - 13 + i + offset, Colour::BLACK_LIGHT, PRINT_FLAG_NO_SPACES | PRINT_FLAG_ALPHA | PRINT_FLAG_PLUS_EIGHT_Y  | PRINT_FLAG_PLUS_EIGHT_X);
 		iocore::print(static_title[i], midcol - 23, midrow - 14 + i + offset, Colour::BLACK_LIGHT, PRINT_FLAG_NO_SPACES | PRINT_FLAG_ALPHA | PRINT_FLAG_PLUS_EIGHT_Y  | PRINT_FLAG_PLUS_EIGHT_X);
 	}
-	iocore::layer(8);
+	iocore::layer(9);
 	for (int i = 0; i < 8; i++)
 	{
 		Colour col;
