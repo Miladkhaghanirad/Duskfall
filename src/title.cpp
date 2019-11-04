@@ -353,7 +353,7 @@ void copyright_window()
 		else if (line == "-") copyright.push_back("{{PB}}");
 		else
 		{
-			strx::find_and_replace(line, "é", "^130^");
+			strx::find_and_replace(line, "Ã©", "^130^");
 			vector<string> line_vec = strx::ansi_vector_split(line, 53);
 			copyright.insert(copyright.end(), line_vec.begin(), line_vec.end());
 		}
