@@ -1,12 +1,9 @@
 CXX = g++
 CXXFLAGS = -std=c++1y -Wall -Wextra -fpermissive -O3 -Isrc -g
-LIBFLAGS = -Llib -lmingw32 -lSDL2main -lSDL2.dll -lSDL2_image.dll -ljpeg -lsqlite3.dll -mwindows -s
+LIBFLAGS = -Llib -lBearLibTerminal.dll -lsqlite3.dll -static-libgcc -static-libstdc++ -static -mwindows -s
 
 SOURCES=$(wildcard src/*.cpp)
-SOURCES+=$(wildcard src/lodepng/*.cpp)
 SOURCES+=$(wildcard src/pcg/*.c)
-SOURCES+=$(wildcard src/sdl_savejpeg/*.c)
-SOURCES+=$(wildcard src/snes_ntsc/*.c)
 SOURCES+=$(wildcard src/SQLiteCpp/*.cpp)
 OURCES+=$(wildcard src/jsoncpp/*.cpp)
 OBJS=$(SOURCES:.cpp=.o)
