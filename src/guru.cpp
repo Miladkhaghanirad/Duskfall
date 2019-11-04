@@ -65,8 +65,8 @@ void halt(string error)
 	dead_already = true;	// You only die once.
 
 	message = error;
-	iocore->cls();
-	iocore->flip();
+	iocore::cls();
+	iocore::flip();
 	while(true)
 	{
 		redraw_cycle++;
@@ -74,10 +74,10 @@ void halt(string error)
 		{
 			redraw_cycle = 0;
 			redraw();
-			iocore->flip();
+			iocore::flip();
 			flash_state = !flash_state;
 		}
-		iocore->wait_for_key(10);
+		iocore::wait_for_key(10);
 	}
 }
 
@@ -145,11 +145,11 @@ void open_syslog()
 void redraw()
 {
 	STACK_TRACE();
-	iocore->cls();
-	if (flash_state) iocore->box(iocore->midcol() - 20, iocore->midrow() - 3, 41, 7, Colour::TERM_LRED);
-	iocore->print("Software Failure, Halting Execution", iocore->midcol() - 17, iocore->midrow() - 1, Colour::TERM_LRED);
-	iocore->print(message, iocore->midcol() - (message.size() / 2), iocore->midrow() + 1, Colour::TERM_LRED);
-	iocore->flip();
+	iocore::cls();
+	if (flash_state) iocore::box(iocore::midcol() - 20, iocore::midrow() - 3, 41, 7, Colour::TERM_LRED);
+	iocore::print("Software Failure, Halting Execution", iocore::midcol() - 17, iocore::midrow() - 1, Colour::TERM_LRED);
+	iocore::print(message, iocore::midcol() - (message.size() / 2), iocore::midrow() + 1, Colour::TERM_LRED);
+	iocore::flip();
 }
 
 }	// namespace guru

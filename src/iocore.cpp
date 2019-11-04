@@ -85,102 +85,44 @@ unsigned int build_version() { return atoi(cc_date); }
  * END OF BUILD VERSION GENERATION *
  ***********************************/
 
-shared_ptr<IOCore>	iocore = nullptr;	// The main IOCore object.
 
-IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), exit_func_level(1), hold_glyph_glitches(false), glitch_multi(1), mouse_clicked_x(0), mouse_clicked_y(0), glitch_clear_countdown(0), glitches_queued(0), ntsc_glitched(false),
-		cleaned_up(false)
+namespace iocore
 {
-	STACK_TRACE();
-	guru::log("Duskfall v" + DUSKFALL_VERSION_STRING + " [build " + strx::itos(build_version()) + "]", GURU_STACK);
-	guru::log("Main program entry. Let's do this.", GURU_INFO);
 
-	// Check for necessary CPU features.
-	bool has_mmx = SDL_HasMMX(), has_sse = SDL_HasSSE(), has_sse2 = SDL_HasSSE2(), has_sse3 = SDL_HasSSE3(), has_multicore = (SDL_GetCPUCount() > 1);
-	vector<string> missing_cpu;
-	if (!has_mmx) missing_cpu.push_back("MMX");
-	if (!has_sse) missing_cpu.push_back("SSE");
-	if (!has_sse2) missing_cpu.push_back("SSE2");
-	if (!has_sse3) missing_cpu.push_back("SSE3");
-	if (!has_multicore) missing_cpu.push_back("multi-core");
-	if (missing_cpu.size()) guru::log("Missing CPU features may degrade performance: " + strx::comma_list(missing_cpu), GURU_WARN);
+SDL_Surface		*alagard = nullptr;		// The texture for the large bitmap font.
+bool			cleaned_up = false;		// Have we run the exit functions already?
+unsigned short	cols = 0, rows = 0, mid_col = 0, mid_row = 0;	// The number of columns and rows available, and the middle column/row.
+unsigned char	exit_func_level = 0;	// Keep track of what to clean up at exit.
+SDL_Surface		*font = nullptr;		// The bitmap font texture.
+unsigned short	font_sheet_size = 0;	// The size of the font texture sheet, in glyphs.
+unsigned int 	glitch_clear_countdown = 0;
+SDL_Surface		*glitch_hz_surface = nullptr;	// Horizontal glitch surface.
+unsigned char	glitch_multi = 0;		// Glitch intensity multiplier.
+SDL_Surface		*glitch_sq_surface = nullptr;	// Square glitch surface.
+std::vector<s_glitch>	glitch_vec;
+SDL_Surface 	*glitched_main_surface = nullptr;	// A glitched version of the main render surface.
+unsigned char	glitches_queued = 0;
+bool			hold_glyph_glitches = false;	// Hold off on glyph glitching right now.
+SDL_Surface		*main_surface = nullptr;	// The main render surface.
+SDL_Window		*main_window = nullptr;		// The main (and only) SDL window.
+unsigned short	mouse_clicked_x = 0, mouse_clicked_y = 0;	// Last clicked location for a mouse event.
+std::unordered_map<std::string, s_rgb>	nebula_cache;	// Cache for the nebula() function.
+unsigned short	nebula_cache_seed = 0;	// The seed for the nebula cache.
+snes_ntsc_t		*ntsc = nullptr;		// Used by the NTSC filter.
+bool			ntsc_glitched = false;
+vector<unsigned int>	queued_keys;	// Keypresses waiting to be processed.
+int				screen_x = 0, screen_y = 0;	// Chosen screen resolution.
+int				shade_mode = false;		// Are we rendering in shade mode?
+SDL_Surface		*snes_surface = nullptr;	// The SNES surface, for rendering the CRT effect.
+SDL_Surface		*sprites = nullptr;		// The texture for larger sprites.
+unsigned char	surface_scale = 0;		// The surface scale modifier.
+SDL_Surface		*temp_surface = nullptr;	// Temporary surface used for blitting glyphs.
+int				unscaled_x = 0, unscaled_y = 0;	// The unscaled resolution.
+SDL_Surface		*window_surface = nullptr;	// The actual window's surface.
 
-	// Start the ball rolling.
-	guru::log("Initializing SDL core systems: video, timer, events.", GURU_INFO);
-	const unsigned int sdl_flags = SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS;
-	if (SDL_Init(sdl_flags) < 0) guru::halt(SDL_GetError());
-	if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) != IMG_INIT_PNG) guru::halt(IMG_GetError());
-	exit_func_level = 2;
-
-	// This is messy. Set up all the surfaces we'll be using for rendering, and exit out if anything goes wrong.
-	guru::log("Initializing SDL window and surfaces.", GURU_INFO);
-	screen_x = unscaled_x = prefs::screen_x;
-	screen_y = unscaled_y = prefs::screen_y;
-	const bool fullscreen = prefs::fullscreen;
-	surface_scale = prefs::scale_mod;
-	if (surface_scale == 1) screen_y = static_cast<int>(screen_y * 1.3333) + 1;
-	else if (surface_scale == 2) { screen_x *= 2; screen_y *= 2; }
-	if (screen_x < SCREEN_MIN_X) screen_x = SCREEN_MIN_X;
-	else if (screen_x > SCREEN_MAX_X) screen_x = SCREEN_MAX_X;
-	if (screen_y < SCREEN_MIN_Y) screen_y = SCREEN_MIN_Y;
-	else if (screen_y > SCREEN_MAX_Y) screen_y = SCREEN_MAX_Y;
-	string window_title = "Duskfall " + DUSKFALL_VERSION_STRING + " [build " + strx::itos(build_version()) + "]";
-	main_window = SDL_CreateWindow(window_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_x, screen_y, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | (fullscreen ? SDL_WINDOW_FULLSCREEN : 0));
-	if (!main_window) guru::halt(SDL_GetError());
-	SDL_SetWindowMinimumSize(main_window, SCREEN_MIN_X, SCREEN_MIN_Y);
-	cols = SNES_NTSC_IN_WIDTH(unscaled_x) / 8; rows = unscaled_y / 16; mid_col = cols / 2; mid_row = rows / 2;
-	if (!(window_surface = SDL_GetWindowSurface(main_window))) guru::halt(SDL_GetError());
-	if (!(main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
-	if (!(glitched_main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
-	if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, window_surface->h + 16, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
-	SDL_RaiseWindow(main_window);
-	if (!(temp_surface = SDL_CreateRGBSurface(0, 32, 32, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
-	if (!(glitch_hz_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, 8, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
-	if (SDL_SetColorKey(glitch_hz_surface, SDL_TRUE, SDL_MapRGB(glitch_hz_surface->format, 1, 1, 1)) < 0) guru::halt(SDL_GetError());
-	if (!(glitch_sq_surface = SDL_CreateRGBSurface(0, 70, 70, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
-	if (SDL_SetColorKey(glitch_sq_surface, SDL_TRUE, SDL_MapRGB(glitch_sq_surface->format, 1, 1, 1)) < 0) guru::halt(SDL_GetError());
-	exit_func_level = 3;
-
-	// Sets up the PCG PRNG.
-	guru::log("Initializing pseudorandom number generator.", GURU_INFO);
-	mathx::init();
-
-	// Set up the SNES renderer.
-	if (!(ntsc = static_cast<snes_ntsc_t*>(calloc(1, sizeof(snes_ntsc_t))))) guru::halt("Unable to initialize NTSC shader.");
-	update_ntsc_mode();
-
-	// Blank the screen.
-	cls();
-	flip();
-
-	// Load the bitmap fonts and other PNGs into memory.
-	guru::log("Attempting to load bitmap fonts.", GURU_INFO);
-	auto load_and_optimize_png = [] (string filename, SDL_Surface **dest, SDL_Surface *main_surface)
-	{
-		SDL_Surface *surf_temp = IMG_Load(("data/png/" + filename).c_str());
-		if (!surf_temp) guru::halt(IMG_GetError());
-		*dest = SDL_ConvertSurface(surf_temp, main_surface->format, 0);
-		if (!dest) guru::halt(SDL_GetError());
-		SDL_FreeSurface(surf_temp);
-		if (SDL_SetColorKey(*dest, SDL_TRUE, SDL_MapRGB((*dest)->format, 255, 255, 255)) < 0) guru::halt(SDL_GetError());
-	};
-
-	load_and_optimize_png("fonts.png", &font, main_surface);
-	load_and_optimize_png("alagard.png", &alagard, main_surface);
-	load_and_optimize_png("sprites.png", &sprites, main_surface);
-	font_sheet_size = (font->w * font->h) / 8;
-	exit_func_level = 4;
-
-	// Now that the font is loaded and SDL is initialized, we can activate Guru's error screen.
-	guru::console_ready(true);
-}
-
-IOCore::~IOCore()
-{
-	exit_functions();
-}
 
 // Adjusts the colour palette, if needed.
-Colour IOCore::adjust_palette(Colour colour)
+Colour adjust_palette(Colour colour)
 {
 	static const unsigned char colour_table_cga[(MAX_COLOUR + 1)] = {
 			0x2D, 0x43, 0x43, 0x43, 0x45, 0x45, 0x45, 0x45, 0x45, 0x43, 0x43, 0x43, 0x43, 0x0D, 0x45, 0x0D,
@@ -229,7 +171,7 @@ Colour IOCore::adjust_palette(Colour colour)
 }
 
 // Prints a string in the Alagard font at the specified coordinates.
-void IOCore::alagard_print(string message, int x, int y, Colour colour)
+void alagard_print(string message, int x, int y, Colour colour)
 {
 	STACK_TRACE();
 	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
@@ -239,7 +181,7 @@ void IOCore::alagard_print(string message, int x, int y, Colour colour)
 }
 
 // Prints an Alagard font character at the specified coordinates.
-void IOCore::alagard_print_at(char letter, int x, int y, Colour colour)
+void alagard_print_at(char letter, int x, int y, Colour colour)
 {
 	STACK_TRACE();
 	if (letter == ' ' || letter == '_') return;
@@ -266,7 +208,7 @@ void IOCore::alagard_print_at(char letter, int x, int y, Colour colour)
 }
 
 // Prints an ANSI string at the specified position.
-void IOCore::ansi_print(string msg, int x, int y, unsigned int print_flags, unsigned int dim)
+void ansi_print(string msg, int x, int y, unsigned int print_flags, unsigned int dim)
 {
 	STACK_TRACE();
 
@@ -304,7 +246,7 @@ void IOCore::ansi_print(string msg, int x, int y, unsigned int print_flags, unsi
 }
 
 // Renders an ASCII box at the given coordinates.
-void IOCore::box(int x, int y, int w, int h, Colour colour, unsigned char flags, string title)
+void box(int x, int y, int w, int h, Colour colour, unsigned char flags, string title)
 {
 	STACK_TRACE();
 	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::WHITE;
@@ -333,13 +275,13 @@ void IOCore::box(int x, int y, int w, int h, Colour colour, unsigned char flags,
 	title = " " + title + " ";
 	const unsigned int title_len = strx::ansi_strlen(title);
 	const unsigned int title_x = (w / 2) - (title_len / 2) + x;
-	iocore->ansi_print(title, title_x, y);
-	iocore->print_at(Glyph::LINE_VL, title_x - 1, y, colour);
-	iocore->print_at(Glyph::LINE_VR, title_x + title_len, y, colour);
+	ansi_print(title, title_x, y);
+	print_at(Glyph::LINE_VL, title_x - 1, y, colour);
+	print_at(Glyph::LINE_VR, title_x + title_len, y, colour);
 }
 
 // Calculates glitch positions.
-void IOCore::calc_glitches()
+void calc_glitches()
 {
 	STACK_TRACE();
 	glitch_vec.clear();
@@ -347,15 +289,21 @@ void IOCore::calc_glitches()
 		if (mathx::rnd(5) == 1) glitch_square(); else glitch_horizontal();
 }
 
+// Clears 'shade mode' entirely.
+void clear_shade()
+{
+	shade_mode = 0;
+}
+
 // Clears the screen.
-void IOCore::cls()
+void cls()
 {
 	STACK_TRACE();
 	if (SDL_FillRect(main_surface, &main_surface->clip_rect, SDL_MapRGBA(main_surface->format, 0, 0, 0, 255)) < 0) guru::halt(SDL_GetError());
 }
 
 // Calls SDL_Delay but also handles visual glitches.
-void IOCore::delay(unsigned int ms)
+void delay(unsigned int ms)
 {
 	STACK_TRACE();
 	SDL_Delay(ms);
@@ -403,7 +351,7 @@ void IOCore::delay(unsigned int ms)
 }
 
 // Checks if the player clicked in a specified area.
-bool IOCore::did_mouse_click(unsigned short x, unsigned short y, unsigned short w, unsigned short h)
+bool did_mouse_click(unsigned short x, unsigned short y, unsigned short w, unsigned short h)
 {
 	if (mouse_clicked_x >= x && mouse_clicked_y >= y && mouse_clicked_x <= x + w - 1 && mouse_clicked_y <= y + h - 1)
 	{
@@ -414,7 +362,7 @@ bool IOCore::did_mouse_click(unsigned short x, unsigned short y, unsigned short 
 }
 
 // This is where we clean up our shit.
-void IOCore::exit_functions()
+void exit_functions()
 {
 	STACK_TRACE();
 	if (cleaned_up) return;
@@ -467,7 +415,7 @@ void IOCore::exit_functions()
 }
 
 // Redraws the display.
-void IOCore::flip()
+void flip()
 {
 	STACK_TRACE();
 	bool glitching = (prefs::visual_glitches && glitch_multi > 0);
@@ -569,8 +517,20 @@ void IOCore::flip()
 	}
 }
 
+// Returns the number of columns on the screen.
+unsigned short get_cols()
+{
+	return cols;
+}
+
+// Returns the number of rows on the screen.
+unsigned short get_rows()
+{
+	return rows;
+}
+
 // Offsets part of the display.
-void IOCore::glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf)
+void glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf)
 {
 	STACK_TRACE();
 	if ((surf == glitch_hz_surface && (glitch_w > glitched_main_surface->w || glitch_h > 8)) || (surf == glitch_sq_surface && (glitch_w > 70 || glitch_h > 70))) guru::halt("Invalid parameters given to glitch()");
@@ -584,7 +544,7 @@ void IOCore::glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int 
 }
 
 // Horizontal displacement visual glitch.
-void IOCore::glitch_horizontal()
+void glitch_horizontal()
 {
 	STACK_TRACE();
 	s_glitch horiz_glitch;
@@ -598,8 +558,14 @@ void IOCore::glitch_horizontal()
 	glitch_vec.push_back(horiz_glitch);
 }
 
+// Sets the glitch intensity level.
+void glitch_intensity(unsigned char value)
+{
+	glitch_multi = value;
+}
+
 // Square displacement glitch.
-void IOCore::glitch_square()
+void glitch_square()
 {
 	STACK_TRACE();
 	s_glitch square_glitch;
@@ -611,8 +577,95 @@ void IOCore::glitch_square()
 	glitch_vec.push_back(square_glitch);
 }
 
+// Initializes SDL and gets the ball rolling.
+void init()
+{
+	STACK_TRACE();
+	guru::log("Duskfall v" + DUSKFALL_VERSION_STRING + " [build " + strx::itos(build_version()) + "]", GURU_STACK);
+	guru::log("Main program entry. Let's do this.", GURU_INFO);
+
+	// Check for necessary CPU features.
+	bool has_mmx = SDL_HasMMX(), has_sse = SDL_HasSSE(), has_sse2 = SDL_HasSSE2(), has_sse3 = SDL_HasSSE3(), has_multicore = (SDL_GetCPUCount() > 1);
+	vector<string> missing_cpu;
+	if (!has_mmx) missing_cpu.push_back("MMX");
+	if (!has_sse) missing_cpu.push_back("SSE");
+	if (!has_sse2) missing_cpu.push_back("SSE2");
+	if (!has_sse3) missing_cpu.push_back("SSE3");
+	if (!has_multicore) missing_cpu.push_back("multi-core");
+	if (missing_cpu.size()) guru::log("Missing CPU features may degrade performance: " + strx::comma_list(missing_cpu), GURU_WARN);
+
+	// Start the ball rolling.
+	guru::log("Initializing SDL core systems: video, timer, events.", GURU_INFO);
+	const unsigned int sdl_flags = SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS;
+	if (SDL_Init(sdl_flags) < 0) guru::halt(SDL_GetError());
+	if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) != IMG_INIT_PNG) guru::halt(IMG_GetError());
+	exit_func_level = 2;
+
+	// This is messy. Set up all the surfaces we'll be using for rendering, and exit out if anything goes wrong.
+	guru::log("Initializing SDL window and surfaces.", GURU_INFO);
+	screen_x = unscaled_x = prefs::screen_x;
+	screen_y = unscaled_y = prefs::screen_y;
+	const bool fullscreen = prefs::fullscreen;
+	surface_scale = prefs::scale_mod;
+	if (surface_scale == 1) screen_y = static_cast<int>(screen_y * 1.3333) + 1;
+	else if (surface_scale == 2) { screen_x *= 2; screen_y *= 2; }
+	if (screen_x < SCREEN_MIN_X) screen_x = SCREEN_MIN_X;
+	else if (screen_x > SCREEN_MAX_X) screen_x = SCREEN_MAX_X;
+	if (screen_y < SCREEN_MIN_Y) screen_y = SCREEN_MIN_Y;
+	else if (screen_y > SCREEN_MAX_Y) screen_y = SCREEN_MAX_Y;
+	string window_title = "Duskfall " + DUSKFALL_VERSION_STRING + " [build " + strx::itos(build_version()) + "]";
+	main_window = SDL_CreateWindow(window_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_x, screen_y, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | (fullscreen ? SDL_WINDOW_FULLSCREEN : 0));
+	if (!main_window) guru::halt(SDL_GetError());
+	SDL_SetWindowMinimumSize(main_window, SCREEN_MIN_X, SCREEN_MIN_Y);
+	cols = SNES_NTSC_IN_WIDTH(unscaled_x) / 8; rows = unscaled_y / 16; mid_col = cols / 2; mid_row = rows / 2;
+	if (!(window_surface = SDL_GetWindowSurface(main_window))) guru::halt(SDL_GetError());
+	if (!(main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (!(glitched_main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, window_surface->h + 16, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	SDL_RaiseWindow(main_window);
+	if (!(temp_surface = SDL_CreateRGBSurface(0, 32, 32, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (!(glitch_hz_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, 8, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (SDL_SetColorKey(glitch_hz_surface, SDL_TRUE, SDL_MapRGB(glitch_hz_surface->format, 1, 1, 1)) < 0) guru::halt(SDL_GetError());
+	if (!(glitch_sq_surface = SDL_CreateRGBSurface(0, 70, 70, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (SDL_SetColorKey(glitch_sq_surface, SDL_TRUE, SDL_MapRGB(glitch_sq_surface->format, 1, 1, 1)) < 0) guru::halt(SDL_GetError());
+	exit_func_level = 3;
+
+	// Sets up the PCG PRNG.
+	guru::log("Initializing pseudorandom number generator.", GURU_INFO);
+	mathx::init();
+
+	// Set up the SNES renderer.
+	if (!(ntsc = static_cast<snes_ntsc_t*>(calloc(1, sizeof(snes_ntsc_t))))) guru::halt("Unable to initialize NTSC shader.");
+	update_ntsc_mode();
+
+	// Blank the screen.
+	cls();
+	flip();
+
+	// Load the bitmap fonts and other PNGs into memory.
+	guru::log("Attempting to load bitmap fonts.", GURU_INFO);
+	auto load_and_optimize_png = [] (string filename, SDL_Surface **dest, SDL_Surface *main_surface)
+	{
+		SDL_Surface *surf_temp = IMG_Load(("data/png/" + filename).c_str());
+		if (!surf_temp) guru::halt(IMG_GetError());
+		*dest = SDL_ConvertSurface(surf_temp, main_surface->format, 0);
+		if (!dest) guru::halt(SDL_GetError());
+		SDL_FreeSurface(surf_temp);
+		if (SDL_SetColorKey(*dest, SDL_TRUE, SDL_MapRGB((*dest)->format, 255, 255, 255)) < 0) guru::halt(SDL_GetError());
+	};
+
+	load_and_optimize_png("fonts.png", &font, main_surface);
+	load_and_optimize_png("alagard.png", &alagard, main_surface);
+	load_and_optimize_png("sprites.png", &sprites, main_surface);
+	font_sheet_size = (font->w * font->h) / 8;
+	exit_func_level = 4;
+
+	// Now that the font is loaded and SDL is initialized, we can activate Guru's error screen.
+	guru::console_ready(true);
+}
+
 // Returns true if the key is a chosen 'cancel' key.
-bool IOCore::is_cancel(unsigned int key)
+bool is_cancel(unsigned int key)
 {
 	STACK_TRACE();
 	if (key == prefs::keybind(MENU_CANCEL) || key == SDLK_ESCAPE) return true;
@@ -620,7 +673,7 @@ bool IOCore::is_cancel(unsigned int key)
 }
 
 // Returns true if the key is a chosen 'down' key.
-bool IOCore::is_down(unsigned int key)
+bool is_down(unsigned int key)
 {
 	STACK_TRACE();
 	if (key == SDLK_DOWN || key == SDLK_KP_2 || key == prefs::keybind(SOUTH)) return true;
@@ -628,7 +681,7 @@ bool IOCore::is_down(unsigned int key)
 }
 
 // Returns true if the key is a chosen 'left' key.
-bool IOCore::is_left(unsigned int key)
+bool is_left(unsigned int key)
 {
 	STACK_TRACE();
 	if (key == SDLK_LEFT || key == SDLK_KP_4 || key == prefs::keybind(WEST)) return true;
@@ -636,7 +689,7 @@ bool IOCore::is_left(unsigned int key)
 }
 
 // Returns true if the key is a chosen 'right' key.
-bool IOCore::is_right(unsigned int key)
+bool is_right(unsigned int key)
 {
 	STACK_TRACE();
 	if (key == SDLK_RIGHT || key == SDLK_KP_6 || key == prefs::keybind(EAST)) return true;
@@ -644,7 +697,7 @@ bool IOCore::is_right(unsigned int key)
 }
 
 // Returns true if the key is a chosen 'select' key.
-bool IOCore::is_select(unsigned int key)
+bool is_select(unsigned int key)
 {
 	STACK_TRACE();
 	if (key == prefs::keybind(Keys::MENU_OK) || key == prefs::keybind(Keys::MENU_OK_2)) return true;
@@ -652,7 +705,7 @@ bool IOCore::is_select(unsigned int key)
 }
 
 // Returns true if the key is a chosen 'up' key.
-bool IOCore::is_up(unsigned int key)
+bool is_up(unsigned int key)
 {
 	STACK_TRACE();
 	if (key == SDLK_UP || key == SDLK_KP_8 || key == prefs::keybind(NORTH)) return true;
@@ -660,7 +713,7 @@ bool IOCore::is_up(unsigned int key)
 }
 
 // Returns the name of a key.
-string IOCore::key_to_name(unsigned int key)
+string key_to_name(unsigned int key)
 {
 	STACK_TRACE();
 	if (!key) return "{5C}[unbound]";
@@ -685,8 +738,20 @@ string IOCore::key_to_name(unsigned int key)
 	return SDL_GetKeyName(key);
 }
 
+// Retrieves the middle column on the screen.
+unsigned short midcol()
+{
+	return mid_col;
+}
+
+// Retrieves the middle row on the screen.
+unsigned short midrow()
+{
+	return mid_row;
+}
+
 // Determines the colour of a specific point in a nebula, based on X,Y coordinates.
-s_rgb IOCore::nebula(int x, int y)
+s_rgb nebula(int x, int y)
 {
 	STACK_TRACE();
 	const string coord = strx::itos(x) + "," + strx::itos(y);
@@ -710,7 +775,7 @@ s_rgb IOCore::nebula(int x, int y)
 }
 
 // Modifies an RGB value in the specified manner, used for rendering nebulae.
-unsigned char IOCore::nebula_rgb(unsigned char value, int modifier)
+unsigned char nebula_rgb(unsigned char value, int modifier)
 {
 	STACK_TRACE();
 	switch(modifier)
@@ -724,7 +789,7 @@ unsigned char IOCore::nebula_rgb(unsigned char value, int modifier)
 }
 
 // Renders an OK box on a pop-up window.
-void IOCore::ok_box(int offset, Colour colour)
+void ok_box(int offset, Colour colour)
 {
 	STACK_TRACE();
 	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
@@ -737,7 +802,7 @@ void IOCore::ok_box(int offset, Colour colour)
 	print_at(Glyph::LINE_VR, mid_col + 1, mid_row + offset, colour);
 }
 
-void IOCore::parse_colour(Colour colour, unsigned char &r, unsigned char &g, unsigned char &b)
+void parse_colour(Colour colour, unsigned char &r, unsigned char &g, unsigned char &b)
 {
 	STACK_TRACE();
 	static const unsigned char colour_table[(MAX_COLOUR + EXTRA_NES_COLOURS + EXTRA_COLOURBLIND_COLOURS + 1) * 3] = { 109,109,109, 0,44,150, 0,10,161, 50,0,132, 145,0,74, 188,0,26, 173,2,0, 122,13,0, 72,32,0, 8,51,0,
@@ -776,7 +841,7 @@ void IOCore::parse_colour(Colour colour, unsigned char &r, unsigned char &g, uns
 }
 
 // Prints a message at the specified coordinates.
-int IOCore::print(string message, int x, int y, Colour colour, unsigned int print_flags)
+int print(string message, int x, int y, Colour colour, unsigned int print_flags)
 {
 	STACK_TRACE();
 	unsigned char r, g, b;
@@ -785,7 +850,7 @@ int IOCore::print(string message, int x, int y, Colour colour, unsigned int prin
 }
 
 // Prints a message at the specified coordinates, in RGB colours.
-int IOCore::print(string message, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags)
+int print(string message, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags)
 {
 	STACK_TRACE();
 	int offset = 0;
@@ -815,7 +880,7 @@ int IOCore::print(string message, int x, int y, unsigned char r, unsigned char g
 }
 
 // Prints a character at a given coordinate on the screen.
-void IOCore::print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flags)
+void print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flags)
 {
 	STACK_TRACE();
 	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
@@ -826,8 +891,15 @@ void IOCore::print_at(Glyph letter, int x, int y, Colour colour, unsigned int pr
 	print_at(letter, x, y, r, g, b, print_flags);
 }
 
+// As above, but with a char instead of a glyph.
+void print_at(char letter, int x, int y, Colour colour, unsigned int print_flags)
+{
+	STACK_TRACE();
+	print_at(static_cast<Glyph>(letter), x, y, colour, print_flags);
+}
+
 // Prints a character at a given coordinate on the screen, in specific RGB colours.
-void IOCore::print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags)
+void print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags)
 {
 	STACK_TRACE();
 	// Just exit quietly if drawing off-screen. This shouldn't normally happen.
@@ -897,8 +969,15 @@ void IOCore::print_at(Glyph letter, int x, int y, unsigned char r, unsigned char
 	}
 }
 
+// As above, but with a char instead of a glyph.
+void print_at(char letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags)
+{
+	STACK_TRACE();
+	print_at(static_cast<Glyph>(letter), x, y, r, g, b, print_flags);
+}
+
 // Draws a coloured rectangle.
-void IOCore::rect(int x, int y, int w, int h, Colour colour)
+void rect(int x, int y, int w, int h, Colour colour)
 {
 	STACK_TRACE();
 	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
@@ -906,7 +985,7 @@ void IOCore::rect(int x, int y, int w, int h, Colour colour)
 }
 
 // Draws a rectangle at very specific coords.
-void IOCore::rect_fine(int x, int y, int w, int h, Colour colour)
+void rect_fine(int x, int y, int w, int h, Colour colour)
 {
 	STACK_TRACE();
 	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
@@ -917,7 +996,7 @@ void IOCore::rect_fine(int x, int y, int w, int h, Colour colour)
 }
 
 // As above, but with direct RGB input.
-void IOCore::rect_fine(int x, int y, int w, int h, s_rgb colour)
+void rect_fine(int x, int y, int w, int h, s_rgb colour)
 {
 	STACK_TRACE();
 
@@ -934,7 +1013,7 @@ void IOCore::rect_fine(int x, int y, int w, int h, s_rgb colour)
 }
 
 // Renders pre-calculated glitches.
-void IOCore::render_glitches()
+void render_glitches()
 {
 	STACK_TRACE();
 	for (auto g : glitch_vec)
@@ -942,7 +1021,7 @@ void IOCore::render_glitches()
 }
 
 // Renders a nebula on the screen.
-void IOCore::render_nebula(unsigned short seed, int off_x, int off_y)
+void render_nebula(unsigned short seed, int off_x, int off_y)
 {
 	STACK_TRACE();
 	// If the currently-cached nebula is different from the one being requested, rebuild it.
@@ -963,7 +1042,7 @@ void IOCore::render_nebula(unsigned short seed, int off_x, int off_y)
 }
 
 // Do absolutely nothing for a little while.
-void IOCore::sleep_for(unsigned int amount)
+void sleep_for(unsigned int amount)
 {
 	STACK_TRACE();
 	if (!amount) return;
@@ -976,7 +1055,7 @@ void IOCore::sleep_for(unsigned int amount)
 }
 
 // Prints a sprite at the given location.
-void IOCore::sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
+void sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
 {
 	STACK_TRACE();
 	const bool plus_four = ((flags & SPRITE_FLAG_PLUS_FOUR) == SPRITE_FLAG_PLUS_FOUR);
@@ -1015,14 +1094,14 @@ void IOCore::sprite_print(Sprite id, int x, int y, Colour colour, unsigned char 
 }
 
 // Unlocks the mutexes, if they're locked. Only for use by the Guru system.
-void IOCore::unlock_surfaces()
+void unlock_surfaces()
 {
 	STACK_TRACE();
 	SDL_UnlockSurface(snes_surface);
 }
 
 // Updates the NTSC filter.
-void IOCore::update_ntsc_mode(int force)
+void update_ntsc_mode(int force)
 {
 	STACK_TRACE();
 	snes_ntsc_setup_t setup = snes_ntsc_composite;
@@ -1044,7 +1123,7 @@ void IOCore::update_ntsc_mode(int force)
 }
 
 // Polls SDL until a key is pressed. If a time is specified, it will abort after this time.
-unsigned int IOCore::wait_for_key(unsigned short max_ms)
+unsigned int wait_for_key(unsigned short max_ms)
 {
 	STACK_TRACE();
 	if (queued_keys.size())
@@ -1198,7 +1277,7 @@ unsigned int IOCore::wait_for_key(unsigned short max_ms)
 }
 
 // Renders a yes/no popup box and returns the result.
-bool IOCore::yes_no_query(string yn_strings, string title, Colour title_colour, unsigned int flags)
+bool yes_no_query(string yn_strings, string title, Colour title_colour, unsigned int flags)
 {
 	STACK_TRACE();
 	if (static_cast<int>(title_colour) > MAX_COLOUR) title_colour = Colour::ERROR_COLOUR;
@@ -1213,19 +1292,19 @@ bool IOCore::yes_no_query(string yn_strings, string title, Colour title_colour, 
 	width += 4;
 	const unsigned int box_start_x = mid_col - (width / 2);
 	const unsigned int box_start_y = mid_row - (height / 2);
-	iocore->box(box_start_x, box_start_y, width, height, UI_COLOUR_BOX);
+	box(box_start_x, box_start_y, width, height, UI_COLOUR_BOX);
 
 	title = " " + title + " ";
 	const unsigned int title_start = mid_col - (title.size() / 2);
-	iocore->print(title, title_start, box_start_y, title_colour);
-	iocore->print_at(Glyph::LINE_VL, title_start - 1, box_start_y, UI_COLOUR_BOX);
-	iocore->print_at(Glyph::LINE_VR, title_start + title.size(), box_start_y, UI_COLOUR_BOX);
+	print(title, title_start, box_start_y, title_colour);
+	print_at(Glyph::LINE_VL, title_start - 1, box_start_y, UI_COLOUR_BOX);
+	print_at(Glyph::LINE_VR, title_start + title.size(), box_start_y, UI_COLOUR_BOX);
 
 	for (unsigned int i = 0; i < message.size(); i++)
 	{
 		const string line = message.at(i);
-		if (ansi) iocore->ansi_print(line, mid_col - (strx::ansi_strlen(line) / 2), box_start_y + 2 + i);
-		else iocore->print(line, mid_col - (strx::ansi_strlen(line) / 2), box_start_y + 2 + i, Colour::CGA_WHITE, PRINT_FLAG_ALT_FONT);
+		if (ansi) ansi_print(line, mid_col - (strx::ansi_strlen(line) / 2), box_start_y + 2 + i);
+		else print(line, mid_col - (strx::ansi_strlen(line) / 2), box_start_y + 2 + i, Colour::CGA_WHITE, PRINT_FLAG_ALT_FONT);
 	}
 
 	const unsigned int bottom_row = box_start_y + height - 1;
@@ -1247,15 +1326,17 @@ bool IOCore::yes_no_query(string yn_strings, string title, Colour title_colour, 
 
 	do
 	{
-		iocore->flip();
-		unsigned int key = iocore->wait_for_key();
+		flip();
+		unsigned int key = wait_for_key();
 		if (key == RESIZE_KEY) return false;
 		if (key == LMB_KEY)
 		{
-			if (iocore->did_mouse_click(mid_col - 3, bottom_row)) return true;
-			if (iocore->did_mouse_click(mid_col + 3, bottom_row)) return false;
+			if (did_mouse_click(mid_col - 3, bottom_row)) return true;
+			if (did_mouse_click(mid_col + 3, bottom_row)) return false;
 		}
-		if (key == 'Y' || key == 'y' || iocore->is_select(key)) return true;
+		if (key == 'Y' || key == 'y' || is_select(key)) return true;
 		else if (key != LMB_KEY) return false;
 	} while(true);
 }
+
+}	// namespace iocore

@@ -121,7 +121,7 @@ void MessageLog::process_output_buffer()
 	// Process the output buffer.
 	for (unsigned int i = 0; i < output_raw.size(); i++)
 	{
-		vector<string> line_vec = strx::ansi_vector_split(output_raw.at(i), iocore->get_cols() - 2);
+		vector<string> line_vec = strx::ansi_vector_split(output_raw.at(i), iocore::get_cols() - 2);
 		for (auto line : line_vec)
 			output_prc.push_back(line);
 	}
@@ -144,7 +144,7 @@ void MessageLog::purge_buffer()
 void MessageLog::render()
 {
 	STACK_TRACE();
-	iocore->rect(0, iocore->get_rows() - MESSAGE_LOG_SIZE, iocore->get_cols(), MESSAGE_LOG_SIZE, Colour::BLACK);
+	iocore::rect(0, iocore::get_rows() - MESSAGE_LOG_SIZE, iocore::get_cols(), MESSAGE_LOG_SIZE, Colour::BLACK);
 	if (output_prc.size())
 	{
 		unsigned int end = output_prc.size();
@@ -157,7 +157,7 @@ void MessageLog::render()
 				dim_amount = MESSAGE_LOG_SIZE - (i - buffer_pos) - 1;
 				if (output_prc.size() < MESSAGE_LOG_SIZE) dim_amount -= MESSAGE_LOG_SIZE - output_prc.size();
 			}
-			iocore->ansi_print(output_prc.at(i), 0, i - buffer_pos + iocore->get_rows() - MESSAGE_LOG_SIZE, 0, dim_amount);
+			iocore::ansi_print(output_prc.at(i), 0, i - buffer_pos + iocore::get_rows() - MESSAGE_LOG_SIZE, 0, dim_amount);
 		}
 	}
 }

@@ -82,92 +82,57 @@ struct s_glitch
 	SDL_Surface *surf;
 };
 
-class IOCore
+namespace iocore
 {
-public:
-			IOCore();
-			~IOCore();				// This is where we clean up our shit.
-	void	alagard_print(string message, int x, int y, Colour colour = Colour::CGA_WHITE);	// Prints a string in the Alagard font at the specified coordinates.
-	void	alagard_print_at(char letter, int x, int y, Colour colour = Colour::CGA_WHITE);	// Prints an Alagard font character at the specified coordinates.
-	void	ansi_print(string msg, int x, int y, unsigned int print_flags = 0, unsigned int dim = 0);	// Prints an ANSI string at the specified position.
-	void	box(int x, int y, int w, int h, Colour colour, unsigned char flags = 0, string title = "");	// Renders an ASCII box at the given coordinates.
-	void	clear_shade() { shade_mode = 0; }	// Clears 'shade mode' entirely.
-	void	cls();					// Clears the screen.
-	void	delay(unsigned int ms);	// Calls SDL_Delay but also handles visual glitches.
-	bool	did_mouse_click(unsigned short x, unsigned short y, unsigned short w = 1, unsigned short h = 1);	// Checks if the player clicked in a specified area.
-	void	exit_functions();		// This is where we clean up our shit.
-	void	flip();					// Redraws the display.
-	unsigned short	get_cols() { return cols; }		// Returns the number of columns on the screen.
-	unsigned short	get_rows() { return rows; }		// Returns the number of rows on the screen.
-	void	glitch_intensity(unsigned char value) { glitch_multi = value; }	// Sets the glitch intensity level.
-	bool	is_cancel(unsigned int key);	// Returns true if the key is a chosen 'cancel' key.
-	bool	is_down(unsigned int key);		// Returns true if the key is a chosen 'down' key.
-	bool	is_left(unsigned int key);		// Returns true if the key is a chosen 'left' key.
-	bool	is_right(unsigned int key);		// Returns true if the key is a chosen 'right' key.
-	bool	is_select(unsigned int key);	// Returns true if the key is a chosen 'select' key.
-	bool	is_up(unsigned int key);		// Returns true if the key is a chosen 'up' key.
-	string	key_to_name(unsigned int key);	// Returns the name of a key.
-	unsigned short	midcol() { return mid_col; }	// Retrieves the middle column on the screen.
-	unsigned short	midrow() { return mid_row; }	// Retrieves the middle row on the screen.
-	void	ok_box(int offset, Colour colour);	// Renders an OK box on a pop-up window.
-	void	parse_colour(Colour colour, unsigned char &r, unsigned char &g, unsigned char &b);	// Parses a colour code into RGB.
-	int		print(string message, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a message at the specified coordinates.
-	int		print(string message, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// Prints a message at the specified coordinates, in RGB colours.
-	void	print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen.
-	void	print_at(char letter, int x, int y, Colour colour, unsigned int print_flags = 0) { print_at(static_cast<Glyph>(letter), x, y, colour, print_flags); }
-	void	print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen, in RGB colours.
-	void	print_at(char letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0) { print_at(static_cast<Glyph>(letter), x, y, r, g, b, print_flags); }
-	void	rect(int x, int y, int w, int h, Colour colour);		// Draws a coloured rectangle
-	void	rect_fine(int x, int y, int w, int h, Colour colour);	// Draws a rectangle at very specific coords.
-	void	rect_fine(int x, int y, int w, int h, s_rgb colour);	// As above, but with direct RGB input.
-	void	render_nebula(unsigned short seed, int off_x, int off_y);	// Renders a nebula on the screen.
-	void	sleep_for(unsigned int amount);	// Do absolutely nothing for a little while.
-	void	sprite_print(Sprite id, int x, int y, Colour colour = Colour::CGA_WHITE, unsigned char print_flags = 0);	// Prints a sprite at the given location.
-	void	unlock_surfaces();		// Unlocks the mutexes, if they're locked. Only for use by the Guru system.
-	void	update_ntsc_mode(int force = -1);	// Updates the NTSC filter.
-	unsigned int	wait_for_key(unsigned short max_ms = 0);	// Polls SDL until a key is pressed. If a time is specified, it will abort after this time.
-	bool	yes_no_query(string yn_strings, string yn_title, Colour title_colour, unsigned int flags = 0);	// Renders a yes/no popup box and returns the result.
 
-private:
-	SDL_Surface		*font;					// The bitmap font texture.
-	SDL_Surface		*alagard;				// The texture for the large bitmap font.
-	SDL_Surface		*sprites;				// The texture for larger sprites.
-	unsigned short	font_sheet_size;		// The size of the font texture sheet, in glyphs.
-	SDL_Window		*main_window;			// The main (and only) SDL window.
-	SDL_Surface		*main_surface;			// The main render surface.
-	SDL_Surface 	*glitched_main_surface;	// A glitched version of the main render surface.
-	SDL_Surface		*window_surface;		// The actual window's surface.
-	SDL_Surface		*snes_surface;			// The SNES surface, for rendering the CRT effect.
-	SDL_Surface		*temp_surface;			// Temporary surface used for blitting glyphs.
-	SDL_Surface		*glitch_hz_surface;		// Horizontal glitch surface.
-	SDL_Surface		*glitch_sq_surface;		// Square glitch surface.
-	unsigned short	cols, rows, mid_col, mid_row;	// The number of columns and rows available, and the middle column/row.
-	std::unordered_map<std::string, s_rgb>	nebula_cache;	// Cache for the nebula() function.
-	unsigned short	nebula_cache_seed;		// The seed for the nebula cache.
-	int				shade_mode;				// Are we rendering in shade mode?
-	int				screen_x, screen_y;		// Chosen screen resolution.
-	int				unscaled_x, unscaled_y;	// The unscaled resolution.
-	snes_ntsc_t		*ntsc;					// Used by the NTSC filter.
-	unsigned char	exit_func_level;		// Keep track of what to clean up at exit.
-	bool			hold_glyph_glitches;	// Hold off on glyph glitching right now.
-	unsigned char	glitch_multi;			// Glitch intensity multiplier.
-	unsigned char	surface_scale;			// The surface scale modifier.
-	unsigned short	mouse_clicked_x, mouse_clicked_y;	// Last clicked location for a mouse event.
-	std::vector<s_glitch>	glitch_vec;
-	unsigned int 	glitch_clear_countdown;
-	unsigned char	glitches_queued;
-	bool			ntsc_glitched;
-	vector<unsigned int>	queued_keys;	// Keypresses waiting to be processed.
-	bool			cleaned_up;				// Have we run the exit functions already?
+Colour	adjust_palette(Colour colour);	// Adjusts the colour palette, if needed.
+void	alagard_print(string message, int x, int y, Colour colour = Colour::CGA_WHITE);	// Prints a string in the Alagard font at the specified coordinates.
+void	alagard_print_at(char letter, int x, int y, Colour colour = Colour::CGA_WHITE);	// Prints an Alagard font character at the specified coordinates.
+void	ansi_print(string msg, int x, int y, unsigned int print_flags = 0, unsigned int dim = 0);	// Prints an ANSI string at the specified position.
+void	box(int x, int y, int w, int h, Colour colour, unsigned char flags = 0, string title = "");	// Renders an ASCII box at the given coordinates.
+void	calc_glitches();		// Calculates glitch positions.
+void	clear_shade();			// Clears 'shade mode' entirely.
+void	cls();					// Clears the screen.
+void	delay(unsigned int ms);	// Calls SDL_Delay but also handles visual glitches.
+bool	did_mouse_click(unsigned short x, unsigned short y, unsigned short w = 1, unsigned short h = 1);	// Checks if the player clicked in a specified area.
+void	exit_functions();		// This is where we clean up our shit.
+void	flip();					// Redraws the display.
+unsigned short	get_cols();		// Returns the number of columns on the screen.
+unsigned short	get_rows();		// Returns the number of rows on the screen.
+void	glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf);	// Offsets part of the display.
+void	glitch_horizontal();	// Horizontal displacement visual glitch.
+void	glitch_intensity(unsigned char value);	// Sets the glitch intensity level.
+void	glitch_square();		// Square displacement glitch.
+void	init();							// Initializes SDL and gets the ball rolling.
+bool	is_cancel(unsigned int key);	// Returns true if the key is a chosen 'cancel' key.
+bool	is_down(unsigned int key);		// Returns true if the key is a chosen 'down' key.
+bool	is_left(unsigned int key);		// Returns true if the key is a chosen 'left' key.
+bool	is_right(unsigned int key);		// Returns true if the key is a chosen 'right' key.
+bool	is_select(unsigned int key);	// Returns true if the key is a chosen 'select' key.
+bool	is_up(unsigned int key);		// Returns true if the key is a chosen 'up' key.
+string	key_to_name(unsigned int key);	// Returns the name of a key.
+unsigned short	midcol();				// Retrieves the middle column on the screen.
+unsigned short	midrow();				// Retrieves the middle row on the screen.
+s_rgb	nebula(int x, int y);	// Determines the colour of a specific point in a nebula, based on X,Y coordinates.
+unsigned char	nebula_rgb(unsigned char value, int modifier);	// Modifies an RGB value in the specified manner, used for rendering nebulae.
+void	ok_box(int offset, Colour colour);	// Renders an OK box on a pop-up window.
+void	parse_colour(Colour colour, unsigned char &r, unsigned char &g, unsigned char &b);	// Parses a colour code into RGB.
+int		print(string message, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a message at the specified coordinates.
+int		print(string message, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// Prints a message at the specified coordinates, in RGB colours.
+void	print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen.
+void	print_at(char letter, int x, int y, Colour colour, unsigned int print_flags = 0);	// As above, but with a char instead of a glyph.
+void	print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen, in RGB colours.
+void	print_at(char letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// As above, but with a char instead of a glyph.
+void	rect(int x, int y, int w, int h, Colour colour);		// Draws a coloured rectangle
+void	rect_fine(int x, int y, int w, int h, Colour colour);	// Draws a rectangle at very specific coords.
+void	rect_fine(int x, int y, int w, int h, s_rgb colour);	// As above, but with direct RGB input.
+void	render_glitches();		// Renders pre-calculated glitches.
+void	render_nebula(unsigned short seed, int off_x, int off_y);	// Renders a nebula on the screen.
+void	sleep_for(unsigned int amount);	// Do absolutely nothing for a little while.
+void	sprite_print(Sprite id, int x, int y, Colour colour = Colour::CGA_WHITE, unsigned char print_flags = 0);	// Prints a sprite at the given location.
+void	unlock_surfaces();		// Unlocks the mutexes, if they're locked. Only for use by the Guru system.
+void	update_ntsc_mode(int force = -1);	// Updates the NTSC filter.
+unsigned int	wait_for_key(unsigned short max_ms = 0);	// Polls SDL until a key is pressed. If a time is specified, it will abort after this time.
+bool	yes_no_query(string yn_strings, string yn_title, Colour title_colour, unsigned int flags = 0);	// Renders a yes/no popup box and returns the result.
 
-	Colour	adjust_palette(Colour colour);	// Adjusts the colour palette, if needed.
-	void	calc_glitches();		// Calculates glitch positions.
-	void	glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf);	// Offsets part of the display.
-	void	glitch_horizontal();	// Horizontal displacement visual glitch.
-	void	glitch_square();		// Square displacement glitch.
-	s_rgb	nebula(int x, int y);	// Determines the colour of a specific point in a nebula, based on X,Y coordinates.
-	unsigned char	nebula_rgb(unsigned char value, int modifier);	// Modifies an RGB value in the specified manner, used for rendering nebulae.
-	void	render_glitches();		// Renders pre-calculated glitches.
-};
-
-extern shared_ptr<IOCore>	iocore;	// External access to the IOCore object.
+}	// namespace iocore

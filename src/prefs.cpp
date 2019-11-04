@@ -110,11 +110,11 @@ void Prefs::adjust_option(signed char amount)
 void Prefs::render()
 {
 	STACK_TRACE();
-	const int midcol = iocore->midcol(), midrow = iocore->midrow();
-	iocore->cls();
-	iocore->box(midcol - 27, midrow - 18, 55, 38, UI_COLOUR_BOX);
-	const int name_pos = (iocore->get_cols() * 4) - (name.size() * 12);
-	iocore->alagard_print(name, name_pos, (midrow - 16) * 8, Colour::CGA_WHITE);
+	const int midcol = iocore::midcol(), midrow = iocore::midrow();
+	iocore::cls();
+	iocore::box(midcol - 27, midrow - 18, 55, 38, UI_COLOUR_BOX);
+	const int name_pos = (iocore::get_cols() * 4) - (name.size() * 12);
+	iocore::alagard_print(name, name_pos, (midrow - 16) * 8, Colour::CGA_WHITE);
 
 	for (unsigned int i = 0; i < entries.size(); i++)
 	{
@@ -147,52 +147,52 @@ void Prefs::render()
 		else line_str += entry.options_str.at(entry.selected);
 		if (i == selected) line_str += "{5F}]"; else line_str += " ";
 		const unsigned int x_pos = midcol - (strx::ansi_strlen(line_str) / 2);
-		iocore->ansi_print(line_str, x_pos, midrow + entry.y_pos);
+		iocore::ansi_print(line_str, x_pos, midrow + entry.y_pos);
 	}
 	string back_str = " ^325^ Back" ;
 	if (selected == entries.size()) back_str = "[^325^ Back]";
-	iocore->print(back_str, midcol - 4, midrow + entries.at(entries.size() -1).y_pos + 2, (selected == entries.size() ? Colour::CGA_WHITE : Colour::CGA_LGRAY));
-	if (has_must_restart) iocore->ansi_print("{54}^015^{58} Must restart for change to take effect.", midcol - 20, midrow + 18);
-	if (has_experimental) iocore->ansi_print("{55}^019^{58} Experimental option - use with caution!", midcol - 20, midrow + 17);
+	iocore::print(back_str, midcol - 4, midrow + entries.at(entries.size() -1).y_pos + 2, (selected == entries.size() ? Colour::CGA_WHITE : Colour::CGA_LGRAY));
+	if (has_must_restart) iocore::ansi_print("{54}^015^{58} Must restart for change to take effect.", midcol - 20, midrow + 18);
+	if (has_experimental) iocore::ansi_print("{55}^019^{58} Experimental option - use with caution!", midcol - 20, midrow + 17);
 	if (selected < entries.size())
 	{
-		if (entries.at(selected).must_restart) iocore->ansi_print("{5C}^015^{5F} Must restart for change to take effect.", midcol - 20, midrow + 18);
-		if (entries.at(selected).experimental) iocore->ansi_print("{5D}^019^{5F} Experimental option - use with caution!", midcol - 20, midrow + 17);
+		if (entries.at(selected).must_restart) iocore::ansi_print("{5C}^015^{5F} Must restart for change to take effect.", midcol - 20, midrow + 18);
+		if (entries.at(selected).experimental) iocore::ansi_print("{5D}^019^{5F} Experimental option - use with caution!", midcol - 20, midrow + 17);
 	}
-	iocore->flip();
+	iocore::flip();
 
 	changed = false;
-	unsigned int key = iocore->wait_for_key();
-	if (iocore->is_up(key) && selected > 0) selected--;
-	else if (iocore->is_down(key) && selected < entries.size()) selected++;
+	unsigned int key = iocore::wait_for_key();
+	if (iocore::is_up(key) && selected > 0) selected--;
+	else if (iocore::is_down(key) && selected < entries.size()) selected++;
 	else if (key == LMB_KEY || key == RMB_KEY)
 	{
 		for (unsigned int i = 0; i < entries.size(); i++)
 		{
-			if (iocore->did_mouse_click(0, midrow + entries.at(i).y_pos, iocore->get_cols(), 1))
+			if (iocore::did_mouse_click(0, midrow + entries.at(i).y_pos, iocore::get_cols(), 1))
 			{
 				if (selected != i) selected = i;
 				else adjust_option(key == LMB_KEY ? 1 : -1);
 				break;
 			}
 		}
-		if (iocore->did_mouse_click(iocore->midcol() - 4, iocore->midrow() + entries.at(entries.size() - 1).y_pos + 2, 8, 1))
+		if (iocore::did_mouse_click(iocore::midcol() - 4, iocore::midrow() + entries.at(entries.size() - 1).y_pos + 2, 8, 1))
 		{
 			if (selected != entries.size()) selected = entries.size();
 			else done = true;
 		}
 	}
-	else if (iocore->is_right(key) || iocore->is_select(key))
+	else if (iocore::is_right(key) || iocore::is_select(key))
 	{
 		if (selected == entries.size()) done = true;
 		else adjust_option(1);
 	}
-	else if (iocore->is_left(key))
+	else if (iocore::is_left(key))
 	{
 		if (selected == entries.size()) done = true;
 		else adjust_option(-1);
 	}
-	else if (iocore->is_cancel(key)) done = true;
+	else if (iocore::is_cancel(key)) done = true;
 }
 
 // Returns the ID of the currently selected preference.
@@ -331,9 +331,9 @@ unsigned int keybind(Keys key)
 void keybinds_window()
 {
 	STACK_TRACE();
-	iocore->cls();
-	iocore->render_nebula(64530, 0, 0);
-	int midrow = iocore->midrow(), midcol = iocore->midcol();
+	iocore::cls();
+	iocore::render_nebula(64530, 0, 0);
+	int midrow = iocore::midrow(), midcol = iocore::midcol();
 	unsigned int selected = 2;
 	int offset = 0;
 
@@ -342,10 +342,10 @@ void keybinds_window()
 
 	while(true)
 	{
-		iocore->box(midcol - 27, midrow - 18, 55, 38, UI_COLOUR_BOX);
-		iocore->box(midcol - 26, midrow - 17, 53, 4, Colour::CGA_LCYAN);
-		iocore->print("ArrowKeys: Select Key - Enter: Remap Key", midcol - 20, midrow - 16, Colour::CGA_WHITE);
-		iocore->print("Escape: Clear Key - D: Revert to Default", midcol - 20, midrow - 15, Colour::CGA_WHITE);
+		iocore::box(midcol - 27, midrow - 18, 55, 38, UI_COLOUR_BOX);
+		iocore::box(midcol - 26, midrow - 17, 53, 4, Colour::CGA_LCYAN);
+		iocore::print("ArrowKeys: Select Key - Enter: Remap Key", midcol - 20, midrow - 16, Colour::CGA_WHITE);
+		iocore::print("Escape: Clear Key - D: Revert to Default", midcol - 20, midrow - 15, Colour::CGA_WHITE);
 
 		string line_str;
 		for (unsigned int i = 0; i < key_id.size(); i++)
@@ -357,12 +357,12 @@ void keybinds_window()
 			if (key_id.at(i) == UINT_MAX)
 			{
 				if (key_longname.at(i).size())
-					iocore->ansi_print(key_longname.at(i), midcol - (strx::ansi_strlen(key_longname.at(i)) / 2), pos_y);
+					iocore::ansi_print(key_longname.at(i), midcol - (strx::ansi_strlen(key_longname.at(i)) / 2), pos_y);
 			}
 			else
 			{
 				if (selected == i) line_str = "{5F}["; else line_str = "{5F} ";
-				string key_str = ((waiting_for_new_key && selected == i) ? "{5B}choose key" : iocore->key_to_name(key_current.at(i)));
+				string key_str = ((waiting_for_new_key && selected == i) ? "{5B}choose key" : iocore::key_to_name(key_current.at(i)));
 				if (!key_str.size()) key_str = "{5C}[unknown]";
 				else
 				{
@@ -379,23 +379,23 @@ void keybinds_window()
 				const int line_pos = midcol - strx::ansi_strlen(line_str) + 3;
 				line_str += key_str;
 				if (selected == i) line_str += "{5F}]"; else line_str += " ";
-				iocore->ansi_print(line_str, line_pos, pos_y);
+				iocore::ansi_print(line_str, line_pos, pos_y);
 			}
 		}
 
 		if (selected == key_id.size()) line_str = "{5F}["; else line_str = "{5F} ";
 		line_str += "^325^ Back";
 		if (selected == key_id.size()) line_str += "{5F}]"; else line_str += " ";
-		iocore->ansi_print(line_str, midcol - (strx::ansi_strlen(line_str) / 2), midrow + 18);
+		iocore::ansi_print(line_str, midcol - (strx::ansi_strlen(line_str) / 2), midrow + 18);
 
-		iocore->flip();
-		unsigned int key = iocore->wait_for_key();
+		iocore::flip();
+		unsigned int key = iocore::wait_for_key();
 		if (key == RESIZE_KEY)
 		{
-			iocore->cls();
-			iocore->render_nebula(64530, 0, 0);
-			midrow = iocore->midrow();
-			midcol = iocore->midcol();
+			iocore::cls();
+			iocore::render_nebula(64530, 0, 0);
+			midrow = iocore::midrow();
+			midcol = iocore::midcol();
 		}
 		else if (waiting_for_new_key)
 		{
@@ -415,23 +415,23 @@ void keybinds_window()
 				prefs::set_keybind(static_cast<Keys>(key_id.at(selected)), 0);
 				update_key = true;
 			}
-			else if (iocore->is_up(key) && selected > 2)
+			else if (iocore::is_up(key) && selected > 2)
 			{
 				selected--;
 				while (key_id.at(selected) == UINT_MAX) selected--;
 			}
-			else if (iocore->is_down(key) && selected < key_id.size())
+			else if (iocore::is_down(key) && selected < key_id.size())
 			{
 				selected++;
 				if (selected < key_id.size())
 					while (key_id.at(selected) == UINT_MAX) selected++;
 			}
-			else if (iocore->is_select(key))
+			else if (iocore::is_select(key))
 			{
 				if (selected == key_id.size()) break;
 				else waiting_for_new_key = true;
 			}
-			else if ((key == LMB_KEY && iocore->did_mouse_click(0, iocore->midrow() + 18, iocore->get_cols())) || key == RMB_KEY) return;
+			else if ((key == LMB_KEY && iocore::did_mouse_click(0, iocore::midrow() + 18, iocore::get_cols())) || key == RMB_KEY) return;
 		}
 
 		if (update_key)
@@ -465,7 +465,7 @@ void parse_string_with_key_tags(string &str)
 		{
 			if (key_names[i] == tag)
 			{
-				new_tag = iocore->key_to_name(keybind(static_cast<Keys>(i)));
+				new_tag = iocore::key_to_name(keybind(static_cast<Keys>(i)));
 				break;
 			}
 		}
@@ -482,29 +482,29 @@ void prefs_window()
 	bool done = false;
 	while(!done)
 	{
-		const int midcol = iocore->midcol(), midrow = iocore->midrow(), cols = iocore->get_cols();
-		iocore->cls();
-		iocore->box(midcol - 27, midrow - 18, 55, 38, UI_COLOUR_BOX);
+		const int midcol = iocore::midcol(), midrow = iocore::midrow(), cols = iocore::get_cols();
+		iocore::cls();
+		iocore::box(midcol - 27, midrow - 18, 55, 38, UI_COLOUR_BOX);
 
-		iocore->alagard_print("GRAPHICS", (cols * 4) - (8 * 12), (midrow - 12) * 8, (selected == 0 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
-		iocore->alagard_print("GAMEPLAY", (cols * 4) - (8 * 12), (midrow - 6) * 8, (selected == 1 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
-		iocore->alagard_print("KEYBINDS", (cols * 4) - (8 * 12), midrow * 8, (selected == 2 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
-		iocore->alagard_print("BACK", (cols * 4) - (4 * 12), (midrow + 12) * 8, (selected == 3 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
+		iocore::alagard_print("GRAPHICS", (cols * 4) - (8 * 12), (midrow - 12) * 8, (selected == 0 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
+		iocore::alagard_print("GAMEPLAY", (cols * 4) - (8 * 12), (midrow - 6) * 8, (selected == 1 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
+		iocore::alagard_print("KEYBINDS", (cols * 4) - (8 * 12), midrow * 8, (selected == 2 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
+		iocore::alagard_print("BACK", (cols * 4) - (4 * 12), (midrow + 12) * 8, (selected == 3 ? Colour::CGA_LCYAN : Colour::CGA_GRAY));
 
-		iocore->flip();
-		unsigned int key = iocore->wait_for_key();
+		iocore::flip();
+		unsigned int key = iocore::wait_for_key();
 
 		if (key == RMB_KEY) done = true;
 		else if (key == LMB_KEY)
 		{
-			if (iocore->did_mouse_click(midcol - 12, midrow - 12, 24, 3)) { selected = 0; prefs_window_graphics(); }
-			else if (iocore->did_mouse_click(midcol - 12, midrow - 6, 24, 3)) { selected = 1; prefs_window_gameplay(); }
-			else if (iocore->did_mouse_click(midcol - 12, midrow, 24, 3)) { selected = 2; keybinds_window(); }
-			else if (iocore->did_mouse_click(midcol - 6, midrow + 12, 12, 3)) done = true;
+			if (iocore::did_mouse_click(midcol - 12, midrow - 12, 24, 3)) { selected = 0; prefs_window_graphics(); }
+			else if (iocore::did_mouse_click(midcol - 12, midrow - 6, 24, 3)) { selected = 1; prefs_window_gameplay(); }
+			else if (iocore::did_mouse_click(midcol - 12, midrow, 24, 3)) { selected = 2; keybinds_window(); }
+			else if (iocore::did_mouse_click(midcol - 6, midrow + 12, 12, 3)) done = true;
 		}
-		if (iocore->is_up(key) && selected > 0) selected--;
-		else if (iocore->is_down(key) && selected < 3) selected++;
-		else if (iocore->is_select(key))
+		if (iocore::is_up(key) && selected > 0) selected--;
+		else if (iocore::is_down(key) && selected < 3) selected++;
+		else if (iocore::is_select(key))
 		{
 			switch(selected)
 			{
@@ -514,7 +514,7 @@ void prefs_window()
 				case 3: done = true; break;
 			}
 		}
-		else if (iocore->is_cancel(key)) done = true;
+		else if (iocore::is_cancel(key)) done = true;
 	}
 }
 
@@ -666,7 +666,7 @@ void prefs_window_graphics()
 			{
 				case ID_SCREEN_RES: resolution_choice = val; break;
 				case ID_FULL_SCREEN: prefs::fullscreen = val; break;
-				case ID_SHADER: prefs::ntsc_mode = val; iocore->update_ntsc_mode(); break;
+				case ID_SHADER: prefs::ntsc_mode = val; iocore::update_ntsc_mode(); break;
 				case ID_PALETTE: prefs::palette = val; break;
 				case ID_GLITCHES: prefs::visual_glitches = val; break;
 				case ID_SS_FORMAT: prefs::screenshot_type = val; break;

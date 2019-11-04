@@ -84,14 +84,14 @@ void World::main_loop()
 		}
 		if (redraw_full)
 		{
-			iocore->cls();
+			iocore::cls();
 			the_dungeon->render();
 			msglog->render();
 			redraw_full = false;
 		}
-		iocore->flip();
+		iocore::flip();
 
-		const unsigned int key = iocore->wait_for_key();
+		const unsigned int key = iocore::wait_for_key();
 		if (key == RESIZE_KEY) redraw_full = true;
 		else if (key == prefs::keybind(Keys::SAVE))
 		{
@@ -117,7 +117,7 @@ void World::main_loop()
 		}
 		else if (key == prefs::keybind(Keys::QUIT_GAME))
 		{
-			iocore->exit_functions();
+			iocore::exit_functions();
 			exit(0);
 		}
 	}

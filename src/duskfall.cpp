@@ -18,12 +18,12 @@ int main(int argc, char* argv[])
 
 	guru::open_syslog();
 	prefs::init();
-	iocore = std::make_shared<IOCore>();
+	iocore::init();
 	static_data();
 	wiki = std::make_shared<Wiki>();
 	guru::log("Everything looks good! Starting the game!", GURU_INFO);
 	title::title_screen();
-	iocore = nullptr;
+	iocore::exit_functions();
 	guru::close_syslog();
 	return 0;
 }
