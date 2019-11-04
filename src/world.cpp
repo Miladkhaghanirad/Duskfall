@@ -29,7 +29,7 @@ World::World(unsigned int new_slot, bool new_save) : recalc_lighting(true), redr
 	}
 	catch(std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 	the_hero = std::make_shared<Hero>();
 	msglog = std::make_shared<MessageLog>();
@@ -53,7 +53,7 @@ void World::load()
 		{
 			level = query.getColumn("level").getUInt();
 		}
-		else guru->halt("Saved game file is damaged!");
+		else guru::halt("Saved game file is damaged!");
 
 		the_dungeon = std::make_shared<Dungeon>(level);
 		the_dungeon->load();
@@ -62,7 +62,7 @@ void World::load()
 	}
 	catch (std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 
 	the_dungeon = std::make_shared<Dungeon>(level);
@@ -84,14 +84,14 @@ void World::main_loop()
 		}
 		if (redraw_full)
 		{
-			iocore->cls();
+			iocore::cls();
 			the_dungeon->render();
 			msglog->render();
 			redraw_full = false;
 		}
-		iocore->flip();
+		iocore::flip();
 
-		const unsigned int key = iocore->wait_for_key();
+		const unsigned int key = iocore::wait_for_key();
 		if (key == RESIZE_KEY) redraw_full = true;
 		else if (key == prefs::keybind(Keys::SAVE))
 		{
@@ -117,7 +117,8 @@ void World::main_loop()
 		}
 		else if (key == prefs::keybind(Keys::QUIT_GAME))
 		{
-			iocore->exit_functions();
+			iocore::exit_functions();
+			guru::close_syslog();
 			exit(0);
 		}
 	}
@@ -157,7 +158,7 @@ void World::save(bool announce)
 	}
 	catch (std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 	if (announce) msglog->amend(" done!");
 }
@@ -166,7 +167,7 @@ void World::save(bool announce)
 void new_world(unsigned short slot, bool new_save)
 {
 	STACK_TRACE();
-	if (the_world) guru->halt("World object already exists!");
+	if (the_world) guru::halt("World object already exists!");
 	the_world = std::make_shared<World>(slot, new_save);
 }
 
@@ -174,6 +175,6 @@ void new_world(unsigned short slot, bool new_save)
 shared_ptr<World> world()
 {
 	STACK_TRACE();
-	if (!the_world) guru->halt("No world object defined!");
+	if (!the_world) guru::halt("No world object defined!");
 	return the_world;
 }

@@ -10,28 +10,16 @@ The game is free and open-source, released under the [GNU General Public License
 
 [Artos Serif and Victoria bitmap fonts](https://opengameart.org/content/a-package-of-8-bit-fonts-for-grafx2-and-linux) (c) 2012 usr_share (CC-0).
 
+[BearLibTerminal](http://foo.wyrd.name/en:bearlibterminal) (c) 2013-2017 Cfyz.
+
 [GCC runtime library DLLs and any embedded GCC library code](https://gcc.gnu.org/) is copyright (c) Free Software Foundation, Inc., distrubuted under the GCC Runtime Library Exception, version 3.1 of the GNU General Public License v3.
 
 [JsonCpp](https://github.com/open-source-parsers/jsoncpp) (c) 2007-2010 Baptiste Lepilleur and The JsonCpp Authors.
 
-[libpng](http://www.libpng.org/pub/png/libpng.html) (c) 2000-2002, 2004, 2006-2017 Glenn Randers-Pehrson.
-
-[libjpeg](https://libjpeg-turbo.org/Documentation/OfficialBinaries) (c) 1991-2016 Thomas G. Lane, Guido Vollbeding. This software is based in part on the work of the Independent JPEG Group.
-
-[LodePNG](https://lodev.org/lodepng/) (c) 2005-2019 Lode Vandevenne.
-
 [PCG](https://lodev.org/lodepng/) (c) 2014 Melissa O'Neill.
-
-[SDL2](https://www.libsdl.org/), [SDL_image](https://www.libsdl.org/projects/SDL_image/) (c) 1997-2019 Sam Lantinga.
-
-[SDL_savejpeg](http://burningsmell.org/code-snippets/) (c) 2004 Pluto, Inc.
-
-[snes_ntsc](http://slack.net/~ant/libs/ntsc.html) (c) Shay Green, used under GNU LGPL 2.1.
 
 [SQLite](https://www.sqlite.org/) (c) SQLite Consortium.
 
 [SQLiteC++](https://github.com/SRombauts/SQLiteCpp) (c) 2012-2019 Sébastien Rombauts.
-
-[zlib](https://zlib.net/) (c) 1995-2017 Jean-loup Gailly and Mark Adler.
 
 THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

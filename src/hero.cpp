@@ -20,10 +20,7 @@ Hero::Hero() : camera_off_x(0), camera_off_y(0), difficulty(1), played(0), style
 	glyph = '@';
 }
 
-Hero::~Hero()
-{
-	STACK_TRACE();
-}
+Hero::~Hero() { }
 
 // Loads the Hero's data from disk.
 void Hero::load()
@@ -44,7 +41,7 @@ void Hero::load()
 	}
 	catch(std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 }
 
@@ -60,14 +57,14 @@ void Hero::recenter_camera()
 void Hero::recenter_camera_horiz()
 {
 	STACK_TRACE();
-	camera_off_x = (iocore->get_cols() / 2) - x;
+	camera_off_x = (iocore::get_cols() / 2) - x;
 }
 
 // Recenters the camera vertically on the Hero's position, not adjusting the horizontal.
 void Hero::recenter_camera_vert()
 {
 	STACK_TRACE();
-	camera_off_y = (iocore->get_rows() / 2) - y;
+	camera_off_y = (iocore::get_rows() / 2) - y;
 }
 
 // Saves the Hero's data to disk, along with the rest of the game world.
@@ -89,7 +86,7 @@ void Hero::save()
 	}
 	catch(std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 
 	std::ofstream tag_file("userdata/save/" + strx::itos(world()->slot()) + "/tag.dat");
