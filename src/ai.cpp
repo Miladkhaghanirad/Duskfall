@@ -14,6 +14,9 @@ bool AI::travel(short x_dir, short y_dir)
 	shared_ptr<Dungeon> dungeon = world()->dungeon();
 	shared_ptr<Tile> target_tile = dungeon->tile(owner->x + x_dir, owner->y + y_dir);
 	if (target_tile->impassible()) return false;
+	for (auto actor : dungeon->actors)
+		if (actor->x == owner->x + x_dir && actor->y == owner->y + y_dir && actor->blocker()) return false;
+
 	owner->x += x_dir;
 	owner->y += y_dir;
 	world()->queue_redraw();

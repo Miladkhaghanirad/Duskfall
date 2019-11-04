@@ -50,13 +50,14 @@ public:
 	void	set_tile(unsigned short x, unsigned short y, Tile &tile);	// Sets a specified tile, with error checking.
 	shared_ptr<Tile>	tile(unsigned short x, unsigned short y);	// Retrieves a specified tile pointer.
 
+	vector<shared_ptr<Actor>>	actors;	// The Actors stored in this dungeon level.
+
 private:
 	unsigned short	level;			// The vertical level of this dungeon.
 	unsigned short	width, height;	// The width and height of this area.
 	Tile			*tiles;			// An array of Tiles which make up this area.
 	s_rgb			*lighting;		// An array of 8-bit integers defining the light level or visibility of tiles.
 	unsigned int	*region;		// The region the current tile belongs to.
-	vector<shared_ptr<Actor>>	actors;	// The Actors stored in this dungeon level.
 	std::set<std::pair<unsigned short, unsigned short>> dynamic_light_temp, dynamic_light_temp_walls;	// Temporary data used by the dynamic lighting system.
 
 	void	carve_room(unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned int new_region);	// Carves out a square room.
