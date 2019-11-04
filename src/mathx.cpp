@@ -1,17 +1,22 @@
 // mathx.cpp -- Extended math utility functions, pseudo-random number generator, etc.
 // Copyright (c) 2016-2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
+#include "guru.h"
 #include "mathx.h"
-#include "pcg/pcg_basic.h"
+
+#include "pcg/pcg_random.hpp"
+
 #include <chrono>
 #include <cmath>
+#include <random>
 
 
 namespace mathx
 {
 
-unsigned int	prand_seed = 0;		// Pseudorandom number seed.
 std::chrono::time_point<std::chrono::system_clock> dev_timer;	// Timer used for testing.
+pcg32			*pcg = nullptr;	// PCG random number generator.
+unsigned int	prand_seed = 0;		// Pseudorandom number seed.
 
 
 // Starts a timer for debugging/testing purposes.
@@ -40,19 +45,8 @@ float grid_dist(long long x1, long long y1, long long x2, long long y2)
 void init()
 {
 	STACK_TRACE();
-
-	// Get a much more accurate count, milliseconds since epoch.
-	const std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
-
-	// Feed this shit into xorshift64*
-	unsigned long long xorshift = ms.count();
-	xorshift ^= xorshift >> 12; // a
-	xorshift ^= xorshift << 25; // b
-	xorshift ^= xorshift >> 27; // c
-	xorshift *= UINT64_C(2685821657736338717);
-
-	// Finally, feed the shifted seed into the RNG.
-	pcg32_srandom(time(NULL) ^ reinterpret_cast<intptr_t>(&printf), xorshift);
+	pcg = new pcg32(pcg_extras::seed_seq_from<std::random_device>{});
+	guru::log("Pseudorandom number generator initialized.");
 }
 
 // Checks if a number is odd.
@@ -136,7 +130,8 @@ unsigned int rnd(unsigned int max)
 {
 	STACK_TRACE();
 	if (max <= 1) return max;
-	return pcg32_boundedrand(max) + 1;
+	std::uniform_int_distribution<unsigned int> uniform_dist(1, max);
+	return uniform_dist(*pcg);
 }
 
 // Rounds a float to two decimal places.
