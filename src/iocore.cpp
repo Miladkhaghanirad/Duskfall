@@ -109,6 +109,7 @@ unsigned short	mouse_clicked_x = 0, mouse_clicked_y = 0;	// Last clicked locatio
 std::unordered_map<std::string, s_rgb>	nebula_cache;	// Cache for the nebula() function.
 unsigned short	nebula_cache_seed = 0;	// The seed for the nebula cache.
 snes_ntsc_t		*ntsc = nullptr;		// Used by the NTSC filter.
+bool			ntsc_filter = true;		// Whether or not the NTSC filter is enabled.
 bool			ntsc_glitched = false;
 vector<unsigned int>	queued_keys;	// Keypresses waiting to be processed.
 int				screen_x = 0, screen_y = 0;	// Chosen screen resolution.
@@ -198,11 +199,11 @@ void alagard_print_at(char letter, int x, int y, Colour colour)
 	const unsigned int sdl_col = SDL_MapRGB(main_surface->format, r, g, b);
 
 	// Determine the location of the character.
-	const unsigned short loc_x = static_cast<unsigned short>(letter) * 24;
-	SDL_Rect font_rect = { loc_x, 0, 24, 26 };
+	const unsigned short loc_x = static_cast<unsigned short>(letter) * (ntsc_filter ? 24 : 48);
+	SDL_Rect font_rect = { loc_x, 0, (ntsc_filter ? 24 : 48), (ntsc_filter ? 26 : 52) };
 
 	// Draw a coloured square, then 'stamp' it with the font.
-	SDL_Rect scr_rect = { x, y, 24, 26 };
+	SDL_Rect scr_rect = { x * (ntsc_filter ? 1 : 2), y * (ntsc_filter ? 1 : 2), (ntsc_filter ? 24 : 48), (ntsc_filter ? 26 : 52) };
 	if (SDL_FillRect(main_surface, &scr_rect, sdl_col) < 0) guru::halt(SDL_GetError());
 	if (SDL_BlitSurface(alagard, &font_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
 }
@@ -374,13 +375,13 @@ void exit_functions()
 		SDL_FreeSurface(main_surface);
 		SDL_FreeSurface(glitched_main_surface);
 		SDL_FreeSurface(window_surface);
-		SDL_FreeSurface(snes_surface);
+		if (ntsc_filter) SDL_FreeSurface(snes_surface);
 		SDL_FreeSurface(temp_surface);
 #ifndef TARGET_LINUX	// Not sure why, but these cause some nasty console errors on Linux.
 		SDL_FreeSurface(glitch_hz_surface);
 		SDL_FreeSurface(glitch_sq_surface);
 #endif
-		free(ntsc);
+		if (ntsc_filter) free(ntsc);
 		main_surface = window_surface = snes_surface = temp_surface = glitch_hz_surface = glitch_sq_surface = glitched_main_surface = nullptr;
 		ntsc = nullptr;
 		guru::console_ready(false);
@@ -432,7 +433,7 @@ void flip()
 		ntsc_glitched = false;
 	}
 
-	SDL_Surface *render_surf = main_surface;
+	SDL_Surface *render_surf = main_surface, *output_surf = snes_surface;
 	if (prefs::visual_glitches && glitch_clear_countdown)
 	{
 		render_surf = glitched_main_surface;
@@ -440,55 +441,60 @@ void flip()
 		render_glitches();
 	}
 
-	if (SDL_LockSurface(snes_surface) < 0)
+	if (ntsc_filter)
 	{
-		guru::console_ready(false);
-		guru::halt(SDL_GetError());
-	}
-	unsigned char *output_pixels = (unsigned char*)snes_surface->pixels;
-	const long output_pitch = snes_surface->pitch;
-	snes_ntsc_blit(ntsc, (unsigned short*)render_surf->pixels, render_surf->pitch / 2, 0, render_surf->w, render_surf->h, output_pixels, output_pitch);
-	for (int y = snes_surface->h / 2; --y >= 0; )
-	{
-		unsigned char const* in = output_pixels + y * output_pitch;
-		unsigned char* out = output_pixels + y * 2 * output_pitch;
-		int n;
-		for (n = render_surf->w; n; --n)
+		if (SDL_LockSurface(snes_surface) < 0)
 		{
-			const unsigned prev = *(unsigned short*) in;
-			const unsigned next = *(unsigned short*) (in + output_pitch);
-			// mix 16-bit rgb without losing low bits
-			const unsigned mixed = prev + next + ((prev ^ next) & 0x0821);
-			// darken by 12%
-			*(unsigned short*) out = prev;
-			*(unsigned short*) (out + output_pitch) = (mixed >> 1) - (mixed >> 4 & 0x18E3);
-			in += 2;
-			out += 2;
+			guru::console_ready(false);
+			guru::halt(SDL_GetError());
+		}
+		unsigned char *output_pixels = (unsigned char*)snes_surface->pixels;
+		const long output_pitch = snes_surface->pitch;
+		snes_ntsc_blit(ntsc, (unsigned short*)render_surf->pixels, render_surf->pitch / 2, 0, render_surf->w, render_surf->h, output_pixels, output_pitch);
+		for (int y = snes_surface->h / 2; --y >= 0; )
+		{
+			unsigned char const* in = output_pixels + y * output_pitch;
+			unsigned char* out = output_pixels + y * 2 * output_pitch;
+			int n;
+			for (n = render_surf->w; n; --n)
+			{
+				const unsigned prev = *(unsigned short*) in;
+				const unsigned next = *(unsigned short*) (in + output_pitch);
+				// mix 16-bit rgb without losing low bits
+				const unsigned mixed = prev + next + ((prev ^ next) & 0x0821);
+				// darken by 12%
+				*(unsigned short*) out = prev;
+				*(unsigned short*) (out + output_pitch) = (mixed >> 1) - (mixed >> 4 & 0x18E3);
+				in += 2;
+				out += 2;
+			}
+		}
+		SDL_UnlockSurface(snes_surface);
+
+		if (!(window_surface = SDL_GetWindowSurface(main_window)))
+		{
+			guru::console_ready(false);
+			guru::halt(SDL_GetError());
 		}
 	}
-	SDL_UnlockSurface(snes_surface);
-	if (!(window_surface = SDL_GetWindowSurface(main_window)))
-	{
-		guru::console_ready(false);
-		guru::halt(SDL_GetError());
-	}
+	else output_surf = main_surface;
 
 	if (surface_scale)
 	{
 		SDL_Rect the_rect = { 0, 0, 0, 0 };
 		switch(surface_scale)
 		{
-			case 1: the_rect = { 0, 0, snes_surface->w, static_cast<int>(snes_surface->h * 1.333f) }; break;
-			case 2: the_rect = { 0, 0, snes_surface->w * 2, snes_surface->h * 2 }; break;
+			case 1: the_rect = { 0, 0, output_surf->w, static_cast<int>(output_surf->h * 1.333f) }; break;
+			case 2: the_rect = { 0, 0, output_surf->w * 2, output_surf->h * 2 }; break;
 			case 3: the_rect = { 0, 0, window_surface->w, window_surface->h }; break;
 		}
-		if (SDL_BlitScaled(snes_surface, nullptr, window_surface, &the_rect) < 0)
+		if (SDL_BlitScaled(output_surf, nullptr, window_surface, &the_rect) < 0)
 		{
 			guru::console_ready(false);
 			guru::halt(SDL_GetError());
 		}
 	}
-	else if (SDL_BlitSurface(snes_surface, nullptr, window_surface, nullptr) < 0)
+	else if (SDL_BlitSurface(output_surf, nullptr, window_surface, nullptr) < 0)
 	{
 		guru::console_ready(false);
 		guru::halt(SDL_GetError());
@@ -522,6 +528,12 @@ void flip()
 unsigned short get_cols()
 {
 	return cols;
+}
+
+// Check if we're using an NTSC screen filter or not.
+bool get_ntsc_filter()
+{
+	return ntsc_filter;
 }
 
 // Returns the number of rows on the screen.
@@ -604,6 +616,7 @@ void init()
 
 	// This is messy. Set up all the surfaces we'll be using for rendering, and exit out if anything goes wrong.
 	guru::log("Initializing SDL window and surfaces.", GURU_INFO);
+	ntsc_filter = prefs::ntsc_filter;
 	screen_x = unscaled_x = prefs::screen_x;
 	screen_y = unscaled_y = prefs::screen_y;
 	const bool fullscreen = prefs::fullscreen;
@@ -618,11 +631,22 @@ void init()
 	main_window = SDL_CreateWindow(window_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_x, screen_y, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | (fullscreen ? SDL_WINDOW_FULLSCREEN : 0));
 	if (!main_window) guru::halt(SDL_GetError());
 	SDL_SetWindowMinimumSize(main_window, SCREEN_MIN_X, SCREEN_MIN_Y);
-	cols = SNES_NTSC_IN_WIDTH(unscaled_x) / 8; rows = unscaled_y / 16; mid_col = cols / 2; mid_row = rows / 2;
+	if (ntsc_filter)
+	{
+		cols = SNES_NTSC_IN_WIDTH(unscaled_x) / 8;
+		rows = unscaled_y / 16;
+	}
+	else
+	{
+		cols = unscaled_x / 16;
+		rows = unscaled_y / 16;
+	}
+	mid_col = cols / 2;
+	mid_row = rows / 2;
 	if (!(window_surface = SDL_GetWindowSurface(main_window))) guru::halt(SDL_GetError());
 	if (!(main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
 	if (!(glitched_main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
-	if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, window_surface->h + 16, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (ntsc_filter) { if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, window_surface->h + 16, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError()); }
 	SDL_RaiseWindow(main_window);
 	if (!(temp_surface = SDL_CreateRGBSurface(0, 32, 32, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
 	if (!(glitch_hz_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, 8, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
@@ -636,8 +660,11 @@ void init()
 	mathx::init();
 
 	// Set up the SNES renderer.
-	if (!(ntsc = static_cast<snes_ntsc_t*>(calloc(1, sizeof(snes_ntsc_t))))) guru::halt("Unable to initialize NTSC shader.");
-	update_ntsc_mode();
+	if (ntsc_filter)
+	{
+		if (!(ntsc = static_cast<snes_ntsc_t*>(calloc(1, sizeof(snes_ntsc_t))))) guru::halt("Unable to initialize NTSC shader.");
+		update_ntsc_mode();
+	}
 
 	// Blank the screen.
 	cls();
@@ -649,9 +676,24 @@ void init()
 	{
 		SDL_Surface *surf_temp = IMG_Load(("data/png/" + filename).c_str());
 		if (!surf_temp) guru::halt(IMG_GetError());
-		*dest = SDL_ConvertSurface(surf_temp, main_surface->format, 0);
-		if (!dest) guru::halt(SDL_GetError());
-		SDL_FreeSurface(surf_temp);
+
+		// Double the size of the loaded graphics if we're not using the NTSC filter.
+		if (!ntsc_filter)
+		{
+			SDL_Surface *surface_temp_opt = SDL_ConvertSurface(surf_temp, main_surface->format, 0);
+			if (!surface_temp_opt) guru::halt(SDL_GetError());
+			SDL_FreeSurface(surf_temp);
+			SDL_Surface *surface_temp_scaled = SDL_CreateRGBSurface(0, surf_temp->w * 2, surf_temp->h * 2, 16, 0, 0, 0, 0);
+			if (SDL_BlitScaled(surface_temp_opt, nullptr, surface_temp_scaled, nullptr) < 0) guru::halt(SDL_GetError());
+			SDL_FreeSurface(surface_temp_opt);
+			*dest = surface_temp_scaled;
+		}
+		else
+		{
+			*dest = SDL_ConvertSurface(surf_temp, main_surface->format, 0);
+			if (!dest) guru::halt(SDL_GetError());
+			SDL_FreeSurface(surf_temp);
+		}
 		if (SDL_SetColorKey(*dest, SDL_TRUE, SDL_MapRGB((*dest)->format, 255, 255, 255)) < 0) guru::halt(SDL_GetError());
 	};
 
@@ -659,6 +701,7 @@ void init()
 	load_and_optimize_png("alagard.png", &alagard, main_surface);
 	load_and_optimize_png("sprites.png", &sprites, main_surface);
 	font_sheet_size = (font->w * font->h) / 8;
+	if (!ntsc_filter) font_sheet_size /= 2;
 	exit_func_level = 4;
 
 	// Now that the font is loaded and SDL is initialized, we can activate Guru's error screen.
@@ -903,10 +946,12 @@ void print_at(char letter, int x, int y, Colour colour, unsigned int print_flags
 void print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags)
 {
 	STACK_TRACE();
+	const int glyph_size = (ntsc_filter ? 8 : 16);
+
 	// Just exit quietly if drawing off-screen. This shouldn't normally happen.
 	if (mathx::check_flag(print_flags, PRINT_FLAG_ABSOLUTE))
 	{
-		if (x < 0 || y < 0 || x > cols * 8 || y > rows * 8) return;
+		if (x < 0 || y < 0 || x > cols * glyph_size || y > rows * glyph_size) return;
 	}
 	else
 	{
@@ -943,21 +988,21 @@ void print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsi
 
 	// Determine the location of the character in the grid.
 	if (static_cast<unsigned short>(letter) >= font_sheet_size) letter = static_cast<Glyph>('?');
-	unsigned short loc_x = static_cast<unsigned short>(letter) * 8, loc_y = 0;
-	while (loc_x >= font->w) { loc_y += 8; loc_x -= font->w; }
-	SDL_Rect font_rect = {loc_x, loc_y, 8, 8};
+	unsigned short loc_x = static_cast<unsigned short>(letter) * glyph_size, loc_y = 0;
+	while (loc_x >= font->w) { loc_y += glyph_size; loc_x -= font->w; }
+	SDL_Rect font_rect = {loc_x, loc_y, glyph_size, glyph_size};
 
 	// Draw a coloured square, then 'stamp' it with the font.
 	int x_pos = x, y_pos = y;
-	if (!mathx::check_flag(print_flags, PRINT_FLAG_ABSOLUTE)) { x_pos *= 8; y_pos *= 8; }
-	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_FOUR_X)) x_pos += 2;
-	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_FOUR_Y)) y_pos += 2;
-	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_EIGHT_X)) x_pos += 4;
-	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_EIGHT_Y)) y_pos += 4;
-	SDL_Rect scr_rect = {x_pos, y_pos, 8, 8};
+	if (!mathx::check_flag(print_flags, PRINT_FLAG_ABSOLUTE)) { x_pos *= glyph_size; y_pos *= glyph_size; }
+	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_FOUR_X)) x_pos += (ntsc_filter ? 2 : 4);
+	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_FOUR_Y)) y_pos += (ntsc_filter ? 2 : 4);
+	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_EIGHT_X)) x_pos += (ntsc_filter ? 4 : 8);
+	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_EIGHT_Y)) y_pos += (ntsc_filter ? 4 : 8);
+	SDL_Rect scr_rect = {x_pos, y_pos, glyph_size, glyph_size};
 	if (mathx::check_flag(print_flags, PRINT_FLAG_ALPHA))
 	{
-		SDL_Rect temp_rect = {0, 0, 8, 8};
+		SDL_Rect temp_rect = {0, 0, glyph_size, glyph_size};
 		if (SDL_FillRect(temp_surface, &temp_rect, sdl_col) < 0) guru::halt(SDL_GetError());
 		if (SDL_BlitSurface(font, &font_rect, temp_surface, &temp_rect) < 0) guru::halt(SDL_GetError());
 		if (SDL_SetColorKey(temp_surface, SDL_TRUE, SDL_MapRGB(temp_surface->format, 0, 0, 0)) < 0) guru::halt(SDL_GetError());
@@ -981,8 +1026,9 @@ void print_at(char letter, int x, int y, unsigned char r, unsigned char g, unsig
 void rect(int x, int y, int w, int h, Colour colour)
 {
 	STACK_TRACE();
+	const unsigned int glyph_size = (ntsc_filter ? 8 : 16);
 	if (static_cast<int>(colour) > MAX_COLOUR) colour = Colour::ERROR_COLOUR;
-	rect_fine(x * 8, y * 8, w * 8, h * 8, colour);
+	rect_fine(x * glyph_size, y * glyph_size, w * glyph_size, h * glyph_size, colour);
 }
 
 // Draws a rectangle at very specific coords.
@@ -1098,13 +1144,14 @@ void sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
 void unlock_surfaces()
 {
 	STACK_TRACE();
-	SDL_UnlockSurface(snes_surface);
+	if (ntsc_filter) SDL_UnlockSurface(snes_surface);
 }
 
 // Updates the NTSC filter.
 void update_ntsc_mode(int force)
 {
 	STACK_TRACE();
+	if (!ntsc_filter) return;
 	snes_ntsc_setup_t setup = snes_ntsc_composite;
 	if (force == -1)
 	{
@@ -1159,7 +1206,8 @@ unsigned int wait_for_key(unsigned short max_ms)
 			{
 				if (e.button.button == SDL_BUTTON_LEFT || e.button.button == SDL_BUTTON_RIGHT)
 				{
-					mouse_clicked_x = SNES_NTSC_IN_WIDTH(e.button.x) / 8;
+					if (ntsc_filter) mouse_clicked_x = SNES_NTSC_IN_WIDTH(e.button.x) / 8;
+					else mouse_clicked_x = e.button.x / 16;
 					mouse_clicked_y = e.button.y / 16;
 					if (e.button.button == SDL_BUTTON_LEFT) return LMB_KEY; else return RMB_KEY;
 				}
@@ -1184,7 +1232,7 @@ unsigned int wait_for_key(unsigned short max_ms)
 					{
 						SDL_FreeSurface(main_surface);
 						SDL_FreeSurface(glitched_main_surface);
-						SDL_FreeSurface(snes_surface);
+						if (ntsc_filter) SDL_FreeSurface(snes_surface);
 						SDL_FreeSurface(glitch_hz_surface);
 						if (!(main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
 						{
@@ -1196,10 +1244,13 @@ unsigned int wait_for_key(unsigned short max_ms)
 							guru::console_ready(false);
 							guru::halt(SDL_GetError());
 						}
-						if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
+						if (ntsc_filter)
 						{
-							guru::console_ready(false);
-							guru::halt(SDL_GetError());
+							if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
+							{
+								guru::console_ready(false);
+								guru::halt(SDL_GetError());
+							}
 						}
 						if (!(glitch_hz_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, 8, 16, 0, 0, 0, 0)))
 						{
@@ -1226,7 +1277,8 @@ unsigned int wait_for_key(unsigned short max_ms)
 							if (surface_scale == 1) screen_y = static_cast<int>(static_cast<float>(screen_y) / 1.333f);
 							else if (surface_scale == 2) { screen_x /= 2; screen_y /= 2; }
 						}
-						cols = SNES_NTSC_IN_WIDTH(screen_x) / 8;
+						if (ntsc_filter) cols = SNES_NTSC_IN_WIDTH(screen_x) / 8;
+						else cols = screen_x / 16;
 						rows = screen_y / 16;
 						mid_col = cols / 2;
 						mid_row = rows / 2;
@@ -1268,8 +1320,8 @@ unsigned int wait_for_key(unsigned short max_ms)
 			if (!(filex::file_exists(filename + ".png") || filex::file_exists(filename + ".bmp") || filex::file_exists(filename + ".jpg") || filex::file_exists(filename + ".tmp"))) break;
 			if (sshot > 1000000) return key;	// Just give up if we have an absurd amount of files.
 		}
-		if (prefs::screenshot_type == 2) SDL_SaveJPG(snes_surface, (filename + ".jpg").c_str(), -1);
-		else SDL_SaveBMP(snes_surface, (filename + (prefs::screenshot_type > 0 ? ".tmp" : ".bmp")).c_str());
+		if (prefs::screenshot_type == 2) SDL_SaveJPG((ntsc_filter ? snes_surface : main_surface), (filename + ".jpg").c_str(), -1);
+		else SDL_SaveBMP((ntsc_filter ? snes_surface : main_surface), (filename + (prefs::screenshot_type > 0 ? ".tmp" : ".bmp")).c_str());
 		if (prefs::screenshot_type == 1) std::thread(convert_png, filename).detach();
 	}
 

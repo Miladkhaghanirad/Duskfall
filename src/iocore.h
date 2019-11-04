@@ -98,6 +98,7 @@ bool	did_mouse_click(unsigned short x, unsigned short y, unsigned short w = 1, u
 void	exit_functions();		// This is where we clean up our shit.
 void	flip();					// Redraws the display.
 unsigned short	get_cols();		// Returns the number of columns on the screen.
+bool	get_ntsc_filter();		// Check if we're using an NTSC screen filter or not.
 unsigned short	get_rows();		// Returns the number of rows on the screen.
 void	glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf);	// Offsets part of the display.
 void	glitch_horizontal();	// Horizontal displacement visual glitch.

@@ -10,9 +10,9 @@
 #include "SQLiteCpp/SQLiteCpp.h"
 
 
-Prefs::Prefs() : selected(0), changed(false), done(false), y_pos(-11), has_experimental(false), has_must_restart(false) { }
+Prefs::Prefs() : selected(0), changed(false), done(false), y_pos(-11), has_cpu_heavy(false), has_must_restart(false) { }
 
-PrefsEntry::PrefsEntry() : id(0), is_boolean(false), is_slider(false), must_restart(false), experimental(false), slider_size(0), y_pos(0), selected(0) { }
+PrefsEntry::PrefsEntry() : id(0), is_boolean(false), is_slider(false), must_restart(false), cpu_heavy(false), slider_size(0), y_pos(0), selected(0) { }
 
 
 namespace prefs
@@ -61,6 +61,7 @@ namespace prefs
 #define DEATH_REPORTS_DEFAULT		true	// Generate death report text files?
 #define FULLSCREEN_DEFAULT			false	// Run the game in full-screen mode?
 #define MESSAGE_LOG_DIM_DEFAULT		true	// Dim the colours in the message log?
+#define NTSC_FILTER_DEFAULT			true	// Whether or not the NTSC filter is enabled.
 #define NTSC_MODE_DEFAULT			2		// Different post-processing modes (0 is least, 2 is most)
 #define PALETTE_DEFAULT				0		// Which colour palette to use?
 #define SCALE_MOD_DEFAULT			0		// Experimental surface scaling.
@@ -69,7 +70,7 @@ namespace prefs
 #define SCREENSHOT_TYPE_DEFAULT		2		// The format of screenshots (0 = BMP, 1 = PNG, 2 = JPEG)
 #define VISUAL_GLITCHES_DEFAULT		0		// Do we want visual glitches?
 
-enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_PALETTE, ID_GLITCHES, ID_SS_FORMAT, ID_TEX_SCALING, ID_DEATH_REPORT, ID_MESSAGE_LOG_DIM };
+enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_PALETTE, ID_GLITCHES, ID_SS_FORMAT, ID_TEX_SCALING, ID_DEATH_REPORT, ID_MESSAGE_LOG_DIM, ID_NTSC_FILTER };
 
 }	// namespace prefs
 
@@ -81,7 +82,7 @@ void Prefs::add_item(PrefsEntry entry)
 	entry.y_pos = y_pos;
 	y_pos += 2;
 	entries.push_back(entry);
-	if (entry.experimental) has_experimental = true;
+	if (entry.cpu_heavy) has_cpu_heavy = true;
 	if (entry.must_restart) has_must_restart = true;
 }
 
@@ -125,7 +126,7 @@ void Prefs::render()
 			if (selected == i) line_str = "{5C}^015^{5F}" + line_str;
 			else line_str = "{54}^015^{57}" + line_str;
 		}
-		if (entry.experimental)
+		if (entry.cpu_heavy)
 		{
 			if (selected == i) line_str = "{5D}^019^{5F}" + line_str;
 			else line_str = "{55}^019^{57}" + line_str;
@@ -153,11 +154,11 @@ void Prefs::render()
 	if (selected == entries.size()) back_str = "[^325^ Back]";
 	iocore::print(back_str, midcol - 4, midrow + entries.at(entries.size() -1).y_pos + 2, (selected == entries.size() ? Colour::CGA_WHITE : Colour::CGA_LGRAY));
 	if (has_must_restart) iocore::ansi_print("{54}^015^{58} Must restart for change to take effect.", midcol - 20, midrow + 18);
-	if (has_experimental) iocore::ansi_print("{55}^019^{58} Experimental option - use with caution!", midcol - 20, midrow + 17);
+	if (has_cpu_heavy) iocore::ansi_print("{55}^019^{58} Disable this option to reduce CPU load.", midcol - 20, midrow + 17);
 	if (selected < entries.size())
 	{
 		if (entries.at(selected).must_restart) iocore::ansi_print("{5C}^015^{5F} Must restart for change to take effect.", midcol - 20, midrow + 18);
-		if (entries.at(selected).experimental) iocore::ansi_print("{5D}^019^{5F} Experimental option - use with caution!", midcol - 20, midrow + 17);
+		if (entries.at(selected).cpu_heavy) iocore::ansi_print("{5D}^019^{5F} Disable this option to reduce CPU load.", midcol - 20, midrow + 17);
 	}
 	iocore::flip();
 
@@ -226,19 +227,17 @@ vector<string>			key_longname;
 vector<unsigned int>	key_id;
 vector<unsigned int>	key_current;
 
-short			screen_x = SCREEN_X_DEFAULT, screen_y = SCREEN_Y_DEFAULT;	// The starting screen X,Y size.
+bool			death_reports = DEATH_REPORTS_DEFAULT;	// Generate death report text files?
 bool			fullscreen = FULLSCREEN_DEFAULT;	// Fullscreen mode.
+bool			glitch_warn = false;	// Have we shown the user the glitch warning screen?
+bool			message_log_dim = MESSAGE_LOG_DIM_DEFAULT;	// Dim the colours in the message log?
+bool			ntsc_filter = NTSC_FILTER_DEFAULT;	// Whether or not the NTSC filter is enabled.
 unsigned char	ntsc_mode = NTSC_MODE_DEFAULT;	// NTSC post-processing level.
-unsigned char	screenshot_type = SCREENSHOT_TYPE_DEFAULT;	// The type of screenshots to take (BMP/UPNG/CPNG)
-unsigned char	visual_glitches = VISUAL_GLITCHES_DEFAULT;	// Visual glitches enabled/disabled.
-bool			no_audio_fox = false;	// Does the audio data file exist?
-bool			no_music_fox = false;	// Does the music data file exist?
-unsigned char	joy_type_detected = 0;	// The type of game controller or joystick auto-detected.
 unsigned char	palette = PALETTE_DEFAULT;	// Which colour palette to use?
 unsigned char	scale_mod = SCALE_MOD_DEFAULT;		// Experimental surface scaling.
-bool			glitch_warn = false;	// Have we shown the user the glitch warning screen?
-bool			death_reports = DEATH_REPORTS_DEFAULT;	// Generate death report text files?
-bool			message_log_dim = MESSAGE_LOG_DIM_DEFAULT;	// Dim the colours in the message log?
+short			screen_x = SCREEN_X_DEFAULT, screen_y = SCREEN_Y_DEFAULT;	// The starting screen X,Y size.
+unsigned char	screenshot_type = SCREENSHOT_TYPE_DEFAULT;	// The type of screenshots to take (BMP/UPNG/CPNG)
+unsigned char	visual_glitches = VISUAL_GLITCHES_DEFAULT;	// Visual glitches enabled/disabled.
 
 // Resets a keybind to default.
 void default_keybind(Keys key)
@@ -289,6 +288,7 @@ void init()
 				else if (id == "glitch_warn") glitch_warn = value;
 				else if (id == "death_reports") death_reports = value;
 				else if (id == "message_log_dim") message_log_dim = value;
+				else if (id == "ntsc_filter") ntsc_filter = value;
 				else guru::log("Unknown preference found in prefs.dat: " + id, GURU_WARN);
 			}
 
@@ -572,7 +572,7 @@ void prefs_window_graphics()
 	else if (actual_resolution >= 1024 * 768) resolution_choice = 1;
 	else resolution_choice = 0;
 
-	PrefsEntry pe_screen_res, pe_full_screen, pe_shader, pe_palette, pe_glitches, pe_ss_format, pe_tex_scaling, pe_ml_dim;
+	PrefsEntry pe_screen_res, pe_full_screen, pe_shader, pe_palette, pe_glitches, pe_ss_format, pe_tex_scaling, pe_ml_dim, pe_ntsc_filter;
 	Prefs prefs_screen;
 	prefs_screen.name = "GRAPHICS";
 
@@ -608,13 +608,22 @@ void prefs_window_graphics()
 	pe_tex_scaling.id = ID_TEX_SCALING;
 	pe_tex_scaling.name = "Texture Scaling";
 	pe_tex_scaling.selected = prefs::scale_mod;
-	pe_tex_scaling.options_str.push_back("NORMAL");
+	pe_tex_scaling.options_str.push_back("DISABLED");
 	pe_tex_scaling.options_str.push_back("4:3");
 	pe_tex_scaling.options_str.push_back("DOUBLE");
 	pe_tex_scaling.options_str.push_back("TO WINDOW");
 	pe_tex_scaling.must_restart = true;
-	pe_tex_scaling.experimental = true;
+	pe_tex_scaling.cpu_heavy = true;
 	prefs_screen.add_item(pe_tex_scaling);
+
+	pe_ntsc_filter.id = ID_NTSC_FILTER;
+	pe_ntsc_filter.name = "NTSC Filter";
+	pe_ntsc_filter.selected = prefs::ntsc_filter;
+	pe_ntsc_filter.is_boolean = true;
+	pe_ntsc_filter.selected = (prefs::ntsc_filter ? 1 : 0);
+	pe_ntsc_filter.must_restart = true;
+	pe_ntsc_filter.cpu_heavy = true;
+	prefs_screen.add_item(pe_ntsc_filter);
 
 	pe_shader.id = ID_SHADER;
 	pe_shader.name = "NTSC Shader";
@@ -672,6 +681,7 @@ void prefs_window_graphics()
 				case ID_SS_FORMAT: prefs::screenshot_type = val; break;
 				case ID_TEX_SCALING: prefs::scale_mod = val; break;
 				case ID_MESSAGE_LOG_DIM: prefs::message_log_dim = val; break;
+				case ID_NTSC_FILTER: prefs::ntsc_filter = val; break;
 			}
 			if (prefs_screen.selected_id() == ID_SCREEN_RES)
 			{
@@ -737,6 +747,7 @@ void save(SQLite::Database *prefs_db)
 		sql_insert_pref("glitch_warn", glitch_warn);
 		sql_insert_pref("death_reports", death_reports);
 		sql_insert_pref("message_log_dim", message_log_dim);
+		sql_insert_pref("ntsc_filter", ntsc_filter);
 
 		auto sql_insert_keybind = [prefs_db] (string key, long long value)
 		{

@@ -51,6 +51,7 @@ void animate_fire(bool render)
 {
 	STACK_TRACE();
 	const int midrow = iocore::midrow(), midcol = iocore::midcol();
+	const bool ntsc_filter = iocore::get_ntsc_filter();
 	for (int x = 0; x < 106; x++)
 	{
 		if (mathx::rnd(5) == 1)	// 1 in 3 chance of flames getting colder.
@@ -72,7 +73,8 @@ void animate_fire(bool render)
 				if (source > 0) heat[(y * ANIMATED_FLAMES_W) + x] = source - (mathx::rnd(10) == 1 ? 0 : 1);
 				else heat[(y * ANIMATED_FLAMES_W) + x] = 0;
 			}
-			if (render) iocore::rect_fine((x * 4) + ((midcol - 26) * 8), ((23 - y) * 4) + ((midrow - 15) * 8), 4, 4, flame_colour_blend[heat[(y * ANIMATED_FLAMES_W) + x]]);
+			if (render) iocore::rect_fine(((x * 4) + ((midcol - 26) * 8)) * (ntsc_filter ? 1 : 2), (((23 - y) * 4) + ((midrow - 15) * 8)) * (ntsc_filter ? 1 : 2), (ntsc_filter ? 4 : 8), (ntsc_filter ? 4 : 8),
+					flame_colour_blend[heat[(y * ANIMATED_FLAMES_W) + x]]);
 		}
 	}
 }
