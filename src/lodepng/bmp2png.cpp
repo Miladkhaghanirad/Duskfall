@@ -111,7 +111,7 @@ int convert_png(string filename)
 
 	if (error)
 	{
-		guru->log("Could not decode BMP file!", GURU_ERROR);
+		guru::log("Could not decode BMP file!", GURU_ERROR);
 		return 0;
 	}
 
@@ -133,12 +133,12 @@ int convert_png(string filename)
 	error = lodepng::encode(temp, image, w, h, state);
 	if (error)
 	{
-		guru->log("Could not encode PNG file!", GURU_ERROR);
+		guru::log("Could not encode PNG file!", GURU_ERROR);
 		return 0;
 	}
 	temp.swap(png);
 	lodepng::save_file(png, dest.c_str());
 	error = remove(source.c_str());
-	if (error) guru->log("Could not delete file: " + source, GURU_WARN);
+	if (error) guru::log("Could not delete file: " + source, GURU_WARN);
 	return 0;
 }

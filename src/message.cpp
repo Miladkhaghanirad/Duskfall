@@ -45,7 +45,7 @@ void MessageLog::load()
 	}
 	catch (std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 
 	if (output_raw.size()) process_output_buffer();
@@ -187,6 +187,6 @@ void MessageLog::save()
 	}
 	catch (std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 }

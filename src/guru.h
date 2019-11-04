@@ -3,7 +3,6 @@
 
 #pragma once
 #include "duskfall.h"
-#include <fstream>
 
 #define GURU_INFO		0	// General logging information.
 #define GURU_WARN		1	// Warnings, non-fatal stuff.
@@ -11,24 +10,15 @@
 #define GURU_CRITICAL	3	// Critical system failure.
 #define GURU_STACK		4	// Stack traces.
 
-class Guru
+namespace guru
 {
-public:
-			Guru();
-			~Guru();
-	void	activate() { fully_active = true; }	// Allows the Guru system to display error message screens.
-	void	deactivate() { fully_active = false; }	// Deactivates the display system; for if we get some horrid bug in the rendering code.
-	void	log(std::string msg, int type = GURU_INFO);	// Logs a message in the system log file.
-	void	halt(string error);	// Stops the game and displays an error messge.
-	void	redraw();			// Redraws the error screen when needed.
 
-private:
-	std::ofstream	syslog;	// The system log file.
-	bool	dead_already;	// Have we already died? Is this crash within the Guru subsystem?
-	bool	fully_active;	// Is the Guru system fully activated yet?
-	int		redraw_cycle;	// Used by the rendering system.
-	bool	flash_state;	// Is the box flashing?
-	string	message;		// The error message.
-};
+void	close_syslog();				// Closes the Guru log file.
+void	console_ready(bool ready);	// Tells Guru whether or not the console is initialized and can handle rendering error messages.
+void	halt(string error);			// Stops the game and displays an error messge.
+void	intercept_signal(int sig);	// Catches a segfault or other fatal signal.
+void	log(std::string msg, int type = GURU_INFO);	// Logs a message in the system log file.
+void	open_syslog();				// Opens the output log for messages.
+void	redraw();					// Redraws the error screen when needed.
 
-extern shared_ptr<Guru>	guru;	// External access to the Guru object.
+}	// namespace guru

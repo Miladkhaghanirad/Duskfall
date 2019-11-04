@@ -139,7 +139,7 @@ vector<string> ansi_vector_split(string source, unsigned int line_len)
 string comma_list(vector<string> vec, bool use_and)
 {
 	STACK_TRACE();
-	if (!vec.size()) guru->halt("comma_list: empty string vector");
+	if (!vec.size()) guru::halt("comma_list: empty string vector");
 	if (vec.size() == 1) return vec.at(0);
 	string plus = " and ";
 	if (!use_and) plus = ", ";

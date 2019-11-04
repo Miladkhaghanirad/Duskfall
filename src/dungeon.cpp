@@ -359,7 +359,7 @@ void Dungeon::load()
 	}
 	catch(std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 }
 
@@ -593,7 +593,7 @@ void Dungeon::save()
 	}
 	catch(std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 }
 
@@ -601,7 +601,7 @@ void Dungeon::save()
 void Dungeon::set_tile(unsigned short x, unsigned short y, Tile &tile)
 {
 	STACK_TRACE();
-	if (x >= width || y >= height) guru->halt("Attempted to set out-of-bounds tile.");
+	if (x >= width || y >= height) guru::halt("Attempted to set out-of-bounds tile.");
 	tiles[x + y * width] = tile;
 }
 
@@ -609,7 +609,7 @@ void Dungeon::set_tile(unsigned short x, unsigned short y, Tile &tile)
 shared_ptr<Tile> Dungeon::tile(unsigned short x, unsigned short y)
 {
 	STACK_TRACE();
-	if (x >= width || y >= height) guru->halt("Attempted to set out-of-bounds tile.");
+	if (x >= width || y >= height) guru::halt("Attempted to set out-of-bounds tile.");
 	return std::make_shared<Tile>(tiles[x + y * width]);
 }
 

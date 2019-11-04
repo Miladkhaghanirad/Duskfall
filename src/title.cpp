@@ -337,7 +337,7 @@ void copyright_window()
 
 	vector<string> copyright;
 	std::ifstream copyright_file("copyright.txt");
-	if (!copyright_file.is_open()) guru->halt("Could not load copyright.txt");
+	if (!copyright_file.is_open()) guru::halt("Could not load copyright.txt");
 	string line;
 	while (getline(copyright_file, line))
 	{

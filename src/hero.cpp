@@ -43,7 +43,7 @@ void Hero::load()
 	}
 	catch(std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 }
 
@@ -88,7 +88,7 @@ void Hero::save()
 	}
 	catch(std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 
 	std::ofstream tag_file("userdata/save/" + strx::itos(world()->slot()) + "/tag.dat");

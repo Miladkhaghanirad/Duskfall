@@ -91,8 +91,8 @@ IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), exit_func_level(1), hold
 		cleaned_up(false)
 {
 	STACK_TRACE();
-	guru->log("Duskfall v" + DUSKFALL_VERSION_STRING + " [build " + strx::itos(build_version()) + "]", GURU_STACK);
-	guru->log("Main program entry. Let's do this.", GURU_INFO);
+	guru::log("Duskfall v" + DUSKFALL_VERSION_STRING + " [build " + strx::itos(build_version()) + "]", GURU_STACK);
+	guru::log("Main program entry. Let's do this.", GURU_INFO);
 
 	// Check for necessary CPU features.
 	bool has_mmx = SDL_HasMMX(), has_sse = SDL_HasSSE(), has_sse2 = SDL_HasSSE2(), has_sse3 = SDL_HasSSE3(), has_multicore = (SDL_GetCPUCount() > 1);
@@ -102,17 +102,17 @@ IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), exit_func_level(1), hold
 	if (!has_sse2) missing_cpu.push_back("SSE2");
 	if (!has_sse3) missing_cpu.push_back("SSE3");
 	if (!has_multicore) missing_cpu.push_back("multi-core");
-	if (missing_cpu.size()) guru->log("Missing CPU features may degrade performance: " + strx::comma_list(missing_cpu), GURU_WARN);
+	if (missing_cpu.size()) guru::log("Missing CPU features may degrade performance: " + strx::comma_list(missing_cpu), GURU_WARN);
 
 	// Start the ball rolling.
-	guru->log("Initializing SDL core systems: video, timer, events.", GURU_INFO);
+	guru::log("Initializing SDL core systems: video, timer, events.", GURU_INFO);
 	const unsigned int sdl_flags = SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS;
-	if (SDL_Init(sdl_flags) < 0) guru->halt(SDL_GetError());
-	if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) != IMG_INIT_PNG) guru->halt(IMG_GetError());
+	if (SDL_Init(sdl_flags) < 0) guru::halt(SDL_GetError());
+	if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) != IMG_INIT_PNG) guru::halt(IMG_GetError());
 	exit_func_level = 2;
 
 	// This is messy. Set up all the surfaces we'll be using for rendering, and exit out if anything goes wrong.
-	guru->log("Initializing SDL window and surfaces.", GURU_INFO);
+	guru::log("Initializing SDL window and surfaces.", GURU_INFO);
 	screen_x = unscaled_x = prefs::screen_x;
 	screen_y = unscaled_y = prefs::screen_y;
 	const bool fullscreen = prefs::fullscreen;
@@ -125,27 +125,27 @@ IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), exit_func_level(1), hold
 	else if (screen_y > SCREEN_MAX_Y) screen_y = SCREEN_MAX_Y;
 	string window_title = "Duskfall " + DUSKFALL_VERSION_STRING + " [build " + strx::itos(build_version()) + "]";
 	main_window = SDL_CreateWindow(window_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_x, screen_y, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | (fullscreen ? SDL_WINDOW_FULLSCREEN : 0));
-	if (!main_window) guru->halt(SDL_GetError());
+	if (!main_window) guru::halt(SDL_GetError());
 	SDL_SetWindowMinimumSize(main_window, SCREEN_MIN_X, SCREEN_MIN_Y);
 	cols = SNES_NTSC_IN_WIDTH(unscaled_x) / 8; rows = unscaled_y / 16; mid_col = cols / 2; mid_row = rows / 2;
-	if (!(window_surface = SDL_GetWindowSurface(main_window))) guru->halt(SDL_GetError());
-	if (!(main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru->halt(SDL_GetError());
-	if (!(glitched_main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru->halt(SDL_GetError());
-	if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, window_surface->h + 16, 16, 0, 0, 0, 0))) guru->halt(SDL_GetError());
+	if (!(window_surface = SDL_GetWindowSurface(main_window))) guru::halt(SDL_GetError());
+	if (!(main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (!(glitched_main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, window_surface->h + 16, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
 	SDL_RaiseWindow(main_window);
-	if (!(temp_surface = SDL_CreateRGBSurface(0, 32, 32, 16, 0, 0, 0, 0))) guru->halt(SDL_GetError());
-	if (!(glitch_hz_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, 8, 16, 0, 0, 0, 0))) guru->halt(SDL_GetError());
-	if (SDL_SetColorKey(glitch_hz_surface, SDL_TRUE, SDL_MapRGB(glitch_hz_surface->format, 1, 1, 1)) < 0) guru->halt(SDL_GetError());
-	if (!(glitch_sq_surface = SDL_CreateRGBSurface(0, 70, 70, 16, 0, 0, 0, 0))) guru->halt(SDL_GetError());
-	if (SDL_SetColorKey(glitch_sq_surface, SDL_TRUE, SDL_MapRGB(glitch_sq_surface->format, 1, 1, 1)) < 0) guru->halt(SDL_GetError());
+	if (!(temp_surface = SDL_CreateRGBSurface(0, 32, 32, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (!(glitch_hz_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, 8, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (SDL_SetColorKey(glitch_hz_surface, SDL_TRUE, SDL_MapRGB(glitch_hz_surface->format, 1, 1, 1)) < 0) guru::halt(SDL_GetError());
+	if (!(glitch_sq_surface = SDL_CreateRGBSurface(0, 70, 70, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
+	if (SDL_SetColorKey(glitch_sq_surface, SDL_TRUE, SDL_MapRGB(glitch_sq_surface->format, 1, 1, 1)) < 0) guru::halt(SDL_GetError());
 	exit_func_level = 3;
 
 	// Sets up the PCG PRNG.
-	guru->log("Initializing pseudorandom number generator.", GURU_INFO);
+	guru::log("Initializing pseudorandom number generator.", GURU_INFO);
 	mathx::init();
 
 	// Set up the SNES renderer.
-	if (!(ntsc = static_cast<snes_ntsc_t*>(calloc(1, sizeof(snes_ntsc_t))))) guru->halt("Unable to initialize NTSC shader.");
+	if (!(ntsc = static_cast<snes_ntsc_t*>(calloc(1, sizeof(snes_ntsc_t))))) guru::halt("Unable to initialize NTSC shader.");
 	update_ntsc_mode();
 
 	// Blank the screen.
@@ -153,15 +153,15 @@ IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), exit_func_level(1), hold
 	flip();
 
 	// Load the bitmap fonts and other PNGs into memory.
-	guru->log("Attempting to load bitmap fonts.", GURU_INFO);
+	guru::log("Attempting to load bitmap fonts.", GURU_INFO);
 	auto load_and_optimize_png = [] (string filename, SDL_Surface **dest, SDL_Surface *main_surface)
 	{
 		SDL_Surface *surf_temp = IMG_Load(("data/png/" + filename).c_str());
-		if (!surf_temp) guru->halt(IMG_GetError());
+		if (!surf_temp) guru::halt(IMG_GetError());
 		*dest = SDL_ConvertSurface(surf_temp, main_surface->format, 0);
-		if (!dest) guru->halt(SDL_GetError());
+		if (!dest) guru::halt(SDL_GetError());
 		SDL_FreeSurface(surf_temp);
-		if (SDL_SetColorKey(*dest, SDL_TRUE, SDL_MapRGB((*dest)->format, 255, 255, 255)) < 0) guru->halt(SDL_GetError());
+		if (SDL_SetColorKey(*dest, SDL_TRUE, SDL_MapRGB((*dest)->format, 255, 255, 255)) < 0) guru::halt(SDL_GetError());
 	};
 
 	load_and_optimize_png("fonts.png", &font, main_surface);
@@ -171,7 +171,7 @@ IOCore::IOCore() : nebula_cache_seed(0), shade_mode(0), exit_func_level(1), hold
 	exit_func_level = 4;
 
 	// Now that the font is loaded and SDL is initialized, we can activate Guru's error screen.
-	guru->activate();
+	guru::console_ready(true);
 }
 
 IOCore::~IOCore()
@@ -261,8 +261,8 @@ void IOCore::alagard_print_at(char letter, int x, int y, Colour colour)
 
 	// Draw a coloured square, then 'stamp' it with the font.
 	SDL_Rect scr_rect = { x, y, 24, 26 };
-	if (SDL_FillRect(main_surface, &scr_rect, sdl_col) < 0) guru->halt(SDL_GetError());
-	if (SDL_BlitSurface(alagard, &font_rect, main_surface, &scr_rect) < 0) guru->halt(SDL_GetError());
+	if (SDL_FillRect(main_surface, &scr_rect, sdl_col) < 0) guru::halt(SDL_GetError());
+	if (SDL_BlitSurface(alagard, &font_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
 }
 
 // Prints an ANSI string at the specified position.
@@ -351,7 +351,7 @@ void IOCore::calc_glitches()
 void IOCore::cls()
 {
 	STACK_TRACE();
-	if (SDL_FillRect(main_surface, &main_surface->clip_rect, SDL_MapRGBA(main_surface->format, 0, 0, 0, 255)) < 0) guru->halt(SDL_GetError());
+	if (SDL_FillRect(main_surface, &main_surface->clip_rect, SDL_MapRGBA(main_surface->format, 0, 0, 0, 255)) < 0) guru::halt(SDL_GetError());
 }
 
 // Calls SDL_Delay but also handles visual glitches.
@@ -419,7 +419,7 @@ void IOCore::exit_functions()
 	STACK_TRACE();
 	if (cleaned_up) return;
 	cleaned_up = true;
-	guru->log("Running cleanup at level " + strx::itos(exit_func_level) + ".", GURU_INFO);
+	guru::log("Running cleanup at level " + strx::itos(exit_func_level) + ".", GURU_INFO);
 
 	if (exit_func_level >= 3)
 	{
@@ -435,7 +435,7 @@ void IOCore::exit_functions()
 		free(ntsc);
 		main_surface = window_surface = snes_surface = temp_surface = glitch_hz_surface = glitch_sq_surface = glitched_main_surface = nullptr;
 		ntsc = nullptr;
-		guru->deactivate();
+		guru::console_ready(false);
 
 		if (exit_func_level >= 4) SDL_FreeSurface(font);
 
@@ -453,14 +453,14 @@ void IOCore::exit_functions()
 					rename((filename + ".tmp").c_str(), (filename + ".bmp").c_str());
 				}
 			}
-			if (converted) guru->log("Rescued " + strx::itos(converted) + " unconverted screenshots as BMP format.", GURU_INFO);
+			if (converted) guru::log("Rescued " + strx::itos(converted) + " unconverted screenshots as BMP format.", GURU_INFO);
 		}
 	}
 
 	if (exit_func_level >= 2)
 	{
 #ifndef TARGET_LINUX	// Also not sure why, but this can be problematic on Linux.
-		guru->log("Shutting SDL down cleanly.", GURU_INFO);
+		guru::log("Shutting SDL down cleanly.", GURU_INFO);
 		SDL_Quit();
 #endif
 	}
@@ -493,8 +493,8 @@ void IOCore::flip()
 
 	if (SDL_LockSurface(snes_surface) < 0)
 	{
-		guru->deactivate();
-		guru->halt(SDL_GetError());
+		guru::console_ready(false);
+		guru::halt(SDL_GetError());
 	}
 	unsigned char *output_pixels = (unsigned char*)snes_surface->pixels;
 	const long output_pitch = snes_surface->pitch;
@@ -520,8 +520,8 @@ void IOCore::flip()
 	SDL_UnlockSurface(snes_surface);
 	if (!(window_surface = SDL_GetWindowSurface(main_window)))
 	{
-		guru->deactivate();
-		guru->halt(SDL_GetError());
+		guru::console_ready(false);
+		guru::halt(SDL_GetError());
 	}
 
 	if (surface_scale)
@@ -535,37 +535,37 @@ void IOCore::flip()
 		}
 		if (SDL_BlitScaled(snes_surface, nullptr, window_surface, &the_rect) < 0)
 		{
-			guru->deactivate();
-			guru->halt(SDL_GetError());
+			guru::console_ready(false);
+			guru::halt(SDL_GetError());
 		}
 	}
 	else if (SDL_BlitSurface(snes_surface, nullptr, window_surface, nullptr) < 0)
 	{
-		guru->deactivate();
-		guru->halt(SDL_GetError());
+		guru::console_ready(false);
+		guru::halt(SDL_GetError());
 	}
 
 	if (SDL_UpdateWindowSurface(main_window) < 0)	// This can fail once in a blue moon. We'll retry a few times, then give up.
 	{
-		guru->log("Having trouble updating the main window surface. Trying to fix this...", GURU_WARN);
+		guru::log("Having trouble updating the main window surface. Trying to fix this...", GURU_WARN);
 		bool got_there_in_the_end = false;
 		int tries = 0;
 		for (int i = 0; i < SDL_RETRIES; i++)
 		{
 			if (!(window_surface = SDL_GetWindowSurface(main_window)))
 			{
-				guru->deactivate();
-				guru->halt(SDL_GetError());
+				guru::console_ready(false);
+				guru::halt(SDL_GetError());
 			}
 			if (!SDL_UpdateWindowSurface(main_window)) { got_there_in_the_end = true; tries = i + 1; break; }
 			delay(10);
 		}
 		if (!got_there_in_the_end)
 		{
-			guru->deactivate();
-			guru->halt(SDL_GetError());
+			guru::console_ready(false);
+			guru::halt(SDL_GetError());
 		}
-		else guru->log("...Reacquired access to the window surface after " + strx::itos(tries) + (tries == 1 ? " try." : " tries."), GURU_WARN);
+		else guru::log("...Reacquired access to the window surface after " + strx::itos(tries) + (tries == 1 ? " try." : " tries."), GURU_WARN);
 	}
 }
 
@@ -573,7 +573,7 @@ void IOCore::flip()
 void IOCore::glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf)
 {
 	STACK_TRACE();
-	if ((surf == glitch_hz_surface && (glitch_w > glitched_main_surface->w || glitch_h > 8)) || (surf == glitch_sq_surface && (glitch_w > 70 || glitch_h > 70))) guru->halt("Invalid parameters given to glitch()");
+	if ((surf == glitch_hz_surface && (glitch_w > glitched_main_surface->w || glitch_h > 8)) || (surf == glitch_sq_surface && (glitch_w > 70 || glitch_h > 70))) guru::halt("Invalid parameters given to glitch()");
 	SDL_Rect clear = { 0, 0, surf->w, surf->h };
 	SDL_FillRect(surf, &clear, SDL_MapRGB(surf->format, 1, 1, 1));
 	SDL_Rect source = { glitch_x, glitch_y, glitch_w, glitch_h };
@@ -885,15 +885,15 @@ void IOCore::print_at(Glyph letter, int x, int y, unsigned char r, unsigned char
 	if (mathx::check_flag(print_flags, PRINT_FLAG_ALPHA))
 	{
 		SDL_Rect temp_rect = {0, 0, 8, 8};
-		if (SDL_FillRect(temp_surface, &temp_rect, sdl_col) < 0) guru->halt(SDL_GetError());
-		if (SDL_BlitSurface(font, &font_rect, temp_surface, &temp_rect) < 0) guru->halt(SDL_GetError());
-		if (SDL_SetColorKey(temp_surface, SDL_TRUE, SDL_MapRGB(temp_surface->format, 0, 0, 0)) < 0) guru->halt(SDL_GetError());
-		if (SDL_BlitSurface(temp_surface, &temp_rect, main_surface, &scr_rect) < 0) guru->halt(SDL_GetError());
+		if (SDL_FillRect(temp_surface, &temp_rect, sdl_col) < 0) guru::halt(SDL_GetError());
+		if (SDL_BlitSurface(font, &font_rect, temp_surface, &temp_rect) < 0) guru::halt(SDL_GetError());
+		if (SDL_SetColorKey(temp_surface, SDL_TRUE, SDL_MapRGB(temp_surface->format, 0, 0, 0)) < 0) guru::halt(SDL_GetError());
+		if (SDL_BlitSurface(temp_surface, &temp_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
 	}
 	else
 	{
-		if (SDL_FillRect(main_surface, &scr_rect, sdl_col) < 0) guru->halt(SDL_GetError());
-		if (SDL_BlitSurface(font, &font_rect, main_surface, &scr_rect) < 0) guru->halt(SDL_GetError());
+		if (SDL_FillRect(main_surface, &scr_rect, sdl_col) < 0) guru::halt(SDL_GetError());
+		if (SDL_BlitSurface(font, &font_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
 	}
 }
 
@@ -930,7 +930,7 @@ void IOCore::rect_fine(int x, int y, int w, int h, s_rgb colour)
 	}
 	SDL_Rect dest = { x, y, w, h };
 	const unsigned int sdl_col = SDL_MapRGB(main_surface->format, colour.r, colour.g, colour.b);
-	if (SDL_FillRect(main_surface, &dest, sdl_col) < 0) guru->halt(SDL_GetError());
+	if (SDL_FillRect(main_surface, &dest, sdl_col) < 0) guru::halt(SDL_GetError());
 }
 
 // Renders pre-calculated glitches.
@@ -1008,10 +1008,10 @@ void IOCore::sprite_print(Sprite id, int x, int y, Colour colour, unsigned char 
 	// Draw a coloured square, then 'stamp' it with the sprite.
 	SDL_Rect scr_rect = { (x * 8) + (plus_four ? 4 : 0), y * 8, 16, 16 };
 	SDL_Rect temp_rect = {0, 0, 32, 32};
-	if (SDL_FillRect(temp_surface, &temp_rect, sdl_col) < 0) guru->halt(SDL_GetError());
-	if (SDL_BlitSurface(sprites, &sprite_rect, temp_surface, &temp_rect) < 0) guru->halt(SDL_GetError());
-	if (SDL_SetColorKey(temp_surface, SDL_TRUE, SDL_MapRGB(temp_surface->format, 0, 0, 0)) < 0) guru->halt(SDL_GetError());
-	if (SDL_BlitSurface(temp_surface, &temp_rect, main_surface, &scr_rect) < 0) guru->halt(SDL_GetError());
+	if (SDL_FillRect(temp_surface, &temp_rect, sdl_col) < 0) guru::halt(SDL_GetError());
+	if (SDL_BlitSurface(sprites, &sprite_rect, temp_surface, &temp_rect) < 0) guru::halt(SDL_GetError());
+	if (SDL_SetColorKey(temp_surface, SDL_TRUE, SDL_MapRGB(temp_surface->format, 0, 0, 0)) < 0) guru::halt(SDL_GetError());
+	if (SDL_BlitSurface(temp_surface, &temp_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
 }
 
 // Unlocks the mutexes, if they're locked. Only for use by the Guru system.
@@ -1097,8 +1097,8 @@ unsigned int IOCore::wait_for_key(unsigned short max_ms)
 					window_surface = SDL_GetWindowSurface(main_window);
 					if (!window_surface)
 					{
-						guru->deactivate();
-						guru->halt(SDL_GetError());
+						guru::console_ready(false);
+						guru::halt(SDL_GetError());
 					}
 					if ((window_surface->w != main_surface->w || window_surface->h != main_surface->h) && surface_scale != 3)
 					{
@@ -1108,33 +1108,33 @@ unsigned int IOCore::wait_for_key(unsigned short max_ms)
 						SDL_FreeSurface(glitch_hz_surface);
 						if (!(main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
 						{
-							guru->deactivate();
-							guru->halt(SDL_GetError());
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
 						}
 						if (!(glitched_main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
 						{
-							guru->deactivate();
-							guru->halt(SDL_GetError());
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
 						}
 						if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
 						{
-							guru->deactivate();
-							guru->halt(SDL_GetError());
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
 						}
 						if (!(glitch_hz_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, 8, 16, 0, 0, 0, 0)))
 						{
-							guru->deactivate();
-							guru->halt(SDL_GetError());
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
 						}
 						if (SDL_SetColorKey(glitch_hz_surface, SDL_TRUE, SDL_MapRGB(glitch_hz_surface->format, 1, 1, 1)) < 0)
 						{
-							guru->deactivate();
-							guru->halt(SDL_GetError());
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
 						}
 						if (SDL_SetColorKey(glitch_sq_surface, SDL_TRUE, SDL_MapRGB(glitch_sq_surface->format, 1, 1, 1)) < 0)
 						{
-							guru->deactivate();
-							guru->halt(SDL_GetError());
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
 						}
 					}
 					else cls();
@@ -1193,6 +1193,7 @@ unsigned int IOCore::wait_for_key(unsigned short max_ms)
 		if (prefs::screenshot_type == 1) std::thread(convert_png, filename).detach();
 	}
 
+	SDL_FlushEvent(SDL_KEYDOWN);
 	return key;
 }
 

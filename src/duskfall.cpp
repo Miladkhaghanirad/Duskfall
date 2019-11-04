@@ -16,14 +16,14 @@ int main(int argc, char* argv[])
 	// Check command-line parameters.
 	vector<string> parameters(argv, argv + argc);
 
-	guru = std::make_shared<Guru>();
+	guru::open_syslog();
 	prefs::init();
 	iocore = std::make_shared<IOCore>();
 	static_data();
 	wiki = std::make_shared<Wiki>();
-	guru->log("Everything looks good! Starting the game!", GURU_INFO);
+	guru::log("Everything looks good! Starting the game!", GURU_INFO);
 	title::title_screen();
 	iocore = nullptr;
-	guru = nullptr;
+	guru::close_syslog();
 	return 0;
 }

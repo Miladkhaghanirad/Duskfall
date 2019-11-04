@@ -244,7 +244,7 @@ bool			message_log_dim = MESSAGE_LOG_DIM_DEFAULT;	// Dim the colours in the mess
 void default_keybind(Keys key)
 {
 	STACK_TRACE();
-	if (static_cast<int>(key) >= PREFS_KEYBINDS) guru->halt("Invalid keybind specified!");
+	if (static_cast<int>(key) >= PREFS_KEYBINDS) guru::halt("Invalid keybind specified!");
 	keybinds[key] = key_defaults[key];
 }
 
@@ -252,7 +252,7 @@ void default_keybind(Keys key)
 void init()
 {
 	STACK_TRACE();
-	guru->log("Attempting to load prefs.dat file, if it exists.", GURU_INFO);
+	guru::log("Attempting to load prefs.dat file, if it exists.", GURU_INFO);
 
 	// Set some defaults for the keybinds, since they're not set above like with the other prefs.
 	for (int i = 0; i < PREFS_KEYBINDS; i++)
@@ -263,7 +263,7 @@ void init()
 
 	if (!file_exists)
 	{
-		guru->log("Can't find prefs.dat, rebuilding default prefs file.", GURU_WARN);
+		guru::log("Can't find prefs.dat, rebuilding default prefs file.", GURU_WARN);
 		SQLite::Database(FILENAME_PREFS, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
 	}
 
@@ -289,7 +289,7 @@ void init()
 				else if (id == "glitch_warn") glitch_warn = value;
 				else if (id == "death_reports") death_reports = value;
 				else if (id == "message_log_dim") message_log_dim = value;
-				else guru->log("Unknown preference found in prefs.dat: " + id, GURU_WARN);
+				else guru::log("Unknown preference found in prefs.dat: " + id, GURU_WARN);
 			}
 
 			SQLite::Statement key_query(prefs_db, "SELECT * FROM keybinds");
@@ -307,14 +307,14 @@ void init()
 						break;
 					}
 				}
-				if (!found) guru->log("Could not find keybind definitions in prefs.dat.", GURU_WARN);
+				if (!found) guru::log("Could not find keybind definitions in prefs.dat.", GURU_WARN);
 			}
 		}
 		else save(&prefs_db);
 	}
 	catch (std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 	ui_init_keybinds();
 }
@@ -323,7 +323,7 @@ void init()
 unsigned int keybind(Keys key)
 {
 	STACK_TRACE();
-	if (static_cast<int>(key) >= PREFS_KEYBINDS) guru->halt("Invalid keybind specified!");
+	if (static_cast<int>(key) >= PREFS_KEYBINDS) guru::halt("Invalid keybind specified!");
 	return keybinds[static_cast<unsigned int>(key)];
 }
 
@@ -471,7 +471,7 @@ void parse_string_with_key_tags(string &str)
 		}
 		str = before + new_tag + after;
 	}
-	if (cycles >= 100) guru->log("Timed out while attempting to parse key string: " + str);
+	if (cycles >= 100) guru::log("Timed out while attempting to parse key string: " + str);
 }
 
 // Where the user can change prefs and shit.
@@ -755,7 +755,7 @@ void save(SQLite::Database *prefs_db)
 	}
 	catch (std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 }
 
@@ -763,7 +763,7 @@ void save(SQLite::Database *prefs_db)
 void set_keybind(Keys key, unsigned int new_key, bool reset_default)
 {
 	STACK_TRACE();
-	if (static_cast<int>(key) >= PREFS_KEYBINDS) guru->halt("Invalid keybind specified!");
+	if (static_cast<int>(key) >= PREFS_KEYBINDS) guru::halt("Invalid keybind specified!");
 	keybinds[static_cast<unsigned int>(key)] = new_key;
 	if (reset_default) key_defaults[static_cast<unsigned int>(key)] = new_key;
 }

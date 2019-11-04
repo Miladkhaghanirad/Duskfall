@@ -17,7 +17,7 @@ shared_ptr<StaticData> static_ptr = nullptr;
 StaticData::StaticData()
 {
 	STACK_TRACE();
-	guru->log("Attempting to load static data from JSON files...", GURU_INFO);
+	guru::log("Attempting to load static data from JSON files...", GURU_INFO);
 	init_tiles_json();
 }
 
@@ -26,7 +26,7 @@ Tile StaticData::get_tile(string tile_id)
 {
 	STACK_TRACE();
 	auto found = static_tile_data.find(tile_id);
-	if (found == static_tile_data.end()) guru->halt("Could not retrieve tile ID " + tile_id + "!");
+	if (found == static_tile_data.end()) guru::halt("Could not retrieve tile ID " + tile_id + "!");
 	return *found->second;
 }
 
@@ -47,7 +47,7 @@ void StaticData::init_tiles_json()
 		auto new_tile = std::make_shared<Tile>();
 
 		const string tile_colour_unparsed = jval.get("colour", "").asString();
-		if (!tile_colour_unparsed.size()) guru->log("No tile colour specified in tiles.json for " + tile_id, GURU_WARN);
+		if (!tile_colour_unparsed.size()) guru::log("No tile colour specified in tiles.json for " + tile_id, GURU_WARN);
 		new_tile->colour = parse_colour_string(tile_colour_unparsed);
 
 		const string tile_flags_unparsed = jval.get("flags", "").asString();
@@ -58,20 +58,20 @@ void StaticData::init_tiles_json()
 			for (auto flag : tile_flags_vec)
 			{
 				auto found = tile_flag_map.find(strx::str_toupper(flag));
-				if (found == tile_flag_map.end()) guru->log("Unknown tile flag in tiles.json for " + tile_id + ": " + flag, GURU_WARN);
+				if (found == tile_flag_map.end()) guru::log("Unknown tile flag in tiles.json for " + tile_id + ": " + flag, GURU_WARN);
 				else new_tile->flags |= found->second;
 			}
 		}
 
 		const string tile_glyph_unparsed = jval.get("glyph", "").asString();
-		if (!tile_glyph_unparsed.size()) guru->log("No glyph specified in tiles.json for " + tile_id, GURU_WARN);
+		if (!tile_glyph_unparsed.size()) guru::log("No glyph specified in tiles.json for " + tile_id, GURU_WARN);
 		new_tile->glyph = parse_glyph_string(tile_glyph_unparsed);
 
 		const string tile_name = jval.get("name", "").asString();
 		if (!tile_name.size())
 		{
 			new_tile->name = 0;
-			guru->log("No name specified in tiles.json for " + tile_id, GURU_WARN);
+			guru::log("No name specified in tiles.json for " + tile_id, GURU_WARN);
 		}
 		else
 		{
@@ -110,7 +110,7 @@ Colour StaticData::parse_colour_string(string colour_string)
 	auto found = colour_map.find(strx::str_toupper(colour_string));
 	if (found == colour_map.end())
 	{
-		guru->log("Could not parse colour code: " + colour_string);
+		guru::log("Could not parse colour code: " + colour_string);
 		return Colour::ERROR_COLOUR;
 	}
 	else return found->second;
@@ -156,7 +156,7 @@ unsigned int StaticData::parse_glyph_string(string glyph_string)
 	auto found = glyph_map.find(strx::str_toupper(glyph_string));
 	if (found == glyph_map.end())
 	{
-		guru->log("Could not parse glyph code: " + glyph_string);
+		guru::log("Could not parse glyph code: " + glyph_string);
 		return '?';
 	}
 	else return static_cast<unsigned int>(found->second);
@@ -168,7 +168,7 @@ string StaticData::tile_name(unsigned int name_id)
 	auto found = tile_names.find(name_id);
 	if (found == tile_names.end())
 	{
-		guru->log("Could not decode tile name ID " + strx::itos(name_id) + "!", GURU_ERROR);
+		guru::log("Could not decode tile name ID " + strx::itos(name_id) + "!", GURU_ERROR);
 		return "[unknown]";
 	}
 	return found->second;

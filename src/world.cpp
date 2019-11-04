@@ -29,7 +29,7 @@ World::World(unsigned int new_slot, bool new_save) : recalc_lighting(true), redr
 	}
 	catch(std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 	the_hero = std::make_shared<Hero>();
 	msglog = std::make_shared<MessageLog>();
@@ -53,7 +53,7 @@ void World::load()
 		{
 			level = query.getColumn("level").getUInt();
 		}
-		else guru->halt("Saved game file is damaged!");
+		else guru::halt("Saved game file is damaged!");
 
 		the_dungeon = std::make_shared<Dungeon>(level);
 		the_dungeon->load();
@@ -62,7 +62,7 @@ void World::load()
 	}
 	catch (std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 
 	the_dungeon = std::make_shared<Dungeon>(level);
@@ -157,7 +157,7 @@ void World::save(bool announce)
 	}
 	catch (std::exception &e)
 	{
-		guru->halt(e.what());
+		guru::halt(e.what());
 	}
 	if (announce) msglog->amend(" done!");
 }
@@ -166,7 +166,7 @@ void World::save(bool announce)
 void new_world(unsigned short slot, bool new_save)
 {
 	STACK_TRACE();
-	if (the_world) guru->halt("World object already exists!");
+	if (the_world) guru::halt("World object already exists!");
 	the_world = std::make_shared<World>(slot, new_save);
 }
 
@@ -174,6 +174,6 @@ void new_world(unsigned short slot, bool new_save)
 shared_ptr<World> world()
 {
 	STACK_TRACE();
-	if (!the_world) guru->halt("No world object defined!");
+	if (!the_world) guru::halt("No world object defined!");
 	return the_world;
 }
