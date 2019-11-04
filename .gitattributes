@@ -5,6 +5,7 @@ docs/* linguist-documentation
 LICENSE linguist-documentation
 lib/* linguist-vendored
 README linguist-documentation
+src/jsoncpp/* linguist-vendored
 src/libjpeg-turbo/* linguist-vendored
 src/lodepng/* linguist-vendored
 src/pcg/* linguist-vendored
