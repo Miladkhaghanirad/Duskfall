@@ -12,6 +12,8 @@ The game is free and open-source, released under the [GNU General Public License
 
 [GCC runtime library DLLs and any embedded GCC library code](https://gcc.gnu.org/) is copyright (c) Free Software Foundation, Inc., distrubuted under the GCC Runtime Library Exception, version 3.1 of the GNU General Public License v3.
 
+[Generic Makefile Template for C/C++ Projects](https://github.com/Cheedoong/MakefileTemplate) copyright (c) 2016 Pear, (c) 2007, 2008 whyglinux.
+
 [JsonCpp](https://github.com/open-source-parsers/jsoncpp) (c) 2007-2010 Baptiste Lepilleur and The JsonCpp Authors.
 
 [libpng](http://www.libpng.org/pub/png/libpng.html) (c) 2000-2002, 2004, 2006-2017 Glenn Randers-Pehrson.
