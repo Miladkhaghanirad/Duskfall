@@ -12,10 +12,32 @@
 #include "guru.h"
 #define WIKIBUF_MAX	256	// Maximum size of the wiki buffer.
 
-shared_ptr<Wiki>	wiki = nullptr;	// The in-game wiki object.
+
+namespace wiki
+{
+
+unsigned int	buffer_pos = 0;		// The position of the console buffer.
+vector<std::pair<unsigned short, unsigned short>>	link_coords;	// Coordinates of the wiki links on the page.
+vector<bool>	link_good;			// Is this a valid link?
+unsigned int	link_selected = 0;	// The current active wiki link.
+vector<string>	link_str;			// Strings for the links.
+std::unordered_map<string, string>	wiki_data;	// The actual wiki entries, read from wiki.json
+vector<string>	wiki_history;		// Previous wiki pages viewed.
+vector<string>	wiki_prc;			// The nicely processed wiki buffer, ready for rendering.
+vector<string>	wiki_raw;			// The raw, unprocessed wiki buffer.
 
 
-Wiki::Wiki() : buffer_pos(0), link_selected(0)
+// Attempts to retrieve wiki data; returns a blank string if the requested page does not exist.
+string get_wiki_data(string key)
+{
+	STACK_TRACE();
+	auto found = wiki_data.find(key);
+	if (found == wiki_data.end()) return "";
+	else return found->second;
+}
+
+// Loads the wiki data from JSON files.
+void init()
 {
 	STACK_TRACE();
 	Json::Value json = filex::load_json("wiki");
@@ -28,17 +50,8 @@ Wiki::Wiki() : buffer_pos(0), link_selected(0)
 	}
 }
 
-// Attempts to retrieve wiki data; returns a blank string if the requested page does not exist.
-string Wiki::get_wiki_data(string key)
-{
-	STACK_TRACE();
-	auto found = wiki_data.find(key);
-	if (found == wiki_data.end()) return "";
-	else return found->second;
-}
-
 // Processes input in the wiki window.
-void Wiki::process_key(unsigned int key)
+void process_key(unsigned int key)
 {
 	STACK_TRACE();
 	const unsigned int height = iocore::get_rows() - 1;
@@ -124,7 +137,7 @@ void Wiki::process_key(unsigned int key)
 }
 
 // Processes the wiki buffer after an update or screen resize.
-void Wiki::process_wiki_buffer()
+void process_wiki_buffer()
 {
 	STACK_TRACE();
 
@@ -188,7 +201,7 @@ void Wiki::process_wiki_buffer()
 }
 
 // Redraws in the in-game wiki.
-void Wiki::render()
+void render()
 {
 	STACK_TRACE();
 	iocore::cls();
@@ -221,7 +234,7 @@ void Wiki::render()
 }
 
 // Resets the wiki buffer position.
-void Wiki::reset_buffer_pos()
+void reset_buffer_pos()
 {
 	STACK_TRACE();
 	buffer_pos = 0;
@@ -230,7 +243,7 @@ void Wiki::reset_buffer_pos()
 }
 
 // Displays a specific wiki window.
-void Wiki::wiki(string page)
+void wiki(string page)
 {
 	STACK_TRACE();
 	wiki_raw.clear();
@@ -276,3 +289,5 @@ void Wiki::wiki(string page)
 		if (wiki_history.at(wiki_history.size() - 1) != page) break;
 	}
 }
+
+}	// namespace wiki

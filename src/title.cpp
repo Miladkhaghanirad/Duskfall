@@ -976,7 +976,7 @@ void title_screen()
 			}
 			else if (menu_pos == 1)	// Game Manual
 			{
-				wiki->wiki("HELP");
+				wiki::wiki("HELP");
 				redraw_background();
 			}
 			else if (menu_pos == 2)	// Prefs
@@ -1008,7 +1008,7 @@ void title_screen()
 			{
 				menu_pos = 1;
 				redraw_menu();
-				wiki->wiki("HELP");
+				wiki::wiki("HELP");
 				redraw_background();
 			}
 			else if (iocore::did_mouse_click(midcol - 8, midrow + 12, 17))	// Prefs

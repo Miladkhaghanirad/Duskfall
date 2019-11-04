@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 	prefs::init();
 	iocore::init();
 	static_data();
-	wiki = std::make_shared<Wiki>();
+	wiki::init();
 	guru::log("Everything looks good! Starting the game!", GURU_INFO);
 	title::title_screen();
 	iocore::exit_functions();
