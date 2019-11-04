@@ -412,6 +412,7 @@ void exit_functions()
 		SDL_Quit();
 #endif
 	}
+	exit_func_level = 0;
 }
 
 // Redraws the display.
