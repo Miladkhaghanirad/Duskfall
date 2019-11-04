@@ -70,6 +70,12 @@
 							<outputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.outputtype.737358248" name="Resource Custom Build Step Output Type" outputNames="app-icon.o"/>
 						</tool>
 					</fileInfo>
+					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.864044851" name="mathx.cpp" rcbsApplicability="disable" resourcePath="src/mathx.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.1912887114.821635122">
+						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.1912887114.821635122" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.1912887114">
+							<option id="gnu.cpp.compiler.option.other.other.1568625180" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -fmessage-length=0 -Wno-unused-but-set-parameter" valueType="string"/>
+							<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.2106467155" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+						</tool>
+					</fileInfo>
 					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.1339278714" name="Makefile" rcbsApplicability="disable" resourcePath="Makefile" toolsToInvoke=""/>
 					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.671862854" name="LICENSE" rcbsApplicability="disable" resourcePath="LICENSE" toolsToInvoke=""/>
 					<fileInfo id="cdt.managedbuild.config.gnu.mingw.exe.release.1348533615.1597084340" name="README.md" rcbsApplicability="disable" resourcePath="README.md" toolsToInvoke=""/>
