@@ -22,7 +22,7 @@ namespace data
 std::unordered_map<string, shared_ptr<Actor>>	static_item_data;	// The data containing templates for items from items.json
 std::unordered_map<string, shared_ptr<Actor>>	static_mob_data;	// The data containing templates for monsters from mobs.json
 std::unordered_map<string, shared_ptr<Tile>>	static_tile_data;	// The data about dungeon tiles from tiles.json
-std::unordered_map<unsigned int, string>		tile_names;	// The tile name strings, which are stored as integers on the tiles themselves.
+std::unordered_map<unsigned int, string>		tile_names;			// The tile name strings, which are stored as integers on the tiles themselves.
 
 
 // Retrieves a copy of the specified item.
@@ -58,88 +58,64 @@ void init()
 	STACK_TRACE();
 	guru::log("Attempting to load static data from JSON files...", GURU_INFO);
 	init_tiles_json();
-	init_mobs_json();
-	init_items_json();
+	init_actors_json("items", ActorType::ITEM, &static_item_data);
+	init_actors_json("mobs", ActorType::MONSTER, &static_mob_data);
 }
 
 // Loads an Actor's data from JSON.
-void init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor, ActorType type)
+void init_actors_json(string filename, ActorType type, std::unordered_map<string, shared_ptr<Actor>> *the_map)
 {
 	STACK_TRACE();
-
 	const std::unordered_map<string, unsigned int> actor_flag_map = { { "BLOCKS_LOS", ACTOR_FLAG_BLOCKS_LOS } };
 
-	const string actor_name = jval.get("name", "").asString();
-	if (!actor_name.size()) guru::log("No actor name specified for " + actor_id, GURU_WARN);
-	else actor->name = actor_name;
-
-	const string actor_colour_unparsed = jval.get("colour", "").asString();
-	if (!actor_colour_unparsed.size()) guru::log("No actor colour specified  for " + actor_id, GURU_WARN);
-	actor->colour = parse_colour_string(actor_colour_unparsed);
-
-	const string actor_glyph_unparsed = jval.get("glyph", "").asString();
-	if (!actor_glyph_unparsed.size()) guru::log("No actor glyph specified for " + actor_id, GURU_WARN);
-	actor->glyph = parse_glyph_string(actor_glyph_unparsed);
-
-	const string actor_flags_unparsed = jval.get("flags", "").asString();
-	actor->flags = 0;
-	bool not_monster = false, not_blocker = false, not_item = false;	// override flags
-	if (actor_flags_unparsed.size())
+	Json::Value json = filex::load_json(filename);
+	const Json::Value::Members jmem = json.getMemberNames();
+	for (unsigned int i = 0; i < jmem.size(); i++)
 	{
-		const vector<string> actor_flags_vec = strx::string_explode(actor_flags_unparsed, " ");
-		for (auto flag : actor_flags_vec)
+		const string actor_id = jmem.at(i);
+		const Json::Value jval = json[actor_id];
+		auto actor = std::make_shared<Actor>();
+
+		const string actor_name = jval.get("name", "").asString();
+		if (!actor_name.size()) guru::log("No actor name specified for " + actor_id, GURU_WARN);
+		else actor->name = actor_name;
+
+		const string actor_colour_unparsed = jval.get("colour", "").asString();
+		if (!actor_colour_unparsed.size()) guru::log("No actor colour specified  for " + actor_id, GURU_WARN);
+		actor->colour = parse_colour_string(actor_colour_unparsed);
+
+		const string actor_glyph_unparsed = jval.get("glyph", "").asString();
+		if (!actor_glyph_unparsed.size()) guru::log("No actor glyph specified for " + actor_id, GURU_WARN);
+		actor->glyph = parse_glyph_string(actor_glyph_unparsed);
+
+		const string actor_flags_unparsed = jval.get("flags", "").asString();
+		actor->flags = 0;
+		bool not_monster = false, not_blocker = false, not_item = false;	// override flags
+		if (actor_flags_unparsed.size())
 		{
-			auto found = actor_flag_map.find(strx::str_toupper(flag));
-			if (found == actor_flag_map.end())
+			const vector<string> actor_flags_vec = strx::string_explode(actor_flags_unparsed, " ");
+			for (auto flag : actor_flags_vec)
 			{
-				if (flag == "!MONSTER") not_monster = true;
-				else if (flag == "!BLOCKER") not_blocker = true;
-				else if (flag == "!ITEM") not_item = true;
-				else guru::log("Unknown actor flag for " + actor_id + ": " + flag, GURU_WARN);
+				auto found = actor_flag_map.find(strx::str_toupper(flag));
+				if (found == actor_flag_map.end())
+				{
+					if (flag == "!MONSTER") not_monster = true;
+					else if (flag == "!BLOCKER") not_blocker = true;
+					else if (flag == "!ITEM") not_item = true;
+					else guru::log("Unknown actor flag for " + actor_id + ": " + flag, GURU_WARN);
+				}
+				else actor->flags |= found->second;
 			}
-			else actor->flags |= found->second;
 		}
-	}
 
-	if (type == ActorType::MONSTER)
-	{
-		if (!not_monster) actor->flags |= ACTOR_FLAG_MONSTER;	// Mobs are counted as monsters unless specified otherwise.
-		if (!not_blocker) actor->flags |= ACTOR_FLAG_BLOCKER;	// Same with the blocker flag.
-	}
-	else if (type == ActorType::ITEM && !not_item) actor->flags |= ACTOR_FLAG_ITEM;	// Items are marked as items unless specified otherwise.
-}
+		if (type == ActorType::MONSTER)
+		{
+			if (!not_monster) actor->flags |= ACTOR_FLAG_MONSTER;	// Mobs are counted as monsters unless specified otherwise.
+			if (!not_blocker) actor->flags |= ACTOR_FLAG_BLOCKER;	// Same with the blocker flag.
+		}
+		else if (type == ActorType::ITEM && !not_item) actor->flags |= ACTOR_FLAG_ITEM;	// Items are marked as items unless specified otherwise.
 
-// Load the data from items.json
-void init_items_json()
-{
-	STACK_TRACE();
-
-	Json::Value json = filex::load_json("items");
-	const Json::Value::Members jmem = json.getMemberNames();
-	for (unsigned int i = 0; i < jmem.size(); i++)
-	{
-		const string actor_id = jmem.at(i);
-		const Json::Value jval = json[actor_id];
-		auto new_item = std::make_shared<Actor>();
-		init_actor_json(jval, actor_id, new_item, ActorType::ITEM);
-		static_item_data.insert(std::pair<string, shared_ptr<Actor>>(actor_id, new_item));
-	}
-}
-
-// Load the data from mobs.json
-void init_mobs_json()
-{
-	STACK_TRACE();
-
-	Json::Value json = filex::load_json("mobs");
-	const Json::Value::Members jmem = json.getMemberNames();
-	for (unsigned int i = 0; i < jmem.size(); i++)
-	{
-		const string actor_id = jmem.at(i);
-		const Json::Value jval = json[actor_id];
-		auto new_mob = std::make_shared<Actor>();
-		init_actor_json(jval, actor_id, new_mob, ActorType::MONSTER);
-		static_mob_data.insert(std::pair<string, shared_ptr<Actor>>(actor_id, new_mob));
+		the_map->insert(std::pair<string, shared_ptr<Actor>>(actor_id, actor));
 	}
 }
 
