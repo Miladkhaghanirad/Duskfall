@@ -113,7 +113,12 @@ void main_loop()
 		iocore::flip();
 
 		const unsigned int key = iocore::wait_for_key();
-		if (key == RESIZE_KEY) redraw_full = true;
+		bool action_taken = true;
+		if (key == RESIZE_KEY)
+		{
+			redraw_full = true;
+			action_taken = false;
+		}
 		else if (key == prefs::keybind(Keys::SAVE))
 		{
 			std::chrono::duration<float> elapsed_seconds = std::chrono::system_clock::now() - game_clock;
@@ -141,6 +146,8 @@ void main_loop()
 			iocore::exit_functions();
 			exit(0);
 		}
+		else action_taken = false;
+		if (action_taken) message::reset_count();
 	}
 }
 

@@ -19,6 +19,7 @@ void	msg(string message, MC colours = MC::NONE);	// Adds a message to the messag
 void	process_input(unsigned int key);	// Processes scroll keys.
 void	purge_buffer();				// Clears the entire output buffer.
 void	render();					// Renders the message window.
+void	reset_count();				// The player took their turn; reset the messages_since_last_reset count.
 void	process_output_buffer();	// Processes the output buffer after an update or screen resize.
 void	reset_buffer_pos();			// Resets the output buffer position.
 void	save();						// Saves the output buffer to disk.

@@ -49,7 +49,7 @@ void print(string text, unsigned int offset_x)
 void render()
 {
 	STACK_TRACE();
-	iocore::rect(iocore::get_cols() - SIDEBAR_WIDTH_8X8 - 1, 0, SIDEBAR_WIDTH_8X8 + 1, iocore::get_rows(), Colour::BLACK);
+	iocore::rect(iocore::get_cols() - SIDEBAR_WIDTH_8X8 - 1, 0, SIDEBAR_WIDTH_8X8 + 1, iocore::get_rows() - 1, Colour::BLACK);
 	sidebar_row = 1;
 
 	if (actors_in_sight.size())

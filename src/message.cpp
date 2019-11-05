@@ -1,10 +1,12 @@
 // message.cpp -- The message log window, where the game can tell the player important things.
 // Copyright (c) 2017-2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
+#include "dungeon.h"
 #include "guru.h"
 #include "iocore.h"
 #include "message.h"
 #include "prefs.h"
+#include "sidebar.h"
 #include "strx.h"
 #include "world.h"
 
@@ -17,6 +19,7 @@ namespace message
 {
 
 unsigned int	buffer_pos = 0;	// The position of the output buffer.
+unsigned int	messages_since_last_reset = 0;	// How many messages arrived since the player last took their turn?
 unsigned int	old_cols = 0;	// Old column count, for determining auto buffer shunting.
 vector<string>	output_prc;		// The nicely processed output buffer, ready for rendering.
 vector<string>	output_raw;		// The raw, unprocessed output buffer.
@@ -58,6 +61,28 @@ void load()
 void msg(string message, MC colours)
 {
 	STACK_TRACE();
+	bool redraw = true;
+	iocore::rect(iocore::get_cols() - SIDEBAR_WIDTH_8X8 - 1, iocore::get_rows() - 1, SIDEBAR_WIDTH_8X8 + 1, 1, Colour::BLACK);
+	unsigned int key = 0;
+	while (++messages_since_last_reset > MESSAGE_LOG_SIZE)
+	{
+		if (key == RESIZE_KEY || redraw)
+		{
+			iocore::cls();
+			world::dungeon()->render();
+			message::render();
+			sidebar::render();
+			iocore::print("-more-", iocore::get_cols_narrow() - SIDEBAR_WIDTH_5X8, iocore::get_rows() - 1, Colour::CGA_WHITE, PRINT_FLAG_NARROW);
+			iocore::flip();
+			redraw = false;
+		}
+		key = iocore::wait_for_key();
+		if (iocore::is_select(key))
+		{
+			messages_since_last_reset = 1;
+			break;
+		}
+	}
 
 	string message_colour_str;
 	switch(colours)
@@ -147,7 +172,7 @@ void purge_buffer()
 void render()
 {
 	STACK_TRACE();
-	iocore::rect(0, iocore::get_rows() - MESSAGE_LOG_SIZE, iocore::get_cols(), MESSAGE_LOG_SIZE, Colour::BLACK);
+	iocore::rect(0, iocore::get_rows() - MESSAGE_LOG_SIZE, iocore::get_cols() - SIDEBAR_WIDTH_8X8 - 1, MESSAGE_LOG_SIZE, Colour::BLACK);
 	if (output_prc.size())
 	{
 		unsigned int end = output_prc.size();
@@ -172,6 +197,12 @@ void reset_buffer_pos()
 	buffer_pos = 0;
 	const unsigned int height = MESSAGE_LOG_SIZE;
 	if (output_prc.size() > height) buffer_pos = output_prc.size() - height;
+}
+
+// The player took their turn; reset the messages_since_last_reset count.
+void reset_count()
+{
+	messages_since_last_reset = 0;
 }
 
 // Saves the output buffer to disk.
