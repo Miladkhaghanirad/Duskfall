@@ -8,7 +8,7 @@ The game is free and open-source, released under the [GNU General Public License
 
 [Alagard font](https://opengameart.org/content/pixel-fonts-by-pix3m) (c) 2013 Pix3M (CC-BY-3.0).
 
-[Artos Serif and Victoria bitmap fonts](https://opengameart.org/content/a-package-of-8-bit-fonts-for-grafx2-and-linux) (c) 2012 usr_share (CC-0).
+[Artos Serif, Victoria](https://opengameart.org/content/a-package-of-8-bit-fonts-for-grafx2-and-linux) and [Ruthenia](https://opengameart.org/content/new-original-grafx2-font-collection) bitmap fonts (c) 2012, 2015 usr_share (CC-0).
 
 [GCC runtime library DLLs and any embedded GCC library code](https://gcc.gnu.org/) is copyright (c) Free Software Foundation, Inc., distrubuted under the GCC Runtime Library Exception, version 3.1 of the GNU General Public License v3.
 

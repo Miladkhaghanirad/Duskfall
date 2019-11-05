@@ -6,7 +6,7 @@ Application icon (c) Chanut-is-Industries (CC-BY-3.0).
 
 Alagard font (c) 2013 Pix3M (CC-BY-3.0).
 
-Artos Serif and Victoria bitmap fonts (c) 2012 usr_share (CC-0).
+Artos Serif, Ruthenia and Victoria bitmap fonts (c) 2012 usr_share (CC-0).
 
 Generic Makefile Template for C/C++ Projects copyright (c) 2016 Pear, (c) 2007, 2008 whyglinux.
 

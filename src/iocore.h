@@ -52,6 +52,7 @@ enum class Sprite : unsigned short { DIFF_EASY = 0, DIFF_NORMAL = 2, DIFF_HARD =
 #define PRINT_FLAG_PLUS_EIGHT_Y	(1 << 6)
 #define PRINT_FLAG_ABSOLUTE		(1 << 7)
 #define PRINT_FLAG_ALT_FONT		(1 << 8)
+#define PRINT_FLAG_NARROW		(1 << 9)
 
 // sprite_print() flags
 #define SPRITE_FLAG_PLUS_FOUR	(1 << 0)
@@ -89,6 +90,7 @@ bool	did_mouse_click(unsigned short x, unsigned short y, unsigned short w = 1, u
 void	exit_functions();		// This is where we clean up our shit.
 void	flip();					// Redraws the display.
 unsigned short	get_cols();		// Returns the number of columns on the screen.
+unsigned short	get_cols_narrow();	// As above, for the narrow font.
 bool	get_ntsc_filter();		// Check if we're using an NTSC screen filter or not.
 unsigned short	get_rows();		// Returns the number of rows on the screen.
 void	glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf);	// Offsets part of the display.
@@ -104,6 +106,7 @@ bool	is_select(unsigned int key);	// Returns true if the key is a chosen 'select
 bool	is_up(unsigned int key);		// Returns true if the key is a chosen 'up' key.
 string	key_to_name(unsigned int key);	// Returns the name of a key.
 unsigned short	midcol();				// Retrieves the middle column on the screen.
+unsigned short	midcol_narrow();		// As above, for the narrow font.
 unsigned short	midrow();				// Retrieves the middle row on the screen.
 s_rgb	nebula(int x, int y);	// Determines the colour of a specific point in a nebula, based on X,Y coordinates.
 unsigned char	nebula_rgb(unsigned char value, int modifier);	// Modifies an RGB value in the specified manner, used for rendering nebulae.

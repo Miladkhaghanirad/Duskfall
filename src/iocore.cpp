@@ -104,10 +104,12 @@ struct s_glitch
 
 SDL_Surface		*alagard = nullptr;		// The texture for the large bitmap font.
 bool			cleaned_up = false;		// Have we run the exit functions already?
-unsigned short	cols = 0, rows = 0, mid_col = 0, mid_row = 0;	// The number of columns and rows available, and the middle column/row.
+unsigned short	cols = 0, rows = 0, mid_col = 0, mid_row = 0, narrow_cols = 0, mid_col_narrow = 0;	// The number of columns and rows available, and the middle column/row.
 unsigned char	exit_func_level = 0;	// Keep track of what to clean up at exit.
 SDL_Surface		*font = nullptr;		// The bitmap font texture.
+SDL_Surface		*font_narrow = nullptr;	// The texture for the narrow bitmap font.
 unsigned short	font_sheet_size = 0;	// The size of the font texture sheet, in glyphs.
+unsigned short	font_sheet_size_narrow = 0;	// As above, for the narrow font.
 unsigned int 	glitch_clear_countdown = 0;
 SDL_Surface		*glitch_hz_surface = nullptr;	// Horizontal glitch surface.
 unsigned char	glitch_multi = 0;		// Glitch intensity multiplier.
@@ -543,6 +545,12 @@ unsigned short get_cols()
 	return cols;
 }
 
+// As above, for the narrow font.
+unsigned short get_cols_narrow()
+{
+	return narrow_cols;
+}
+
 // Check if we're using an NTSC screen filter or not.
 bool get_ntsc_filter()
 {
@@ -648,14 +656,17 @@ void init()
 	{
 		cols = SNES_NTSC_IN_WIDTH(unscaled_x) / 8;
 		rows = unscaled_y / 16;
+		narrow_cols = SNES_NTSC_IN_WIDTH(unscaled_x) / 5;
 	}
 	else
 	{
 		cols = unscaled_x / 16;
 		rows = unscaled_y / 16;
+		narrow_cols = unscaled_x / 10;
 	}
 	mid_col = cols / 2;
 	mid_row = rows / 2;
+	mid_col_narrow = narrow_cols / 2;
 	if (!(window_surface = SDL_GetWindowSurface(main_window))) guru::halt(SDL_GetError());
 	if (!(main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
 	if (!(glitched_main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0))) guru::halt(SDL_GetError());
@@ -713,8 +724,14 @@ void init()
 	load_and_optimize_png("fonts.png", &font, main_surface);
 	load_and_optimize_png("alagard.png", &alagard, main_surface);
 	load_and_optimize_png("sprites.png", &sprites, main_surface);
+	load_and_optimize_png("ruthenia.png", &font_narrow, main_surface);
 	font_sheet_size = (font->w * font->h) / 8;
-	if (!ntsc_filter) font_sheet_size /= 2;
+	font_sheet_size_narrow = (font_narrow->w / 5) * (font_narrow->h / 8);
+	if (!ntsc_filter)
+	{
+		font_sheet_size /= 2;
+		font_sheet_size_narrow /= 2;
+	}
 	exit_func_level = 4;
 
 	// Now that the font is loaded and SDL is initialized, we can activate Guru's error screen.
@@ -805,6 +822,12 @@ unsigned short midcol()
 unsigned short midrow()
 {
 	return mid_row;
+}
+
+// As above, for the narrow font.
+unsigned short midcol_narrow()
+{
+	return mid_col_narrow;
 }
 
 // Determines the colour of a specific point in a nebula, based on X,Y coordinates.
@@ -959,16 +982,21 @@ void print_at(char letter, int x, int y, Colour colour, unsigned int print_flags
 void print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags)
 {
 	STACK_TRACE();
-	const int glyph_size = (ntsc_filter ? 8 : 16);
+	const bool narrow_font = (print_flags & PRINT_FLAG_NARROW) == PRINT_FLAG_NARROW;
+	int glyph_width = (narrow_font ? 5 : 8), glyph_height = 8;
+	if (!ntsc_filter) { glyph_width *= 2; glyph_height *= 2; }
+	int cols_available = (narrow_font ? narrow_cols : cols), rows_available = rows;
+	unsigned int sheet_size = (narrow_font ? font_sheet_size_narrow : font_sheet_size);
+	SDL_Surface *chosen_font = (narrow_font ? font_narrow : font);
 
 	// Just exit quietly if drawing off-screen. This shouldn't normally happen.
 	if (mathx::check_flag(print_flags, PRINT_FLAG_ABSOLUTE))
 	{
-		if (x < 0 || y < 0 || x > cols * glyph_size || y > rows * glyph_size) return;
+		if (x < 0 || y < 0 || x > cols_available * glyph_width || y > rows_available * glyph_height) return;
 	}
 	else
 	{
-		if (x < 0 || y < 0 || x > cols || y > rows) return;
+		if (x < 0 || y < 0 || x > cols_available || y > rows_available) return;
 	}
 
 	// If we're using the alternate font, adjust the glyph now.
@@ -1000,31 +1028,32 @@ void print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsi
 	const unsigned int sdl_col = SDL_MapRGB(main_surface->format, r, g, b);
 
 	// Determine the location of the character in the grid.
-	if (static_cast<unsigned short>(letter) >= font_sheet_size) letter = static_cast<Glyph>('?');
-	unsigned short loc_x = static_cast<unsigned short>(letter) * glyph_size, loc_y = 0;
-	while (loc_x >= font->w) { loc_y += glyph_size; loc_x -= font->w; }
-	SDL_Rect font_rect = {loc_x, loc_y, glyph_size, glyph_size};
+	if (narrow_font) letter = static_cast<Glyph>(static_cast<unsigned short>(letter) - 32);
+	if (static_cast<unsigned short>(letter) >= sheet_size) letter = static_cast<Glyph>('?');
+	unsigned short loc_x = static_cast<unsigned short>(letter) * glyph_width, loc_y = 0;
+	while (loc_x >= chosen_font->w) { loc_y += glyph_height; loc_x -= chosen_font->w; }
+	SDL_Rect font_rect = {loc_x, loc_y, glyph_width, glyph_height};
 
 	// Draw a coloured square, then 'stamp' it with the font.
 	int x_pos = x, y_pos = y;
-	if (!mathx::check_flag(print_flags, PRINT_FLAG_ABSOLUTE)) { x_pos *= glyph_size; y_pos *= glyph_size; }
+	if (!mathx::check_flag(print_flags, PRINT_FLAG_ABSOLUTE)) { x_pos *= glyph_width; y_pos *= glyph_height; }
 	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_FOUR_X)) x_pos += (ntsc_filter ? 2 : 4);
 	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_FOUR_Y)) y_pos += (ntsc_filter ? 2 : 4);
 	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_EIGHT_X)) x_pos += (ntsc_filter ? 4 : 8);
 	if (mathx::check_flag(print_flags, PRINT_FLAG_PLUS_EIGHT_Y)) y_pos += (ntsc_filter ? 4 : 8);
-	SDL_Rect scr_rect = {x_pos, y_pos, glyph_size, glyph_size};
+	SDL_Rect scr_rect = {x_pos, y_pos, glyph_width, glyph_height};
 	if (mathx::check_flag(print_flags, PRINT_FLAG_ALPHA))
 	{
-		SDL_Rect temp_rect = {0, 0, glyph_size, glyph_size};
+		SDL_Rect temp_rect = {0, 0, glyph_width, glyph_height};
 		if (SDL_FillRect(temp_surface, &temp_rect, sdl_col) < 0) guru::halt(SDL_GetError());
-		if (SDL_BlitSurface(font, &font_rect, temp_surface, &temp_rect) < 0) guru::halt(SDL_GetError());
+		if (SDL_BlitSurface(chosen_font, &font_rect, temp_surface, &temp_rect) < 0) guru::halt(SDL_GetError());
 		if (SDL_SetColorKey(temp_surface, SDL_TRUE, SDL_MapRGB(temp_surface->format, 0, 0, 0)) < 0) guru::halt(SDL_GetError());
 		if (SDL_BlitSurface(temp_surface, &temp_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
 	}
 	else
 	{
 		if (SDL_FillRect(main_surface, &scr_rect, sdl_col) < 0) guru::halt(SDL_GetError());
-		if (SDL_BlitSurface(font, &font_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
+		if (SDL_BlitSurface(chosen_font, &font_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
 	}
 }
 
@@ -1290,11 +1319,20 @@ unsigned int wait_for_key(unsigned short max_ms)
 							if (surface_scale == 1) screen_y = static_cast<int>(static_cast<float>(screen_y) / 1.333f);
 							else if (surface_scale == 2) { screen_x /= 2; screen_y /= 2; }
 						}
-						if (ntsc_filter) cols = SNES_NTSC_IN_WIDTH(screen_x) / 8;
-						else cols = screen_x / 16;
+						if (ntsc_filter)
+						{
+							cols = SNES_NTSC_IN_WIDTH(screen_x) / 8;
+							narrow_cols = SNES_NTSC_IN_WIDTH(screen_x) / 5;
+						}
+						else
+						{
+							cols = screen_x / 16;
+							narrow_cols = screen_x / 10;
+						}
 						rows = screen_y / 16;
 						mid_col = cols / 2;
 						mid_row = rows / 2;
+						mid_col_narrow = narrow_cols / 2;
 					}
 					return RESIZE_KEY;
 				}

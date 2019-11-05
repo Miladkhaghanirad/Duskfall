@@ -160,7 +160,7 @@ void render()
 				dim_amount = MESSAGE_LOG_SIZE - (i - buffer_pos) - 1;
 				if (output_prc.size() < MESSAGE_LOG_SIZE) dim_amount -= MESSAGE_LOG_SIZE - output_prc.size();
 			}
-			iocore::ansi_print(output_prc.at(i), 0, i - buffer_pos + iocore::get_rows() - MESSAGE_LOG_SIZE, 0, dim_amount);
+			iocore::ansi_print(output_prc.at(i), 0, i - buffer_pos + iocore::get_rows() - MESSAGE_LOG_SIZE, PRINT_FLAG_NARROW, dim_amount);
 		}
 	}
 }
