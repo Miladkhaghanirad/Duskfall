@@ -32,6 +32,8 @@
  *        bound
  */
 
+#pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
+
 #ifndef PCG_EXTRAS_HPP_INCLUDED
 #define PCG_EXTRAS_HPP_INCLUDED 1
 
