@@ -8,6 +8,7 @@
 #include "mathx.h"
 #include "message.h"
 #include "prefs.h"
+#include "sidebar.h"
 #include "static-data.h"
 #include "strx.h"
 #include "world.h"
@@ -593,10 +594,11 @@ void Dungeon::render(bool render_lighting, bool see_all)
 {
 	STACK_TRACE();
 	iocore::cls();
+	sidebar::reset_lists();
 	for (unsigned int x = 0; x < width; x++)
 	{
 		int screen_x = static_cast<signed int>(x) + world::hero()->camera_off_x;
-		if (screen_x < 0 || screen_x >= iocore::get_cols()) continue;
+		if (screen_x < 0 || screen_x >= iocore::get_cols() - SIDEBAR_WIDTH_8X8) continue;
 		for (unsigned int y = 0; y < height; y++)
 		{
 			int screen_y = static_cast<signed int>(y) + world::hero()->camera_off_y;
@@ -633,9 +635,14 @@ void Dungeon::render(bool render_lighting, bool see_all)
 					}
 					if (actor_here)
 					{
+						sidebar::actor_in_sight(actor_here);
 						iocore::print_at(static_cast<Glyph>(actor_here->glyph), screen_x, screen_y, actor_here->colour);
 					}
-					else iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, here_col.r, here_col.g, here_col.b);
+					else
+					{
+						sidebar::tile_in_sight(here);
+						iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, here_col.r, here_col.g, here_col.b);
+					}
 					explore(x, y);
 				}
 				else if (here.explored()) iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, 30, 30, 30);

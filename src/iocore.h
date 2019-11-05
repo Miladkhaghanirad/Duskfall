@@ -97,6 +97,7 @@ void	glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_o
 void	glitch_horizontal();	// Horizontal displacement visual glitch.
 void	glitch_intensity(unsigned char value);	// Sets the glitch intensity level.
 void	glitch_square();		// Square displacement glitch.
+string	glyph_string(Glyph glyph);		// Converts a Glyph into an ansi_print() compatible glyph string.
 void	init();							// Initializes SDL and gets the ball rolling.
 bool	is_cancel(unsigned int key);	// Returns true if the key is a chosen 'cancel' key.
 bool	is_down(unsigned int key);		// Returns true if the key is a chosen 'down' key.

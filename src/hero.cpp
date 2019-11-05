@@ -6,6 +6,8 @@
 #include "guru.h"
 #include "iocore.h"
 #include "hero.h"
+#include "message.h"
+#include "sidebar.h"
 #include "strx.h"
 #include "world.h"
 
@@ -61,14 +63,14 @@ void Hero::recenter_camera()
 void Hero::recenter_camera_horiz()
 {
 	STACK_TRACE();
-	camera_off_x = (iocore::get_cols() / 2) - x;
+	camera_off_x = ((iocore::get_cols() - SIDEBAR_WIDTH_8X8) / 2) - x;
 }
 
 // Recenters the camera vertically on the Hero's position, not adjusting the horizontal.
 void Hero::recenter_camera_vert()
 {
 	STACK_TRACE();
-	camera_off_y = (iocore::get_rows() / 2) - y;
+	camera_off_y = ((iocore::get_rows() - MESSAGE_LOG_SIZE) / 2) - y;
 }
 
 // Saves the Hero's data to disk, along with the rest of the game world.

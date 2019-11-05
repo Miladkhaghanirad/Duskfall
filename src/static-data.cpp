@@ -13,6 +13,8 @@
 
 #include <unordered_map>
 
+enum class ActorType : unsigned int { MONSTER };
+
 
 namespace data
 {
@@ -49,7 +51,7 @@ void init()
 }
 
 // Loads an Actor's data from JSON.
-void init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor)
+void init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor, ActorType type)
 {
 	STACK_TRACE();
 	const string actor_name = jval.get("name", "").asString();
@@ -64,7 +66,15 @@ void init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor)
 	if (!actor_glyph_unparsed.size()) guru::log("No actor glyph specified for " + actor_id, GURU_WARN);
 	actor->glyph = parse_glyph_string(actor_glyph_unparsed);
 
+	if (jval.get("blocker", false).asBool()) actor->flags |= ACTOR_FLAG_BLOCKER;
 	if (jval.get("blocks_los", false).asBool()) actor->flags |= ACTOR_FLAG_BLOCKS_LOS;
+	if (jval.get("monster", false).asBool()) actor->flags |= ACTOR_FLAG_MONSTER;
+
+	if (type == ActorType::MONSTER)
+	{
+		if (jval.get("monster", true).asBool()) actor->flags |= ACTOR_FLAG_MONSTER;	// Mobs are counted as monsters unless specified otherwise.
+		if (jval.get("blocker", true).asBool()) actor->flags |= ACTOR_FLAG_BLOCKER;	// Same with the blocker flag.
+	}
 }
 
 // Load the data from mobs.json
@@ -79,8 +89,7 @@ void init_mobs_json()
 		const string actor_id = jmem.at(i);
 		const Json::Value jval = json[actor_id];
 		auto new_mob = std::make_shared<Actor>();
-		init_actor_json(jval, actor_id, new_mob);
-		new_mob->flags |= ACTOR_FLAG_BLOCKER;	// Mobs cannot be walked through or over.
+		init_actor_json(jval, actor_id, new_mob, ActorType::MONSTER);
 		static_mob_data.insert(std::pair<string, shared_ptr<Actor>>(actor_id, new_mob));
 	}
 }

@@ -10,9 +10,9 @@
 // version numbers personally to all code that is added to the master branch.
 
 #define DUSKFALL_VERSION_EPOCH		0
-#define DUSKFALL_VERSION_MAJOR		13
-#define DUSKFALL_VERSION_MINOR		2
-#define DUSKFALL_VERSION_PATCH		1
+#define DUSKFALL_VERSION_MAJOR		14
+#define DUSKFALL_VERSION_MINOR		0
+#define DUSKFALL_VERSION_PATCH		0
 #define DUSKFALL_EDITION			"A New Beginning"
 
 #define DUSKFALL_MAJOR_VERSION_STRING	(std::to_string(DUSKFALL_VERSION_EPOCH) + "." + std::to_string(DUSKFALL_VERSION_MAJOR) + "." + std::to_string(DUSKFALL_VERSION_MINOR))

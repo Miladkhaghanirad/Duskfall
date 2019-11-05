@@ -611,6 +611,15 @@ void glitch_square()
 	glitch_vec.push_back(square_glitch);
 }
 
+// Converts a Glyph into an ansi_print() compatible glyph string.
+string glyph_string(Glyph glyph)
+{
+	STACK_TRACE();
+	string result = strx::itos(static_cast<unsigned int>(glyph));
+	while (result.size() < 3) result = "0" + result;
+	return "^" + result + "^";
+}
+
 // Initializes SDL and gets the ball rolling.
 void init()
 {

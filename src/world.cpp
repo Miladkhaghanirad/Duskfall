@@ -8,6 +8,7 @@
 #include "iocore.h"
 #include "message.h"
 #include "prefs.h"
+#include "sidebar.h"
 #include "strx.h"
 #include "world.h"
 
@@ -106,6 +107,7 @@ void main_loop()
 			iocore::cls();
 			the_dungeon->render();
 			message::render();
+			sidebar::render();
 			redraw_full = false;
 		}
 		iocore::flip();
