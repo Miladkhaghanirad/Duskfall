@@ -20,7 +20,7 @@ namespace prefs
 {
 
 #define FILENAME_PREFS	"userdata/prefs.dat"
-#define PREFS_KEYBINDS	23
+#define PREFS_KEYBINDS	25
 
 // Shift			letter
 // Ctrl				letter - 64
@@ -35,6 +35,7 @@ namespace prefs
 #define KEYMOD_SHIFT_ALT	131072
 #define KEYMOD_CTRL_ALT		32768
 
+#define KEY_CLOSE_DEFAULT			'C'
 #define KEY_EAST_DEFAULT			'd'
 #define KEY_MENU_CANCEL_DEFAULT		SDLK_ESCAPE
 #define KEY_MENU_OK_DEFAULT			SDLK_RETURN
@@ -42,6 +43,7 @@ namespace prefs
 #define KEY_NORTH_DEFAULT			'w'
 #define KEY_NORTHEAST_DEFAULT		'e'
 #define KEY_NORTHWEST_DEFAULT		'q'
+#define KEY_OPEN_DEFAULT			'o'
 #define KEY_OPTIONS_WINDOW_DEFAULT	(KEYMOD_SHIFT_CTRL + 'O')
 #define KEY_QUIT_GAME_DEFAULT		(KEYMOD_SHIFT_CTRL + 'X')
 #define KEY_SAVE_DEFAULT			(KEYMOD_CTRL + 'S')
@@ -219,9 +221,10 @@ unsigned int	keybinds[PREFS_KEYBINDS];	// Keybind definitions.
 
 uint32_t key_defaults[PREFS_KEYBINDS] = { KEY_NORTH_DEFAULT, KEY_SOUTH_DEFAULT, KEY_EAST_DEFAULT, KEY_WEST_DEFAULT, KEY_NORTHEAST_DEFAULT, KEY_NORTHWEST_DEFAULT, KEY_SOUTHEAST_DEFAULT, KEY_SOUTHWEST_DEFAULT, KEY_QUIT_GAME_DEFAULT,
 		KEY_OPTIONS_WINDOW_DEFAULT, KEY_MENU_OK_DEFAULT, KEY_MENU_OK_2_DEFAULT, KEY_MENU_CANCEL_DEFAULT, KEY_SCREENSHOT_DEFAULT, KEY_SAVE_DEFAULT, KEY_SCROLL_TOP_DEFAULT, KEY_SCROLL_BOTTOM_DEFAULT, KEY_SCROLL_PAGEUP_DEFAULT,
-		KEY_SCROLL_PAGEDOWN_DEFAULT, KEY_SCROLL_UP_DEFAULT, KEY_SCROLL_DOWN_DEFAULT, KEY_SCROLL_LEFT_DEFAULT, KEY_SCROLL_RIGHT_DEFAULT };
+		KEY_SCROLL_PAGEDOWN_DEFAULT, KEY_SCROLL_UP_DEFAULT, KEY_SCROLL_DOWN_DEFAULT, KEY_SCROLL_LEFT_DEFAULT, KEY_SCROLL_RIGHT_DEFAULT, KEY_OPEN_DEFAULT, KEY_CLOSE_DEFAULT };
 const string key_names[PREFS_KEYBINDS] = { "key_north", "key_south", "key_east", "key_west", "key_northeast", "key_northwest", "key_southeast", "key_southwest", "key_quit_game", "key_options_window", "key_menu_ok", "key_menu_ok_2",
-		"key_menu_cancel", "key_screenshot", "key_save", "key_scroll_top", "key_scroll_bottom", "key_scroll_pageup", "key_scroll_pagedown", "key_scroll_up", "key_scroll_down", "key_scroll_left", "key_scroll_right" };
+		"key_menu_cancel", "key_screenshot", "key_save", "key_scroll_top", "key_scroll_bottom", "key_scroll_pageup", "key_scroll_pagedown", "key_scroll_up", "key_scroll_down", "key_scroll_left", "key_scroll_right", "key_open",
+		"key_close" };
 
 // Used by the keybinds window.
 vector<string>			key_longname;
@@ -804,6 +807,12 @@ void ui_init_keybinds()
 	ui_add_keybind("Travel Northwest", Keys::NORTHWEST);
 	ui_add_keybind("Travel Southeast", Keys::SOUTHEAST);
 	ui_add_keybind("Travel Southwest", Keys::SOUTHWEST);
+	ui_add_keybind("", UINT_MAX);
+
+	ui_add_keybind("{5F}^219^^178^^177^^176^ WORLD INTERACTION ^176^^177^^178^^219^", UINT_MAX);
+	ui_add_keybind("", UINT_MAX);
+	ui_add_keybind("Open Door", Keys::OPEN);
+	ui_add_keybind("Close Door", Keys::CLOSE);
 	ui_add_keybind("", UINT_MAX);
 
 	ui_add_keybind("{5F}^219^^178^^177^^176^ MESSAGE LOG & WIKI ^176^^177^^178^^219^", UINT_MAX);

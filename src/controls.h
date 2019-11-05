@@ -5,9 +5,16 @@
 #include "duskfall.h"
 #include "ai.h"
 
+
 class Controls : public AI
 {
 public:
 			Controls(Actor* new_owner) : AI(new_owner) { }
 	bool	travel(short x_dir, short y_dir) override;	// Attempts to travel in a given direction.
+
+	static void	close();	// Attempts to close a door.
+	static void	open();		// Attempts to open a door.
+
+private:
+	static void	open_door(shared_ptr<Actor> door);	// Opens a specified door.
 };

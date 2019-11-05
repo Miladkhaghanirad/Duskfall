@@ -13,7 +13,7 @@
 
 #include <unordered_map>
 
-enum class ActorType : unsigned int { MONSTER, ITEM };
+enum class ActorType : unsigned int { MONSTER, ITEM, TILE_FEATURE };
 
 
 namespace data
@@ -22,6 +22,7 @@ namespace data
 std::unordered_map<string, shared_ptr<Actor>>	static_item_data;	// The data containing templates for items from items.json
 std::unordered_map<string, shared_ptr<Actor>>	static_mob_data;	// The data containing templates for monsters from mobs.json
 std::unordered_map<string, shared_ptr<Tile>>	static_tile_data;	// The data about dungeon tiles from tiles.json
+std::unordered_map<string, shared_ptr<Actor>>	static_tile_feature_data;	// The data containing templates for tile features from tile features.json
 std::unordered_map<unsigned int, string>		tile_names;			// The tile name strings, which are stored as integers on the tiles themselves.
 
 
@@ -52,6 +53,15 @@ Tile get_tile(string tile_id)
 	return *found->second;
 }
 
+// Retrieves a copy of a specified tile feature.
+shared_ptr<Actor> get_tile_feature(string feature_id)
+{
+	STACK_TRACE();
+	auto found = static_tile_feature_data.find(feature_id);
+	if (found == static_tile_feature_data.end()) guru::halt("Could not find tile feature ID " + feature_id + "!");
+	return std::make_shared<Actor>(*found->second);
+}
+
 // Loads the static data from JSON files.
 void init()
 {
@@ -60,13 +70,15 @@ void init()
 	init_tiles_json();
 	init_actors_json("items", ActorType::ITEM, &static_item_data);
 	init_actors_json("mobs", ActorType::MONSTER, &static_mob_data);
+	init_actors_json("tile features", ActorType::TILE_FEATURE, &static_tile_feature_data);
 }
 
 // Loads an Actor's data from JSON.
 void init_actors_json(string filename, ActorType type, std::unordered_map<string, shared_ptr<Actor>> *the_map)
 {
 	STACK_TRACE();
-	const std::unordered_map<string, unsigned int> actor_flag_map = { { "BLOCKS_LOS", ACTOR_FLAG_BLOCKS_LOS } };
+	const std::unordered_map<string, unsigned int> actor_flag_map = { { "BLOCKER", ACTOR_FLAG_BLOCKER }, { "BLOCKS_LOS", ACTOR_FLAG_BLOCKS_LOS }, { "MONSTER", ACTOR_FLAG_MONSTER }, { "ITEM", ACTOR_FLAG_ITEM },
+			{ "INVISIBLE", ACTOR_FLAG_INVISIBLE }, { "DOOR", ACTOR_FLAG_DOOR } };
 
 	Json::Value json = filex::load_json(filename);
 	const Json::Value::Members jmem = json.getMemberNames();

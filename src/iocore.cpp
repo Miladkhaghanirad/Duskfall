@@ -551,6 +551,20 @@ unsigned short get_cols_narrow()
 	return narrow_cols;
 }
 
+// Gets a direction key, or returns false if an invalid key is pressed.
+bool get_direction(int &x_dir, int &y_dir)
+{
+	STACK_TRACE();
+	x_dir = y_dir = 0;
+	const unsigned int key = wait_for_key();
+	if (key == prefs::keybind(Keys::NORTH) || key == prefs::keybind(Keys::NORTHEAST) || key == prefs::keybind(Keys::NORTHWEST)) y_dir = -1;
+	else if (key == prefs::keybind(Keys::SOUTH) || key == prefs::keybind(Keys::SOUTHEAST) || key == prefs::keybind(Keys::SOUTHWEST)) y_dir = 1;
+	if (key == prefs::keybind(Keys::WEST) || key == prefs::keybind(Keys::NORTHWEST) || key == prefs::keybind(Keys::SOUTHWEST)) x_dir = -1;
+	else if (key == prefs::keybind(Keys::EAST) || key == prefs::keybind(Keys::NORTHEAST) || key == prefs::keybind(Keys::SOUTHEAST)) x_dir = 1;
+	if (x_dir || y_dir) return true;
+	else return false;
+}
+
 // Check if we're using an NTSC screen filter or not.
 bool get_ntsc_filter()
 {

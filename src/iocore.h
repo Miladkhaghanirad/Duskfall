@@ -91,6 +91,7 @@ void	exit_functions();		// This is where we clean up our shit.
 void	flip();					// Redraws the display.
 unsigned short	get_cols();		// Returns the number of columns on the screen.
 unsigned short	get_cols_narrow();	// As above, for the narrow font.
+bool	get_direction(int &x_dir, int &y_dir);	// Gets a direction key, or returns false if an invalid key is pressed.
 bool	get_ntsc_filter();		// Check if we're using an NTSC screen filter or not.
 unsigned short	get_rows();		// Returns the number of rows on the screen.
 void	glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf);	// Offsets part of the display.

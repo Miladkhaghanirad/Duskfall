@@ -1,0 +1,13 @@
+// tile features.json -- Invisible Actors which provide extra functionality to Tiles.
+// Copyright (c) 2019 Raine "Gravecat" Simmons. All rights reserved.
+
+{
+
+"DOOR_CLOSED" : {
+	"colour" : "BLACK",
+	"flags" : "BLOCKER BLOCKS_LOS DOOR INVISIBLE",
+	"glyph" : " ",
+	"name" : "door"
+}
+
+}

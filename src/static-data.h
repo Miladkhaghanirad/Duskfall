@@ -18,6 +18,7 @@ namespace data
 shared_ptr<Actor>	get_item(string item_id);	// Retrieves a copy of the specified item.
 shared_ptr<Actor>	get_mob(string mob_id);		// Retrieves a copy of a specified mob.
 Tile				get_tile(string tile_id);	// Retrieves a copy of a specified Tile.
+shared_ptr<Actor>	get_tile_feature(string feature_id);	// Retrieves a copy of a specified tile feature.
 void				init();	// Loads the static data from JSON files.
 void				init_actors_json(string filename, ActorType type, std::unordered_map<string, shared_ptr<Actor>> *the_map);	// Loads an Actor's data from JSON.
 void				init_items_json();	// Load the data from items.json

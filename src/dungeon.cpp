@@ -330,8 +330,18 @@ void Dungeon::generate_type_a()
 	// Attempt to place doors in room entrances.
 	Tile regular_door = data::get_tile("BASIC_DOOR");
 	for (unsigned short x = 2; x < width - 2; x++)
+	{
 		for (unsigned short y = 2; y < height - 2; y++)
-			if (viable_doorway(x, y) && mathx::rnd(3) == 1) tiles[x + y * width] = regular_door;
+		{
+			if (viable_doorway(x, y) && mathx::rnd(3) == 1)
+			{
+				tiles[x + y * width] = regular_door;
+				shared_ptr<Actor> door = data::get_tile_feature("DOOR_CLOSED");
+				door->x = x; door->y = y;
+				actors.push_back(door);
+			}
+		}
+	}
 
 	delete[] region;
 }
@@ -637,7 +647,7 @@ void Dungeon::render(bool render_lighting, bool see_all)
 					shared_ptr<Actor> actor_here = nullptr;
 					for (auto actor : actors)
 					{
-						if (actor->x == x && actor->y == y)
+						if (actor->x == x && actor->y == y && !actor->invisible())
 						{
 							if (actor_here)
 							{

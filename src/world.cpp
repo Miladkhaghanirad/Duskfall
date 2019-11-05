@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
 #include "ai.h"
+#include "controls.h"
 #include "dungeon.h"
 #include "guru.h"
 #include "hero.h"
@@ -146,6 +147,8 @@ void main_loop()
 			iocore::exit_functions();
 			exit(0);
 		}
+		else if (key == prefs::keybind(Keys::OPEN)) Controls::open();
+		else if (key == prefs::keybind(Keys::CLOSE)) Controls::close();
 		else action_taken = false;
 		if (action_taken) message::reset_count();
 	}

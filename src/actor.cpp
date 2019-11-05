@@ -13,6 +13,12 @@ Actor::Actor() : ai(nullptr), colour(Colour::WHITE), flags(0), glyph('?'), x(0),
 
 Actor::~Actor() { }
 
+// Clears a flag on this Actor.
+void Actor::clear_flag(unsigned int flag)
+{
+	if ((flags & flag) == flag) flags ^= flag;
+}
+
 // Loads this Actor's data from disk.
 void Actor::load(unsigned int actor_id, unsigned int dungeon_id)
 {
@@ -59,4 +65,10 @@ void Actor::save(unsigned int actor_id, unsigned int dungeon_id)
 	{
 		guru::halt(e.what());
 	}
+}
+
+// Sets a flag on this Actor.
+void Actor::set_flag(unsigned int flag)
+{
+	flags |= flag;
 }
