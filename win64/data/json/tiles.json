@@ -23,7 +23,7 @@
 "BASIC_WALL" : {
 	"colour" : "CGA_LGRAY",
 	"flags" : "IMPASSIBLE OPAQUE WALL",
-	"glyph" : "#",
+	"glyph" : "BLOCK_SOLID",
 	"name" : "wall"
 },
 
@@ -31,7 +31,7 @@
 "BOUNDARY_WALL" : {
 	"colour" : "CGA_GRAY",
 	"flags" : "IMPASSIBLE OPAQUE PERMAWALL WALL",	// DO NOT MESS WITH THESE!
-	"glyph" : "#",
+	"glyph" : "BLOCK_SOLID",
 	"name" : "wall"
 }
 
