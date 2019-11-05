@@ -1149,6 +1149,7 @@ void sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
 	STACK_TRACE();
 	const bool plus_four = ((flags & SPRITE_FLAG_PLUS_FOUR) == SPRITE_FLAG_PLUS_FOUR);
 	const bool quad = ((flags & SPRITE_FLAG_QUAD) == SPRITE_FLAG_QUAD);
+	const int sprite_size = (ntsc_filter ? 16 : 32);
 	if (quad)
 	{
 		for (unsigned int i = 0; i < 2; i++)
@@ -1164,9 +1165,9 @@ void sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
 		return;
 
 	}
-	unsigned short loc_x = static_cast<unsigned short>(id) * 16, loc_y = 0;
-	while (loc_x >= sprites->w) { loc_y += 16; loc_x -= sprites->w; }
-	SDL_Rect sprite_rect = {loc_x, loc_y, 16, 16};
+	unsigned short loc_x = static_cast<unsigned short>(id) * sprite_size, loc_y = 0;
+	while (loc_x >= sprites->w) { loc_y += sprite_size; loc_x -= sprites->w; }
+	SDL_Rect sprite_rect = {loc_x, loc_y, sprite_size, sprite_size};
 
 	// Parse the colour into SDL's native format.
 	unsigned char r, g, b;
@@ -1174,8 +1175,8 @@ void sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
 	const unsigned int sdl_col = SDL_MapRGB(main_surface->format, r, g, b);
 
 	// Draw a coloured square, then 'stamp' it with the sprite.
-	SDL_Rect scr_rect = { (x * 8) + (plus_four ? 4 : 0), y * 8, 16, 16 };
-	SDL_Rect temp_rect = {0, 0, 32, 32};
+	SDL_Rect scr_rect = { (x * (sprite_size / 2)) + (plus_four ? (sprite_size / 4) : 0), y * (sprite_size / 2), sprite_size, sprite_size };
+	SDL_Rect temp_rect = {0, 0, sprite_size * 2, sprite_size * 2};
 	if (SDL_FillRect(temp_surface, &temp_rect, sdl_col) < 0) guru::halt(SDL_GetError());
 	if (SDL_BlitSurface(sprites, &sprite_rect, temp_surface, &temp_rect) < 0) guru::halt(SDL_GetError());
 	if (SDL_SetColorKey(temp_surface, SDL_TRUE, SDL_MapRGB(temp_surface->format, 0, 0, 0)) < 0) guru::halt(SDL_GetError());
