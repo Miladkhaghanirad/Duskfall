@@ -124,7 +124,7 @@ void process_output_buffer()
 	// Process the output buffer.
 	for (unsigned int i = 0; i < output_raw.size(); i++)
 	{
-		vector<string> line_vec = strx::ansi_vector_split(output_raw.at(i), iocore::get_cols() - 2);
+		vector<string> line_vec = strx::ansi_vector_split(output_raw.at(i), iocore::get_cols_narrow() - 2);
 		for (auto line : line_vec)
 			output_prc.push_back(line);
 	}
