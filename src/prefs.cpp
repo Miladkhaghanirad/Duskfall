@@ -11,9 +11,9 @@
 #include "SQLiteCpp/SQLiteCpp.h"
 
 
-Prefs::Prefs() : selected(0), changed(false), done(false), y_pos(-11), has_cpu_heavy(false), has_must_restart(false) { }
+Prefs::Prefs() : changed(false), done(false), selected(0), has_cpu_heavy(false), has_must_restart(false), y_pos(-11) { }
 
-PrefsEntry::PrefsEntry() : id(0), is_boolean(false), is_slider(false), must_restart(false), cpu_heavy(false), slider_size(0), y_pos(0), selected(0) { }
+PrefsEntry::PrefsEntry() : cpu_heavy(false), id(0), is_boolean(false), is_slider(false), must_restart(false), selected(0), slider_size(0), y_pos(0) { }
 
 
 namespace prefs

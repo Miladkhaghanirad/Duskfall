@@ -13,16 +13,16 @@ class PrefsEntry
 {
 public:
 					PrefsEntry();
-	string			name;			// The name of this prefs option.
+	bool			cpu_heavy;		// Is this an CPU-heavy option?
 	unsigned char	id;				// The internal ID of this prefs option.
 	bool			is_boolean;		// Is this prefs option a boolean?
 	bool			is_slider;		// Is  this prefs option a menu slider?
 	bool			must_restart;	// Do we have to restart to change this option?
-	bool			cpu_heavy;		// Is this an CPU-heavy option?
-	unsigned char	slider_size;	// The size of a menu slider, if any.
+	string			name;			// The name of this prefs option.
 	vector<string>	options_str;	// Vector of strings for the selectable options.
-	unsigned int	y_pos;			// The vertical position on the screen where this entry will be rendered.
 	unsigned int	selected;		// The currently-selected option.
+	unsigned char	slider_size;	// The size of a menu slider, if any.
+	unsigned int	y_pos;			// The vertical position on the screen where this entry will be rendered.
 };
 
 class Prefs
@@ -34,18 +34,18 @@ public:
 	unsigned int	selected_id();	// Returns the ID of the currently selected preference.
 	unsigned int	selected_val();	// Returns the value on the selected preference.
 
-	string			name;		// The name of this prefs screen.
-	unsigned int	selected;	// The currently selected preference.
 	bool			changed;	// Did the user change an option?
 	bool			done;		// Are we done here?
+	string			name;		// The name of this prefs screen.
+	unsigned int	selected;	// The currently selected preference.
 
 private:
 	void		adjust_option(signed char amount);	// Adjusts an option up or down.
 
 	vector<PrefsEntry>	entries;	// The prefs entries in this list.
-	int		y_pos;				// The vertical position of the prefs entries.
 	bool	has_cpu_heavy	;	// Do we have any CPU-heavy options?
 	bool	has_must_restart;	// Do we have an option that requires a restart?
+	int		y_pos;				// The vertical position of the prefs entries.
 };
 
 namespace prefs
