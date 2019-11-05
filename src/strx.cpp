@@ -261,6 +261,16 @@ string trim_excess_spaces(string source)
 	return std::regex_replace(source, std::regex("^ +| +$|( ) +"), "$1");
 }
 
+// Unsigned version of itos().
+string uitos(unsigned long long num)
+{
+	STACK_TRACE();
+	std::stringstream ss;
+	ss << num;
+	return ss.str();
+}
+
+// Returns a count of the amount of times a string is found in a parent string.
 int word_count(string str, string word)
 {
 	STACK_TRACE();

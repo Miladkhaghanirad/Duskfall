@@ -15,6 +15,7 @@ namespace guru
 
 void	close_syslog();				// Closes the Guru log file.
 void	console_ready(bool ready);	// Tells Guru whether or not the console is initialized and can handle rendering error messages.
+void	game_output(bool enabled);	// Enables or disables output of Guru logging into the in-game message window.
 void	halt(string error);			// Stops the game and displays an error messge.
 void	intercept_signal(int sig);	// Catches a segfault or other fatal signal.
 void	log(std::string msg, int type = GURU_INFO);	// Logs a message in the system log file.

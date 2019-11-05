@@ -4,6 +4,7 @@
 #include "controls.h"
 #include "dungeon.h"
 #include "guru.h"
+#include "inventory.h"
 #include "iocore.h"
 #include "hero.h"
 #include "message.h"
@@ -16,24 +17,23 @@
 #include <fstream>
 
 
-Hero::Hero() : camera_off_x(0), camera_off_y(0), difficulty(1), played(0), style(1)
+Hero::Hero(unsigned long long new_id, unsigned int new_dungeon_id, unsigned long long new_owner_id) : Actor(new_id, new_dungeon_id, new_owner_id), camera_off_x(0), camera_off_y(0), difficulty(1), played(0), style(1)
 {
 	STACK_TRACE();
-	ai = new Controls(this);
+	ai = std::make_shared<Controls>(this);
+	inventory = std::make_shared<Inventory>(this, world::unique_id());
 	glyph = '@';
+	id = new_id;
+	dungeon_id = new_dungeon_id;
+	owner_id = new_owner_id;
 }
 
-Hero::~Hero()
-{
-	STACK_TRACE();
-	if (ai) delete ai;
-}
+Hero::~Hero() { }
 
 // Loads the Hero's data from disk.
-void Hero::load(unsigned int actor_id, unsigned int dungeon_id)
+void Hero::load()
 {
 	STACK_TRACE();
-	actor_id = actor_id; dungeon_id = dungeon_id;	// These will always be 0, so this line is just to silence compiler warnings.
 	try
 	{
 		SQLite::Statement query(*world::save_db(), "SELECT * FROM hero");
@@ -43,7 +43,7 @@ void Hero::load(unsigned int actor_id, unsigned int dungeon_id)
 			style = query.getColumn("style").getUInt();
 			played = query.getColumn("played").getUInt();
 		}
-		Actor::load(0, 0);
+		Actor::load();
 	}
 	catch(std::exception &e)
 	{
@@ -74,10 +74,9 @@ void Hero::recenter_camera_vert()
 }
 
 // Saves the Hero's data to disk, along with the rest of the game world.
-void Hero::save(unsigned int actor_id, unsigned int dungeon_id)
+void Hero::save()
 {
 	STACK_TRACE();
-	actor_id = actor_id; dungeon_id = dungeon_id;	// These will always be 0, so this line is just to silence compiler warnings.
 	try
 	{
 		SQLite::Statement query(*world::save_db(), "INSERT INTO hero (difficulty,style,played) VALUES (?,?,?)");
@@ -90,7 +89,7 @@ void Hero::save(unsigned int actor_id, unsigned int dungeon_id)
 	{
 		guru::halt(e.what());
 	}
-	Actor::save(0, 0);
+	Actor::save();
 
 	std::ofstream tag_file("userdata/save/" + strx::itos(world::slot()) + "/tag.dat");
 	tag_file << name << std::endl;	// The character's name.

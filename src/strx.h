@@ -19,6 +19,7 @@ string			str_tolower(string str);	// Converts a string to lower-case.
 string			str_toupper(string str);	// Converts a string to upper-case.
 vector<string>	string_explode(string str, string separator);	// String split/explode function.
 string			trim_excess_spaces(string source);	// Trims out leading, trailing, and excess (more than one at a time) spaces from a string.
+string			uitos(unsigned long long num);	// Unsigned version of itos().
 int				word_count(string str, string word);	// Returns a count of the amount of times a string is found in a parent string.
 
 }	// namespace strx

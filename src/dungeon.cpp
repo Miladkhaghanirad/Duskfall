@@ -67,6 +67,7 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 		shared_ptr<Actor> new_mob;
 		if (mathx::rnd(10) >= 8) new_mob = data::get_mob("TROLL");
 		else new_mob = data::get_mob("ORC");
+		new_mob->dungeon_id = level;
 		bool success = find_empty_tile(x, y, w, h, new_mob->x, new_mob->y);
 		if (!success) return;
 		actors.push_back(new_mob);
@@ -77,6 +78,7 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 		shared_ptr<Actor> new_item;
 		if (mathx::rnd(2) == 1) new_item = data::get_item("SQUIDDLYBOX");
 		else new_item = data::get_item("JACKET_POTATO");
+		new_item->dungeon_id = level;
 		bool success = find_empty_tile(x, y, w, h, new_item->x, new_item->y);
 		if (!success) return;
 		actors.push_back(new_item);
@@ -337,6 +339,7 @@ void Dungeon::generate_type_a()
 			{
 				tiles[x + y * width] = regular_door;
 				shared_ptr<Actor> door = data::get_tile_feature("DOOR_CLOSED");
+				door->dungeon_id = level;
 				door->x = x; door->y = y;
 				actors.push_back(door);
 			}
@@ -423,13 +426,13 @@ void Dungeon::load()
 		const unsigned int actor_count = world::save_db()->execAndGet("SELECT COUNT(*) FROM actors WHERE did = " + strx::itos(level));
 		SQLite::Statement actors_query(*world::save_db(), "SELECT * FROM actors WHERE did = ?");
 		actors_query.bind(1, level);
-		actors.resize(actor_count);
+		actors.reserve(actor_count);
 		while (actors_query.executeStep())
 		{
 			unsigned int actor_id = actors_query.getColumn("aid").getUInt();
-			shared_ptr<Actor> new_actor = std::make_shared<Actor>();
-			new_actor->load(actor_id, level);
-			actors.at(actor_id) = new_actor;
+			shared_ptr<Actor> new_actor = std::make_shared<Actor>(actor_id, level);
+			new_actor->load();
+			actors.push_back(new_actor);
 		}
 	}
 	catch(std::exception &e)
@@ -707,7 +710,7 @@ void Dungeon::save()
 		actors_sql.bind(1, level);
 		actors_sql.exec();
 		for (unsigned int a = 0; a < actors.size(); a++)
-			actors.at(a)->save(a, level);
+			actors.at(a)->save();
 	}
 	catch(std::exception &e)
 	{

@@ -23,6 +23,7 @@
 namespace world
 {
 
+bool				db_ready = false;		// Is the database available for reading/writing?
 unsigned short		level = 0;				// The current dungeon level depth.
 bool				recalc_lighting = true;	// Recalculate the dynamic lighting at the start of the next turn.
 bool				redraw_full = true;		// Redraw the dungeon entirely at the start of the next turn.
@@ -48,6 +49,7 @@ shared_ptr<Hero> hero()
 void load()
 {
 	STACK_TRACE();
+	db_ready = true;
 	try
 	{
 		SQLite::Statement query(*save_db_ptr, "SELECT * FROM world");
@@ -64,7 +66,7 @@ void load()
 
 	the_dungeon = std::make_shared<Dungeon>(level);
 	the_dungeon->load();
-	the_hero->load(0, 0);
+	the_hero->load();
 	the_hero->recenter_camera();
 	message::load();
 }
@@ -82,7 +84,7 @@ void new_world(unsigned short slot, bool new_save)
 	{
 		guru::halt(e.what());
 	}
-	the_hero = std::make_shared<Hero>();
+	the_hero = std::make_shared<Hero>(1, 0, 0);
 }
 
 // Queues up a recalculation of the game's dynamic lighting.
@@ -96,6 +98,7 @@ void main_loop()
 {
 	STACK_TRACE();
 	std::chrono::time_point<std::chrono::system_clock> game_clock = std::chrono::system_clock::now();
+	guru::game_output(true);
 	while(true)
 	{
 		if (recalc_lighting)
@@ -185,15 +188,17 @@ void save(bool first_time)
 		if (first_time)
 			save_db_ptr->exec("CREATE TABLE world ( id INTEGER PRIMARY KEY AUTOINCREMENT, level INTEGER NOT NULL ); "
 					"CREATE TABLE hero ( id INTEGER PRIMARY KEY AUTOINCREMENT, difficulty INTEGER NOT NULL, style INTEGER NOT NULL, played INTEGER NOT NULL );"
-					"CREATE TABLE actors ( aid INTEGER NOT NULL, did INTEGER NOT NULL, colour INTEGER NOT NULL, name TEXT, flags INTEGER NOT NULL, glyph INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, "
-					"PRIMARY KEY ('aid', 'did') );");
+					"CREATE TABLE actors ( aid PRUMARY KEY INTEGER UNIQUE NOT NULL, did INTEGER NOT NULL, owner INTEGER NOT NULL, colour INTEGER NOT NULL, name TEXT, flags INTEGER NOT NULL, glyph INTEGER NOT NULL, "
+					"x INTEGER NOT NULL, y INTEGER NOT NULL, inventory INTEGER ); "
+					"CREATE TABLE id_seq (next_id INTEGER PRIMARY KEY AUTOINCREMENT); INSERT INTO id_seq DEFAULT VALUES; UPDATE sqlite_sequence SET seq = " + strx::itos(unique_id()) + " WHERE name='id_seq';" );
 
 		save_db_ptr->exec("DELETE FROM world; DELETE FROM hero; DELETE FROM actors;");
 		SQLite::Statement query(*save_db_ptr, "INSERT INTO world (level) VALUES (?)");
 		query.bind(1, level);
 		query.exec();
+		db_ready = true;
 
-		hero()->save(0, 0);
+		hero()->save();
 		the_dungeon->save();
 		message::save();
 		transaction.commit();
@@ -215,6 +220,29 @@ SQLite::Database* save_db()
 unsigned short slot()
 {
 	return save_slot;
+}
+
+// Gets a unique item ID for a SQLite save file.
+unsigned long long unique_id()
+{
+	STACK_TRACE();
+	if (!db_ready)
+	{
+		// Use this simple system for the initial dungeon generation, then we can rely on SQLite for the rest.
+		static unsigned long long temporary_id = 1000;
+		return ++temporary_id;
+	}
+	try
+	{
+		save_db_ptr->exec("DELETE FROM id_seq; INSERT INTO id_seq DEFAULT VALUES;");
+		SQLite::Statement query(*save_db_ptr, "SELECT last_insert_rowid();");
+		if (query.executeStep()) return query.getColumn("last_insert_rowid()").getInt64();
+	}
+	catch (std::exception &e)
+	{
+		guru::halt(e.what());
+	}
+	return 0;
 }
 
 }	// namespace world

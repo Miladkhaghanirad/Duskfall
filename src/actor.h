@@ -4,7 +4,8 @@
 #pragma once
 #include "duskfall.h"
 
-class AI;	// defined in ai.h
+class AI;			// defined in ai.h
+class Inventory;	// defined in inventory.h
 enum class Colour : unsigned char;	// defined in iocore.h
 
 #define ACTOR_FLAG_BLOCKER		(1 << 0)	// Does this Actor block movement?
@@ -18,7 +19,7 @@ enum class Colour : unsigned char;	// defined in iocore.h
 class Actor
 {
 public:
-					Actor();
+					Actor(unsigned long long new_id, unsigned int new_dungeon_id = 0, unsigned long long new_owner_id = 0);
 	virtual			~Actor();
 	bool			blocker() { return (flags & ACTOR_FLAG_BLOCKER) == ACTOR_FLAG_BLOCKER; }
 	bool			blocks_los() { return (flags & ACTOR_FLAG_BLOCKS_LOS) == ACTOR_FLAG_BLOCKS_LOS; }
@@ -28,14 +29,18 @@ public:
 	bool			is_item() { return (flags & ACTOR_FLAG_ITEM) == ACTOR_FLAG_ITEM; }
 	bool			is_monster() { return (flags & ACTOR_FLAG_MONSTER) == ACTOR_FLAG_MONSTER; }
 	bool			low_priority_rendering() { return is_item(); }
-	virtual void	load(unsigned int actor_id, unsigned int dungeon_id);		// Loads this Actor's data from disk.
-	virtual void	save(unsigned int actor_id, unsigned int dungeon_id);		// Saves this Actor's data to disk.
+	virtual void	load();	// Loads this Actor's data from disk.
+	virtual void	save();	// Saves this Actor's data to disk.
 	void			set_flag(unsigned int flag);	// Sets a flag on this Actor.
 
-	AI*				ai;	// If this Actor has AI, this is where its 'brain' is.
-	Colour			colour;	// The colour of this Actor's glyph.
-	string			name;	// The Actor's name.
-	unsigned char	flags;	// The Actor's individual flags.
-	unsigned short	glyph;	// The glyph to represent this Actor in the world.
-	unsigned short	x, y;	// X,Y coordinates on the current dungeon level.
+	shared_ptr<AI>	ai;			// If this Actor has AI, this is where its 'brain' is.
+	Colour			colour;		// The colour of this Actor's glyph.
+	unsigned int	dungeon_id;	// The ID of the dungeon level this Actor is on.
+	unsigned char	flags;		// The Actor's individual flags.
+	unsigned short	glyph;		// The glyph to represent this Actor in the world.
+	unsigned long long	id;		// The unique ID for this Actor.
+	shared_ptr<Inventory>	inventory;	// If this Actor has an Inventory, it attaches here.
+	string			name;		// The Actor's name.
+	unsigned long long	owner_id;	// ID of an Actor that 'owns' this Actor (e.g. an inventory containing items)
+	unsigned short	x, y;		// X,Y coordinates on the current dungeon level.
 };

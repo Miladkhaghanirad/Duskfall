@@ -15,5 +15,5 @@ public:
 	virtual bool	travel(short x_dir, short y_dir);	// Attempts to travel in a given direction.
 
 protected:
-	Actor*	owner;	// The Actor that owns this AI.
+	Actor*	owner;	// The Actor that owns this AI. This should NOT be a shared_ptr, as that creates some nasty issues during object destruction.
 };

@@ -225,7 +225,9 @@ void save()
 		for (unsigned int i = 0; i < output_raw.size(); i++)
 		{
 			SQLite::Statement query(*world::save_db(), "INSERT INTO msgbuffer (line) VALUES (?)");
-			query.bind(1, output_raw.at(i));
+			string line = output_raw.at(i);
+			if (line == "{5B}Saving game...") line = "{5B}Saving game... done!";
+			query.bind(1, line);
 			query.exec();
 		}
 	}

@@ -4,6 +4,7 @@
 #include "filex.h"
 #include "guru.h"
 #include "iocore.h"
+#include "message.h"
 #include "strx.h"
 
 #include <ctime>
@@ -14,12 +15,13 @@
 namespace guru
 {
 
-bool			dead_already;	// Have we already died? Is this crash within the Guru subsystem?
-bool			flash_state;	// Is the box flashing?
-bool			fully_active;	// Is the Guru system fully activated yet?
-string			message;		// The error message.
-int				redraw_cycle;	// Used by the rendering system.
-std::ofstream	syslog;			// The system log file.
+bool			dead_already = false;	// Have we already died? Is this crash within the Guru subsystem?
+bool			flash_state = true;		// Is the box flashing?
+bool			fully_active = false;	// Is the Guru system fully activated yet?
+string			message;				// The error message.
+bool			output_to_game = false;	// When this is set to true, Guru errors will output to the main game window.
+int				redraw_cycle = 0;		// Used by the rendering system.
+std::ofstream	syslog;					// The system log file.
 
 
 // Closes the Guru log file.
@@ -35,6 +37,13 @@ void close_syslog()
 void console_ready(bool ready)
 {
 	fully_active = ready;
+	if (!ready) output_to_game = false;
+}
+
+// Enables or disables output of Guru logging into the in-game message window.
+void game_output(bool enabled)
+{
+	output_to_game = enabled;
 }
 
 // Guru meditation error.
@@ -63,6 +72,7 @@ void halt(string error)
 		exit(2);
 	}
 	dead_already = true;	// You only die once.
+	output_to_game = false;
 
 	message = error;
 	if (message.size() > 39) message = message.substr(0, 38) + "^330^";
@@ -110,12 +120,13 @@ void log(string msg, int type)
 	STACK_TRACE();
 	if (!syslog.is_open()) return;
 	string txt_tag = "???", tag_colour = "{5F}";
+	MC message_colour = MC::NONE;
 	switch(type)
 	{
-		case GURU_INFO: txt_tag = ""; tag_colour = ""; break;
-		case GURU_WARN: txt_tag = "[WARN] "; tag_colour = "{5E}"; break;
-		case GURU_ERROR: txt_tag = "[ERROR] "; tag_colour = "{5C}"; break;
-		case GURU_CRITICAL: txt_tag = "[CRITICAL] "; tag_colour = "{5D}"; break;
+		case GURU_INFO: txt_tag = ""; tag_colour = ""; message_colour = MC::INFO; break;
+		case GURU_WARN: txt_tag = "[WARN] "; tag_colour = "{5E}"; message_colour = MC::WARN; break;
+		case GURU_ERROR: txt_tag = "[ERROR] "; tag_colour = "{5C}"; message_colour = MC::BAD; break;
+		case GURU_CRITICAL: txt_tag = "[CRITICAL] "; tag_colour = "{5D}"; message_colour = MC::AWFUL; break;
 		case GURU_STACK: txt_tag = ""; tag_colour = "{5F}"; break;
 	}
 
@@ -126,6 +137,8 @@ void log(string msg, int type)
 	string time_str = &buffer[0];
 	msg = "[" + time_str + "] " + txt_tag + msg;
 	syslog << msg << std::endl;
+
+	if (output_to_game && type != GURU_STACK) message::msg("[*] " + msg, message_colour);
 }
 
 // Opens the output log for messages.

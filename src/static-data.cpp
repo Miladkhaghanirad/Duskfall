@@ -8,6 +8,7 @@
 #include "iocore.h"
 #include "static-data.h"
 #include "strx.h"
+#include "world.h"
 
 #include "jsoncpp/json/json.h"
 
@@ -32,7 +33,9 @@ shared_ptr<Actor> get_item(string item_id)
 	STACK_TRACE();
 	auto found = static_item_data.find(item_id);
 	if (found == static_item_data.end()) guru::halt("Could not find item ID " + item_id + "!");
-	return std::make_shared<Actor>(*found->second);
+	shared_ptr<Actor> result = std::make_shared<Actor>(*found->second);
+	result->id = world::unique_id();
+	return result;
 }
 
 // Retrieves a copy of a specified mob.
@@ -41,7 +44,9 @@ shared_ptr<Actor> get_mob(string mob_id)
 	STACK_TRACE();
 	auto found = static_mob_data.find(mob_id);
 	if (found == static_mob_data.end()) guru::halt("Could not find mob ID " + mob_id + "!");
-	return std::make_shared<Actor>(*found->second);
+	shared_ptr<Actor> result = std::make_shared<Actor>(*found->second);
+	result->id = world::unique_id();
+	return result;
 }
 
 // Retrieves a copy of a specified Tile
@@ -59,7 +64,9 @@ shared_ptr<Actor> get_tile_feature(string feature_id)
 	STACK_TRACE();
 	auto found = static_tile_feature_data.find(feature_id);
 	if (found == static_tile_feature_data.end()) guru::halt("Could not find tile feature ID " + feature_id + "!");
-	return std::make_shared<Actor>(*found->second);
+	shared_ptr<Actor> result = std::make_shared<Actor>(*found->second);
+	result->id = world::unique_id();
+	return result;
 }
 
 // Loads the static data from JSON files.
@@ -86,7 +93,7 @@ void init_actors_json(string filename, ActorType type, std::unordered_map<string
 	{
 		const string actor_id = jmem.at(i);
 		const Json::Value jval = json[actor_id];
-		auto actor = std::make_shared<Actor>();
+		auto actor = std::make_shared<Actor>(0);
 
 		const string actor_name = jval.get("name", "").asString();
 		if (!actor_name.size()) guru::log("No actor name specified for " + actor_id, GURU_WARN);

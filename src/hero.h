@@ -8,13 +8,13 @@
 class Hero : public Actor
 {
 public:
-			Hero();
+			Hero(unsigned long long new_id, unsigned int new_dungeon_id = 0, unsigned long long new_owner_id = 0);
 			~Hero();
-	void	load(unsigned int actor_id, unsigned int dungeon_id) override;	// Loads the Hero's data from disk.
+	void	load() override;	// Loads the Hero's data from disk.
 	void	recenter_camera();	// Recenters the camera on the Hero's position.
 	void	recenter_camera_horiz();	// Recenters the camera horizontally on the Hero's position, not adjusting the vertical.
 	void	recenter_camera_vert();		// Recenters the camera vertically on the Hero's position, not adjusting the horizontal.
-	void	save(unsigned int actor_id, unsigned int dungeon_id) override;	// Saves the Hero's data to disk, along with the rest of the game world.
+	void	save() override;	// Saves the Hero's data to disk, along with the rest of the game world.
 
 	short			camera_off_x, camera_off_y;	// The 'camera' offset, allowing us to scroll around a multi-screen dungeon.
 	unsigned char	difficulty;	// The current difficulty level.

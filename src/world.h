@@ -23,5 +23,6 @@ void				queue_redraw();				// Queues up a full redraw of the game world.
 void				save(bool first_time = false);	// Saves the game to disk.
 SQLite::Database*	save_db();		// Returns a pointer to the save file handle.
 unsigned short		slot();			// Read-only access to the save slot currently in use.
+unsigned long long	unique_id();	// Gets a unique ID for a SQLite save file.
 
 }	// namespace world
