@@ -108,7 +108,7 @@ void Dungeon::cast_light(unsigned int x, unsigned int y, unsigned int radius, un
 			Tile *tile = &tiles[ax + ay * width];
 			if (blocked)
 			{
-				if (tile->opaque())
+				if (tile->opaque() || tile_contains_los_blocker(ax, ay))
 				{
 					next_start_slope = r_slope;
 					continue;
@@ -119,7 +119,7 @@ void Dungeon::cast_light(unsigned int x, unsigned int y, unsigned int radius, un
 					start_slope = next_start_slope;
 				}
 			}
-			else if (tile->opaque())
+			else if (tile->opaque() || tile_contains_los_blocker(ax, ay))
 			{
 				blocked = true;
 				next_start_slope = r_slope;
@@ -451,6 +451,8 @@ bool Dungeon::los_check(unsigned short x1, unsigned short y1)
 			error += delta_y;
 			x1 += ix;
 
+			// We're not calling tile_contains_los_blocker() here, as this function is used to see if a tile would be within a player's
+			// line of sight, for calculating things like dynamic lighting.
 			if (tiles[x1 + y1 * width].opaque()) return false;
 		}
 	}
@@ -684,6 +686,15 @@ shared_ptr<Tile> Dungeon::tile(unsigned short x, unsigned short y)
 	STACK_TRACE();
 	if (x >= width || y >= height) guru::halt("Attempted to set out-of-bounds tile.");
 	return std::make_shared<Tile>(tiles[x + y * width]);
+}
+
+// Checks if a tile contains an Actor that blocks line-of-sight.
+bool Dungeon::tile_contains_los_blocker(unsigned short x, unsigned short y)
+{
+	STACK_TRACE();
+	for (auto actor : actors)
+		if (actor->x == x && actor->y == y && (actor->flags & ACTOR_FLAG_BLOCKS_LOS) == ACTOR_FLAG_BLOCKS_LOS) return true;
+	return false;
 }
 
 // Checks if this tile touches a different region.

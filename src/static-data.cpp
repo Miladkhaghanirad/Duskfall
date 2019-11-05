@@ -63,6 +63,8 @@ void init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor)
 	const string actor_glyph_unparsed = jval.get("glyph", "").asString();
 	if (!actor_glyph_unparsed.size()) guru::log("No actor glyph specified for " + actor_id, GURU_WARN);
 	actor->glyph = parse_glyph_string(actor_glyph_unparsed);
+
+	if (jval.get("blocks_los", false).asBool()) actor->flags |= ACTOR_FLAG_BLOCKS_LOS;
 }
 
 // Load the data from mobs.json

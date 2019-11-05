@@ -15,6 +15,7 @@
 "TROLL" : {
 	"armour" : 1,
 	"attack" : 4,
+	"blocks_los" : true,
 	"colour" : "GREEN_LIGHT",
 	"glyph" : "T",
 	"hp" : 16,

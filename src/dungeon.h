@@ -70,6 +70,7 @@ private:
 	void	light_tile(unsigned short x, unsigned short y, s_rgb colour);	// Applies light to a specified tile.
 	void	recalc_light_source(unsigned short x, unsigned short y, s_rgb colour, unsigned short radius, bool always_visible = false);	// Recalculates a specific light source.
 	void	region_floodfill(unsigned short x, unsigned short y, unsigned int new_region);		// Flood-fills a specified area with a new region ID.
+	bool	tile_contains_los_blocker(unsigned short x, unsigned short y);	// Checks if a tile contains an Actor that blocks line-of-sight.
 	bool	touches_two_regions(unsigned short x, unsigned short y);	// Checks if this tile touches a different region.
 	bool	viable_doorway(unsigned short x, unsigned short y);			// Checks if this tile is a viable doorway.
 	bool	viable_maze_position(unsigned short x, unsigned short y);	// Checks if this tile is a viable position to build a maze corridor.

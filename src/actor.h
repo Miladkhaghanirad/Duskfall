@@ -7,7 +7,8 @@
 class AI;	// defined in ai.h
 enum class Colour : unsigned char;	// defined in iocore.h
 
-#define ACTOR_FLAG_BLOCKER	(1 << 0)	// Does this Actor block movement?
+#define ACTOR_FLAG_BLOCKER		(1 << 0)	// Does this Actor block movement?
+#define ACTOR_FLAG_BLOCKS_LOS	(1 << 1)	// Is this Actor large enough to block line-of-sight?
 
 
 class Actor
