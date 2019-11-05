@@ -54,6 +54,9 @@ void init()
 void init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor, ActorType type)
 {
 	STACK_TRACE();
+
+	const std::unordered_map<string, unsigned int> actor_flag_map = { { "BLOCKS_LOS", ACTOR_FLAG_BLOCKS_LOS } };
+
 	const string actor_name = jval.get("name", "").asString();
 	if (!actor_name.size()) guru::log("No actor name specified for " + actor_id, GURU_WARN);
 	else actor->name = actor_name;
@@ -66,14 +69,29 @@ void init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor,
 	if (!actor_glyph_unparsed.size()) guru::log("No actor glyph specified for " + actor_id, GURU_WARN);
 	actor->glyph = parse_glyph_string(actor_glyph_unparsed);
 
-	if (jval.get("blocker", false).asBool()) actor->flags |= ACTOR_FLAG_BLOCKER;
-	if (jval.get("blocks_los", false).asBool()) actor->flags |= ACTOR_FLAG_BLOCKS_LOS;
-	if (jval.get("monster", false).asBool()) actor->flags |= ACTOR_FLAG_MONSTER;
+	const string actor_flags_unparsed = jval.get("flags", "").asString();
+	actor->flags = 0;
+	bool not_monster = false, not_blocker = false;	// override flags
+	if (actor_flags_unparsed.size())
+	{
+		const vector<string> actor_flags_vec = strx::string_explode(actor_flags_unparsed, " ");
+		for (auto flag : actor_flags_vec)
+		{
+			auto found = actor_flag_map.find(strx::str_toupper(flag));
+			if (found == actor_flag_map.end())
+			{
+				if (flag == "!MONSTER") not_monster = true;
+				else if (flag == "!BLOCKER") not_blocker = true;
+				else guru::log("Unknown actor flag for " + actor_id + ": " + flag, GURU_WARN);
+			}
+			else actor->flags |= found->second;
+		}
+	}
 
 	if (type == ActorType::MONSTER)
 	{
-		if (jval.get("monster", true).asBool()) actor->flags |= ACTOR_FLAG_MONSTER;	// Mobs are counted as monsters unless specified otherwise.
-		if (jval.get("blocker", true).asBool()) actor->flags |= ACTOR_FLAG_BLOCKER;	// Same with the blocker flag.
+		if (!not_monster) actor->flags |= ACTOR_FLAG_MONSTER;	// Mobs are counted as monsters unless specified otherwise.
+		if (!not_blocker) actor->flags |= ACTOR_FLAG_BLOCKER;	// Same with the blocker flag.
 	}
 }
 
