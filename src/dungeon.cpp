@@ -9,9 +9,8 @@
 #include "message.h"
 #include "prefs.h"
 #include "static-data.h"
-#include "world.h"
-
 #include "strx.h"
+#include "world.h"
 
 #include "SQLiteCpp/SQLiteCpp.h"
 
@@ -60,7 +59,6 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 	// Put things in this room!
 	if (w <= 1 || h <= 1) return;
 	unsigned int monsters_here = mathx::rnd(4) - 1;
-	guru::log(strx::itos(monsters_here));
 	while (monsters_here)
 	{
 		monsters_here--;
@@ -402,8 +400,6 @@ void Dungeon::load()
 		}
 
 		const unsigned int actor_count = world::save_db()->execAndGet("SELECT COUNT(*) FROM actors WHERE did = " + strx::itos(level));
-		guru::log(strx::itos(actor_count));
-
 		SQLite::Statement actors_query(*world::save_db(), "SELECT * FROM actors WHERE did = ?");
 		actors_query.bind(1, level);
 		actors.resize(actor_count);
