@@ -3,12 +3,11 @@
 
 #pragma once
 
-class Guru;	// defined in guru.h
+class	Guru;			// defined in guru.h
+struct	SDL_Surface;	// defined in sdl/SDL2.h
 
 #include "duskfall.h"
-#include <unordered_map>
-#include "sdl2/sdl.h"
-#include "snes_ntsc/snes_ntsc.h"
+
 
 // Colour code definitions.
 enum class Colour : unsigned char { GRAY = 0x00, AQUA, BLUE, PURPLE, MAGENTA, PINK, RED, ORANGE, YELLOW, LIME, GREEN, TURQ, CYAN, BLACK, BROWN, ERROR_COLOUR, GRAY_LIGHT, AQUA_LIGHT, BLUE_LIGHT, PURPLE_LIGHT, MAGENTA_LIGHT,
@@ -73,14 +72,6 @@ enum { SHIFT_LEFT = 27, SHIFT_RIGHT, SHIFT_UP, SHIFT_DOWN };
 #define MOUSEWHEEL_UP_KEY	(UINT_MAX - 3)
 #define MOUSEWHEEL_DOWN_KEY	(UINT_MAX - 4)
 
-// Struct definitions
-struct s_glitch
-{
-	unsigned int x, y, w, h;
-	int off_x, off_y;
-	bool black;
-	SDL_Surface *surf;
-};
 
 namespace iocore
 {

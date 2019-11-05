@@ -3,7 +3,6 @@
 
 #pragma once
 #include "duskfall.h"
-#include <unordered_map>
 
 class Actor;	// defined in actor.h
 class Tile;		// defined in dungeon.h

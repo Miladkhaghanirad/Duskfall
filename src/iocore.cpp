@@ -11,12 +11,16 @@
 
 #include "lodepng/bmp2png.h"
 #include "sdl_savejpeg/SDL_savejpeg.h"
-#include "SDL2/SDL_image.h"
+#include "sdl2/SDL.h"
+#include "sdl2/SDL_image.h"
+#include "snes_ntsc/snes_ntsc.h"
 
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <thread>
+#include <unordered_map>
+
 
 #define	SCREEN_MIN_X		1024	// Minimum X-resolution of the screen. Should not be lower than 1024.
 #define SCREEN_MIN_Y		600		// Minimum Y-resolution of the screen. Should not be lower than 600.
@@ -88,6 +92,15 @@ unsigned int build_version() { return atoi(cc_date); }
 
 namespace iocore
 {
+
+// Struct definitions
+struct s_glitch
+{
+	unsigned int x, y, w, h;
+	int off_x, off_y;
+	bool black;
+	SDL_Surface *surf;
+};
 
 SDL_Surface		*alagard = nullptr;		// The texture for the large bitmap font.
 bool			cleaned_up = false;		// Have we run the exit functions already?

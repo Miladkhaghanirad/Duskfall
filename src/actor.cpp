@@ -2,7 +2,6 @@
 // Copyright (c) 2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
 #include "actor.h"
-#include "ai.h"
 #include "guru.h"
 #include "iocore.h"
 #include "world.h"

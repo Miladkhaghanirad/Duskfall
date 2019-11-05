@@ -11,6 +11,8 @@
 
 #include "jsoncpp/json/json.h"
 
+#include <unordered_map>
+
 
 namespace data
 {

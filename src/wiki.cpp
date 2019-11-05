@@ -9,7 +9,9 @@
 
 #include "jsoncpp/json/json.h"
 
-#include "guru.h"
+#include <unordered_map>
+
+
 #define WIKIBUF_MAX	256	// Maximum size of the wiki buffer.
 
 

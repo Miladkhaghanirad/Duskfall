@@ -7,6 +7,7 @@
 #include "prefs.h"
 #include "strx.h"
 
+#include "sdl2/SDL.h"
 #include "SQLiteCpp/SQLiteCpp.h"
 
 

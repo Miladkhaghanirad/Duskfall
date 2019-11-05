@@ -13,13 +13,13 @@
 #include "wiki.h"
 #include "world.h"
 
+#include "sdl2/SDL.h"
 #include "SQLiteCpp/SQLiteCpp.h"
 
 #include <chrono>
 #include <cmath>
 #include <fstream>
 
-#include "dungeon.h"	// temp
 
 namespace title
 {
