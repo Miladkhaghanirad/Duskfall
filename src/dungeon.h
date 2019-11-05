@@ -13,12 +13,13 @@ enum class Colour : unsigned char;	// defined in iocore.h
 #define TILE_FLAG_WALL			(1 << 2)
 #define TILE_FLAG_PERMAWALL		(1 << 3)
 #define TILE_FLAG_EXPLORED		(1 << 4)
+#define TILE_FLAG_INVERSE		(1 << 5)
 
 
 struct Tile
 {
 	unsigned short	glyph;	// The symbol used to represent this tile.
-	Colour			colour;	// The base colour of this tile, before any lighting effects.
+	Colour			colour, bg_colour;	// The base colour of this tile, before any lighting effects.
 	unsigned char	flags;	// Various properties of this tile.
 	unsigned int	name;	// An integer for the tile's hashed name, which is decoded elsewhere.
 
@@ -26,6 +27,7 @@ struct Tile
 	bool	destroyable_wall() { return wall() && !permawall(); }
 	bool	explored() { return (flags & TILE_FLAG_EXPLORED) == TILE_FLAG_EXPLORED; }
 	bool	impassible() { return (flags & TILE_FLAG_IMPASSIBLE) == TILE_FLAG_IMPASSIBLE; }
+	bool	inverse() { return (flags & TILE_FLAG_INVERSE) == TILE_FLAG_INVERSE; }
 	bool	opaque() { return (flags & TILE_FLAG_OPAQUE) == TILE_FLAG_OPAQUE; }
 	bool	permawall() { return (flags & TILE_FLAG_PERMAWALL) == TILE_FLAG_PERMAWALL; }
 	bool	wall() { return (flags & TILE_FLAG_WALL) == TILE_FLAG_WALL; }

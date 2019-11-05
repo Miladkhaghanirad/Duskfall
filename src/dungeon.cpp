@@ -348,7 +348,6 @@ s_rgb Dungeon::light_surface(s_rgb surface_colour, s_rgb light_colour)
 	{
 		float light_perc = static_cast<float>(light) / 255.0f;
 		unsigned char modified_surf = static_cast<unsigned char>(round(static_cast<float>(surf) * light_perc));
-		//unsigned char modified_surf = (surf / 2) + (light / 2);
 		if (modified_surf < 20 && surf > 0 && light > 0)
 		{
 			if (surf >= 20) modified_surf = 20;
@@ -641,11 +640,24 @@ void Dungeon::render(bool render_lighting, bool see_all)
 					else
 					{
 						sidebar::tile_in_sight(here);
-						iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, here_col.r, here_col.g, here_col.b);
+						if (here.inverse())
+						{
+							iocore::print_at(Glyph::BLOCK_SOLID, screen_x, screen_y, here_col.r, here_col.g, here_col.b);
+							iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, Colour::BLACK_LIGHT, PRINT_FLAG_ALPHA);
+						}
+						else iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, here_col.r, here_col.g, here_col.b);
 					}
 					explore(x, y);
 				}
-				else if (here.explored()) iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, 30, 30, 30);
+				else if (here.explored())
+				{
+					if (here.inverse())
+					{
+						iocore::print_at(Glyph::BLOCK_SOLID, screen_x, screen_y, 30, 30, 30);
+						iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, Colour::BLACK_LIGHT, PRINT_FLAG_ALPHA);
+					}
+					else iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, 30, 30, 30);
+				}
 			}
 		}
 	}

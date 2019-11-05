@@ -100,7 +100,7 @@ void init_tiles_json()
 	STACK_TRACE();
 
 	const std::unordered_map<string, unsigned int> tile_flag_map = { { "IMPASSIBLE", TILE_FLAG_IMPASSIBLE }, { "OPAQUE", TILE_FLAG_OPAQUE }, { "WALL", TILE_FLAG_WALL }, { "PERMAWALL", TILE_FLAG_PERMAWALL },
-		{ "EXPLORED", TILE_FLAG_EXPLORED } };
+		{ "EXPLORED", TILE_FLAG_EXPLORED }, { "INVERSE", TILE_FLAG_INVERSE } };
 
 	Json::Value json = filex::load_json("tiles");
 	const Json::Value::Members jmem = json.getMemberNames();
