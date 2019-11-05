@@ -15,7 +15,7 @@ namespace sidebar
 {
 
 vector<shared_ptr<Actor>>	actors_in_sight;	// The list of visible Actors.
-unsigned int				sidebar_row = 1;				// The current row we're writing on.
+unsigned int				sidebar_row = 1;	// The current row we're writing on.
 vector<shared_ptr<Tile>>	tiles_in_sight;		// The list of visible Tiles.
 
 
@@ -54,14 +54,37 @@ void render()
 
 	if (actors_in_sight.size())
 	{
-		sidebar::print("{5F}Monsters nearby:");
+		bool monsters = false, items = false;
 		for (auto actor : actors_in_sight)
 		{
-			if ((actor->flags & ACTOR_FLAG_MONSTER) != ACTOR_FLAG_MONSTER) continue;
-			iocore::print_at(actor->glyph, iocore::get_cols() - SIDEBAR_WIDTH_8X8 + 1, sidebar_row, actor->colour);
-			sidebar::print("{57}" + actor->name, 1);
+			if (actor->is_monster()) monsters = true;
+			if (actor->is_item()) items = true;
+			if (monsters && items) break;
 		}
-		sidebar_row++;
+
+		if (monsters)
+		{
+			sidebar::print("{5F}Monsters nearby:");
+			for (auto actor : actors_in_sight)
+			{
+				if (!actor->is_monster()) continue;
+				iocore::print_at(actor->glyph, iocore::get_cols() - SIDEBAR_WIDTH_8X8 + 1, sidebar_row, actor->colour);
+				sidebar::print("{57}" + actor->name, 1);
+			}
+			sidebar_row++;
+		}
+
+		if (items)
+		{
+			sidebar::print("{5F}Items nearby:");
+			for (auto actor : actors_in_sight)
+			{
+				if (!actor->is_item()) continue;
+				iocore::print_at(actor->glyph, iocore::get_cols() - SIDEBAR_WIDTH_8X8 + 1, sidebar_row, actor->colour);
+				sidebar::print("{57}" + actor->name, 1);
+			}
+			sidebar_row++;
+		}
 	}
 
 	if (tiles_in_sight.size())

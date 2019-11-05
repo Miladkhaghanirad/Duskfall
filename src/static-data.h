@@ -14,10 +14,12 @@ namespace Json { class Value; }			// defined in json.cpp/json/json.h
 namespace data
 {
 
+shared_ptr<Actor>	get_item(string item_id);	// Retrieves a copy of the specified item.
 shared_ptr<Actor>	get_mob(string mob_id);		// Retrieves a copy of a specified mob.
 Tile				get_tile(string tile_id);	// Retrieves a copy of a specified Tile.
 void				init();	// Loads the static data from JSON files.
 void				init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor, ActorType type);	// Loads an Actor's data from JSON.
+void				init_items_json();	// Load the data from items.json
 void				init_mobs_json();	// Load the data from mobs.json
 void				init_tiles_json();	// Load the data from tiles.json
 Colour				parse_colour_string(string colour_string);	// Parses a colour string into a Colour.

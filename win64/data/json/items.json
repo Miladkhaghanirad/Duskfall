@@ -1,0 +1,18 @@
+// items.json -- This is where all the items in the game world are defined.
+// Copyright (c) 2019 Raine "Gravecat" Simmons. All rights reserved.
+
+{
+
+"JACKET_POTATO" : {
+	"colour" : "BROWN_LIGHT",
+	"glyph" : "*",
+	"name" : "jacket potato"
+},
+
+"SQUIDDLYBOX" : {
+	"colour" : "PURPLE_BRIGHT",
+	"glyph" : "&",
+	"name" : "squiddlybox"
+}
+
+}

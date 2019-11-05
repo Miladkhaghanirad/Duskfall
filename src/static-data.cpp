@@ -13,15 +13,26 @@
 
 #include <unordered_map>
 
-enum class ActorType : unsigned int { MONSTER };
+enum class ActorType : unsigned int { MONSTER, ITEM };
 
 
 namespace data
 {
 
+std::unordered_map<string, shared_ptr<Actor>>	static_item_data;	// The data containing templates for items from items.json
 std::unordered_map<string, shared_ptr<Actor>>	static_mob_data;	// The data containing templates for monsters from mobs.json
 std::unordered_map<string, shared_ptr<Tile>>	static_tile_data;	// The data about dungeon tiles from tiles.json
 std::unordered_map<unsigned int, string>		tile_names;	// The tile name strings, which are stored as integers on the tiles themselves.
+
+
+// Retrieves a copy of the specified item.
+shared_ptr<Actor> get_item(string item_id)
+{
+	STACK_TRACE();
+	auto found = static_item_data.find(item_id);
+	if (found == static_item_data.end()) guru::halt("Could not find item ID " + item_id + "!");
+	return std::make_shared<Actor>(*found->second);
+}
 
 // Retrieves a copy of a specified mob.
 shared_ptr<Actor> get_mob(string mob_id)
@@ -48,6 +59,7 @@ void init()
 	guru::log("Attempting to load static data from JSON files...", GURU_INFO);
 	init_tiles_json();
 	init_mobs_json();
+	init_items_json();
 }
 
 // Loads an Actor's data from JSON.
@@ -71,7 +83,7 @@ void init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor,
 
 	const string actor_flags_unparsed = jval.get("flags", "").asString();
 	actor->flags = 0;
-	bool not_monster = false, not_blocker = false;	// override flags
+	bool not_monster = false, not_blocker = false, not_item = false;	// override flags
 	if (actor_flags_unparsed.size())
 	{
 		const vector<string> actor_flags_vec = strx::string_explode(actor_flags_unparsed, " ");
@@ -82,6 +94,7 @@ void init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor,
 			{
 				if (flag == "!MONSTER") not_monster = true;
 				else if (flag == "!BLOCKER") not_blocker = true;
+				else if (flag == "!ITEM") not_item = true;
 				else guru::log("Unknown actor flag for " + actor_id + ": " + flag, GURU_WARN);
 			}
 			else actor->flags |= found->second;
@@ -92,6 +105,24 @@ void init_actor_json(Json::Value jval, string actor_id, shared_ptr<Actor> actor,
 	{
 		if (!not_monster) actor->flags |= ACTOR_FLAG_MONSTER;	// Mobs are counted as monsters unless specified otherwise.
 		if (!not_blocker) actor->flags |= ACTOR_FLAG_BLOCKER;	// Same with the blocker flag.
+	}
+	else if (type == ActorType::ITEM && !not_item) actor->flags |= ACTOR_FLAG_ITEM;	// Items are marked as items unless specified otherwise.
+}
+
+// Load the data from items.json
+void init_items_json()
+{
+	STACK_TRACE();
+
+	Json::Value json = filex::load_json("items");
+	const Json::Value::Members jmem = json.getMemberNames();
+	for (unsigned int i = 0; i < jmem.size(); i++)
+	{
+		const string actor_id = jmem.at(i);
+		const Json::Value jval = json[actor_id];
+		auto new_item = std::make_shared<Actor>();
+		init_actor_json(jval, actor_id, new_item, ActorType::ITEM);
+		static_item_data.insert(std::pair<string, shared_ptr<Actor>>(actor_id, new_item));
 	}
 }
 

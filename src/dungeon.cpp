@@ -60,6 +60,7 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 	// Put things in this room!
 	if (w <= 1 || h <= 1) return;
 	unsigned int monsters_here = mathx::rnd(4) - 1;
+	unsigned int items_here = mathx::rnd(3) - 1;
 	while (monsters_here)
 	{
 		monsters_here--;
@@ -69,6 +70,16 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 		bool success = find_empty_tile(x, y, w, h, new_mob->x, new_mob->y);
 		if (!success) return;
 		actors.push_back(new_mob);
+	}
+	while (items_here)
+	{
+		items_here--;
+		shared_ptr<Actor> new_item;
+		if (mathx::rnd(2) == 1) new_item = data::get_item("SQUIDDLYBOX");
+		else new_item = data::get_item("JACKET_POTATO");
+		bool success = find_empty_tile(x, y, w, h, new_item->x, new_item->y);
+		if (!success) return;
+		actors.push_back(new_item);
 	}
 }
 
@@ -628,8 +639,11 @@ void Dungeon::render(bool render_lighting, bool see_all)
 					{
 						if (actor->x == x && actor->y == y)
 						{
-							actor_here = actor;	// todo: Handle stacking here (i.e. mobs stand on items, etc.)
-							break;
+							if (actor_here)
+							{
+								if (actor_here->low_priority_rendering() && !actor->low_priority_rendering()) actor_here = actor;
+							}
+							else actor_here = actor;
 						}
 					}
 					if (actor_here)
@@ -712,7 +726,7 @@ bool Dungeon::tile_contains_los_blocker(unsigned short x, unsigned short y)
 {
 	STACK_TRACE();
 	for (auto actor : actors)
-		if (actor->x == x && actor->y == y && (actor->flags & ACTOR_FLAG_BLOCKS_LOS) == ACTOR_FLAG_BLOCKS_LOS) return true;
+		if (actor->x == x && actor->y == y && actor->blocks_los()) return true;
 	return false;
 }
 
