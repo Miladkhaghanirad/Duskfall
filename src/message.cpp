@@ -22,6 +22,7 @@ unsigned int	buffer_pos = 0;	// The position of the output buffer.
 unsigned int	messages_since_last_reset = 0;	// How many messages arrived since the player last took their turn?
 unsigned int	old_cols = 0;	// Old column count, for determining auto buffer shunting.
 vector<string>	output_prc;		// The nicely processed output buffer, ready for rendering.
+vector<unsigned int>	output_prc_count;	// Duplicate line count for the processed buffer.
 vector<string>	output_raw;		// The raw, unprocessed output buffer.
 
 // Amends the last message, adding additional text.
@@ -40,6 +41,7 @@ void load()
 	STACK_TRACE();
 	output_raw.clear();
 	output_prc.clear();
+	output_prc_count.clear();
 	try
 	{
 		SQLite::Statement query(*world::save_db(), "SELECT line FROM msgbuffer");
@@ -144,6 +146,7 @@ void process_output_buffer()
 
 	// Clear the processed buffer.
 	output_prc.clear();
+	output_prc_count.clear();
 	if (!output_raw.size()) return;
 
 	// Process the output buffer.
@@ -151,7 +154,14 @@ void process_output_buffer()
 	{
 		vector<string> line_vec = strx::ansi_vector_split(output_raw.at(i), iocore::get_cols_narrow() - 2);
 		for (auto line : line_vec)
-			output_prc.push_back(line);
+		{
+			if (output_prc.size() && output_prc.at(output_prc.size() - 1) == line) output_prc_count.at(output_prc.size() - 1)++;
+			else
+			{
+				output_prc.push_back(line);
+				output_prc_count.push_back(1);
+			}
+		}
 	}
 
 	// Reset the buffer position if needed.
@@ -185,7 +195,7 @@ void render()
 				dim_amount = MESSAGE_LOG_SIZE - (i - buffer_pos) - 1;
 				if (output_prc.size() < MESSAGE_LOG_SIZE) dim_amount -= MESSAGE_LOG_SIZE - output_prc.size();
 			}
-			iocore::ansi_print(output_prc.at(i), 0, i - buffer_pos + iocore::get_rows() - MESSAGE_LOG_SIZE, PRINT_FLAG_NARROW, dim_amount);
+			iocore::ansi_print(output_prc.at(i) + (output_prc_count.at(i) > 1 ? " (" + strx::itos(output_prc_count.at(i)) + ")" : ""), 0, i - buffer_pos + iocore::get_rows() - MESSAGE_LOG_SIZE, PRINT_FLAG_NARROW, dim_amount);
 		}
 	}
 }
