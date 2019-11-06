@@ -83,6 +83,7 @@ void	alagard_print_at(char letter, int x, int y, Colour colour = Colour::CGA_WHI
 void	ansi_print(string msg, int x, int y, unsigned int print_flags = 0, unsigned int dim = 0);	// Prints an ANSI string at the specified position.
 void	box(int x, int y, int w, int h, Colour colour, unsigned char flags = 0, string title = "");	// Renders an ASCII box at the given coordinates.
 void	calc_glitches();		// Calculates glitch positions.
+unsigned int	check_for_key();	// Like wait_for_key() below, but only checks if a key is queued; if not, it does nothing and doesn't wait.
 void	clear_shade();			// Clears 'shade mode' entirely.
 void	cls();					// Clears the screen.
 void	delay(unsigned int ms);	// Calls SDL_Delay but also handles visual glitches.
@@ -125,7 +126,7 @@ void	print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flag
 void	print_at(char letter, int x, int y, Colour colour, unsigned int print_flags = 0);	// As above, but with a char instead of a glyph.
 void	print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen, in RGB colours.
 void	print_at(char letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// As above, but with a char instead of a glyph.
-void	print_tile(string tile, int x, int y, unsigned char brightness = 255);	// Renders a tile from the active tileset on the screen at the specified location.
+void	print_tile(string tile, int x, int y, unsigned char brightness = 255, bool animted = false);	// Renders a tile from the active tileset on the screen at the specified location.
 void	put_pixel(s_rgb rgb, int x, int y);	// Writes a pixel to the main surface.
 void	rect(int x, int y, int w, int h, Colour colour);		// Draws a coloured rectangle
 void	rect_fine(int x, int y, int w, int h, Colour colour);	// Draws a rectangle at very specific coords.
@@ -135,6 +136,7 @@ void	render_nebula(unsigned short seed, int off_x, int off_y);	// Renders a nebu
 void	sleep_for(unsigned int amount);	// Do absolutely nothing for a little while.
 void	sprite_print(Sprite id, int x, int y, Colour colour = Colour::CGA_WHITE, unsigned char print_flags = 0);	// Prints a sprite at the given location.
 unsigned int	tile_pixel_size();	// Returns the pixel size of the loaded tileset's individual tiles.
+void	toggle_animation_frame();	// Toggles the two-step animations.
 void	unlock_surfaces();		// Unlocks the mutexes, if they're locked. Only for use by the Guru system.
 void	update_ntsc_mode(int force = -1);	// Updates the NTSC filter.
 unsigned int	wait_for_key(unsigned short max_ms = 0);	// Polls SDL until a key is pressed. If a time is specified, it will abort after this time.

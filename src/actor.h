@@ -14,6 +14,7 @@ enum class Colour : unsigned char;	// defined in iocore.h
 #define ACTOR_FLAG_ITEM			(1 << 3)	// Does this Actor count as an item?
 #define ACTOR_FLAG_INVISIBLE	(1 << 4)	// Is this Actor invisible?
 #define ACTOR_FLAG_DOOR			(1 << 5)	// Is this Actor a door?
+#define ACTOR_FLAG_ANIMATED		(1 << 6)	// Does this Actor have an animated sprite?
 
 
 class Actor
@@ -21,6 +22,7 @@ class Actor
 public:
 					Actor(unsigned long long new_id, unsigned int new_dungeon_id = 0, unsigned long long new_owner_id = 0);
 	virtual			~Actor();
+	bool			animated() { return (flags & ACTOR_FLAG_ANIMATED) == ACTOR_FLAG_ANIMATED; }
 	bool			blocker() { return (flags & ACTOR_FLAG_BLOCKER) == ACTOR_FLAG_BLOCKER; }
 	bool			blocks_los() { return (flags & ACTOR_FLAG_BLOCKS_LOS) == ACTOR_FLAG_BLOCKS_LOS; }
 	bool			door() { return (flags & ACTOR_FLAG_DOOR) == ACTOR_FLAG_DOOR; }

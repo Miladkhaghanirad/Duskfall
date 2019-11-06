@@ -621,8 +621,8 @@ void Dungeon::render(bool see_all)
 					}
 				}
 				iocore::print_tile(here.get_sprite(x, y), screen_x, screen_y, here_brightness);
-				if (x == world::hero()->x && y == world::hero()->y) iocore::print_tile(world::hero()->tile, screen_x, screen_y, here_brightness);
-				else if (actor_here) iocore::print_tile(actor_here->tile, screen_x, screen_y, here_brightness);
+				if (x == world::hero()->x && y == world::hero()->y) iocore::print_tile(world::hero()->tile, screen_x, screen_y, here_brightness, true);
+				else if (actor_here) iocore::print_tile(actor_here->tile, screen_x, screen_y, here_brightness, actor_here->animated());
 				explore(x, y);
 			}
 			else if (here.explored()) iocore::print_tile(here.get_sprite(x, y), screen_x, screen_y, 50);

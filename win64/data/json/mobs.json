@@ -6,6 +6,7 @@
 "ORC" : {
 	"armour" : 0,
 	"attack" : 3,
+	"flags" : "ANIMATED",
 	"hp" : 10,
 	"name" : "orc",
 	"tile" : "NPC_ORC"
@@ -14,7 +15,7 @@
 "TROLL" : {
 	"armour" : 1,
 	"attack" : 4,
-	"flags" : "BLOCKS_LOS",
+	"flags" : "ANIMATED BLOCKS_LOS",
 	"hp" : 16,
 	"name" : "troll",
 	"tile" : "NPC_TROLL"

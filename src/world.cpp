@@ -97,10 +97,18 @@ void queue_recalc_lighting()
 void main_loop()
 {
 	STACK_TRACE();
-	std::chrono::time_point<std::chrono::system_clock> game_clock = std::chrono::system_clock::now();
+	auto game_clock = std::chrono::system_clock::now();
+	auto animation_timer = std::chrono::system_clock::now();
 	guru::game_output(true);
 	while(true)
 	{
+		std::chrono::duration<float> elapsed_seconds = std::chrono::system_clock::now() - animation_timer;
+		if (elapsed_seconds.count() > 1)
+		{
+			animation_timer = std::chrono::system_clock::now();
+			iocore::toggle_animation_frame();
+			redraw_full = true;
+		}
 		if (recalc_lighting)
 		{
 			the_dungeon->recalc_lighting();
@@ -112,11 +120,12 @@ void main_loop()
 			the_dungeon->render();
 			message::render();
 			sidebar::render();
+			iocore::flip();
 			redraw_full = false;
 		}
-		iocore::flip();
 
-		const unsigned int key = iocore::wait_for_key();
+		const unsigned int key = iocore::check_for_key();
+		if (!key) iocore::delay(1);
 		bool action_taken = true;
 		if (key == RESIZE_KEY)
 		{

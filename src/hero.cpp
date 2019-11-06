@@ -26,6 +26,7 @@ Hero::Hero(unsigned long long new_id, unsigned int new_dungeon_id, unsigned long
 	id = new_id;
 	dungeon_id = new_dungeon_id;
 	owner_id = new_owner_id;
+	flags |= ACTOR_FLAG_ANIMATED;
 }
 
 Hero::~Hero() { }

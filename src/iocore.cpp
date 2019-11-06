@@ -104,6 +104,7 @@ struct s_glitch
 };
 
 SDL_Surface		*alagard = nullptr;		// The texture for the large bitmap font.
+bool			current_animation_frame = false;	// This toggles on and off for two-frame animation.
 bool			cleaned_up = false;		// Have we run the exit functions already?
 unsigned short	cols = 0, rows = 0, mid_col = 0, mid_row = 0, narrow_cols = 0, mid_col_narrow = 0, tile_cols = 0, tile_rows = 0;	// The number of columns and rows available, and the middle column/row.
 unsigned char	exit_func_level = 0;	// Keep track of what to clean up at exit.
@@ -308,6 +309,172 @@ void calc_glitches()
 	glitch_vec.clear();
 	for (unsigned int i = 0; i < mathx::rnd(25); i++)
 		if (mathx::rnd(5) == 1) glitch_square(); else glitch_horizontal();
+}
+
+// Like wait_for_key() below, but only checks if a key is queued; if not, it does nothing and doesn't wait.
+unsigned int check_for_key()
+{
+	STACK_TRACE();
+	if (queued_keys.size())
+	{
+		const unsigned int result = queued_keys.at(0);
+		queued_keys.erase(queued_keys.begin());
+		return result;
+	}
+
+	SDL_Event e;
+	bool shift = false, ctrl = false, caps = false, alt = false;
+	unsigned int key = 0;
+
+	if (SDL_PollEvent(&e))
+	{
+		if (e.type == SDL_QUIT) { exit_functions(); exit(0); }
+		else if (e.type == SDL_KEYDOWN)
+		{
+			const unsigned short mod = e.key.keysym.mod;
+			if (!key)
+			{
+				key = e.key.keysym.sym;
+				if ((mod & KMOD_LSHIFT) || (mod & KMOD_RSHIFT) || (mod & KMOD_SHIFT)) shift = true;
+				if ((mod & KMOD_LCTRL) || (mod & KMOD_RCTRL) || (mod & KMOD_CTRL)) ctrl = true;
+				if ((mod & KMOD_LALT) || (mod & KMOD_RALT) || (mod & KMOD_ALT)) alt = true;
+				if (mod & KMOD_CAPS) caps = true;
+			}
+		}
+		// Mouse controls!
+		else if (e.type == SDL_MOUSEBUTTONDOWN)
+		{
+			if (e.button.button == SDL_BUTTON_LEFT || e.button.button == SDL_BUTTON_RIGHT)
+			{
+				if (ntsc_filter) mouse_clicked_x = SNES_NTSC_IN_WIDTH(e.button.x) / 8;
+				else mouse_clicked_x = e.button.x / 16;
+				mouse_clicked_y = e.button.y / 16;
+				if (e.button.button == SDL_BUTTON_LEFT) return LMB_KEY; else return RMB_KEY;
+			}
+		}
+		else if (e.type == SDL_MOUSEWHEEL)
+		{
+			if (e.wheel.y > 0) return MOUSEWHEEL_UP_KEY;
+			else if (e.wheel.y < 0) return MOUSEWHEEL_DOWN_KEY;
+		}
+		else if (e.type == SDL_WINDOWEVENT)
+		{
+			if (e.window.event == SDL_WINDOWEVENT_RESIZED)
+			{
+				glitch_vec.clear();
+				window_surface = SDL_GetWindowSurface(main_window);
+				if (!window_surface)
+				{
+					guru::console_ready(false);
+					guru::halt(SDL_GetError());
+				}
+				if ((window_surface->w != main_surface->w || window_surface->h != main_surface->h) && surface_scale != 3)
+				{
+					SDL_FreeSurface(main_surface);
+					SDL_FreeSurface(glitched_main_surface);
+					if (ntsc_filter) SDL_FreeSurface(snes_surface);
+					SDL_FreeSurface(glitch_hz_surface);
+					if (!(main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
+					{
+						guru::console_ready(false);
+						guru::halt(SDL_GetError());
+					}
+					if (!(glitched_main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
+					{
+						guru::console_ready(false);
+						guru::halt(SDL_GetError());
+					}
+					if (ntsc_filter)
+					{
+						if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
+						{
+							guru::console_ready(false);
+							guru::halt(SDL_GetError());
+						}
+					}
+					if (!(glitch_hz_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, 8, 16, 0, 0, 0, 0)))
+					{
+						guru::console_ready(false);
+						guru::halt(SDL_GetError());
+					}
+					if (SDL_SetColorKey(glitch_hz_surface, SDL_TRUE, SDL_MapRGB(glitch_hz_surface->format, 1, 1, 1)) < 0)
+					{
+						guru::console_ready(false);
+						guru::halt(SDL_GetError());
+					}
+					if (SDL_SetColorKey(glitch_sq_surface, SDL_TRUE, SDL_MapRGB(glitch_sq_surface->format, 1, 1, 1)) < 0)
+					{
+						guru::console_ready(false);
+						guru::halt(SDL_GetError());
+					}
+				}
+				else cls();
+				if (surface_scale != 3)
+				{
+					screen_x = unscaled_x = window_surface->w; screen_y = unscaled_y = window_surface->h;
+					if (surface_scale)
+					{
+						if (surface_scale == 1) screen_y = static_cast<int>(static_cast<float>(screen_y) / 1.333f);
+						else if (surface_scale == 2) { screen_x /= 2; screen_y /= 2; }
+					}
+					if (ntsc_filter)
+					{
+						cols = SNES_NTSC_IN_WIDTH(screen_x) / 8;
+						narrow_cols = SNES_NTSC_IN_WIDTH(screen_x) / 5;
+						tile_cols = SNES_NTSC_IN_WIDTH(unscaled_x) / tileset_pixel_size;
+						tile_rows = (unscaled_y - 112) / (tileset_pixel_size * 2);
+					}
+					else
+					{
+						cols = screen_x / 16;
+						narrow_cols = screen_x / 10;
+						tile_cols = screen_x / tileset_pixel_size;
+						tile_rows = screen_y / tileset_pixel_size;
+					}
+					rows = screen_y / 16;
+					mid_col = cols / 2;
+					mid_row = rows / 2;
+					mid_col_narrow = narrow_cols / 2;
+				}
+				return RESIZE_KEY;
+			}
+			else if (e.window.event == SDL_WINDOWEVENT_CLOSE) { exit_functions(); exit(0); }
+		}
+	}
+	if (key == SDLK_LCTRL || key == SDLK_RCTRL || key == SDLK_LALT || key == SDLK_RALT || key == SDLK_LSHIFT || key == SDLK_RSHIFT) key = 0;
+	else if (key >= 'a' && key <= 'z')
+	{
+		if ((shift || caps) && ctrl && alt) key += (1 << 15) - 32;	// shift-ctrl-alt
+		else if (ctrl && alt) key += (1 << 15);						// ctrl-alt
+		else if ((shift || caps) && ctrl) key += (1 << 16) - 32;	// shift-ctrl
+		else if ((shift || caps) && alt) key += (1 << 17) - 32;		// shift-alt
+		else if (shift || caps) key -= 32;							// shift
+		else if (ctrl) key -= 96;									// ctrl
+		else if (alt) key += (1 << 17);								// alt
+	}
+	else if ((key == SDLK_LEFT || key == SDLK_KP_4) && shift) key = SHIFT_LEFT;
+	else if ((key == SDLK_RIGHT || key == SDLK_KP_6) && shift) key = SHIFT_RIGHT;
+	else if ((key == SDLK_UP || key == SDLK_KP_8) && shift) key = SHIFT_UP;
+	else if ((key == SDLK_DOWN || key == SDLK_KP_2) && shift) key = SHIFT_DOWN;
+	else if (key == prefs::keybind(Keys::SCREENSHOT))
+	{
+		// Create screenshot folder if needed.
+		filex::make_dir(FOLDER_SCREENS);
+
+		// Determine the filename for the screenshot.
+		int sshot = 0;
+		string filename;
+		while(true)
+		{
+			filename = (string)FOLDER_SCREENS + "/duskfall" + strx::itos(++sshot);
+			if (!(filex::file_exists(filename + ".png") || filex::file_exists(filename + ".bmp") || filex::file_exists(filename + ".jpg") || filex::file_exists(filename + ".tmp"))) break;
+			if (sshot > 1000000) return key;	// Just give up if we have an absurd amount of files.
+		}
+		if (prefs::screenshot_type == 2) SDL_SaveJPG((ntsc_filter ? snes_surface : main_surface), (filename + ".jpg").c_str(), -1);
+		else SDL_SaveBMP((ntsc_filter ? snes_surface : main_surface), (filename + (prefs::screenshot_type > 0 ? ".tmp" : ".bmp")).c_str());
+		if (prefs::screenshot_type == 1) std::thread(convert_png, filename).detach();
+	}
+	return key;
 }
 
 // Clears 'shade mode' entirely.
@@ -1181,7 +1348,7 @@ void print_at(char letter, int x, int y, unsigned char r, unsigned char g, unsig
 }
 
 // Renders a tile from the active tileset on the screen at the specified location.
-void print_tile(string tile, int x, int y, unsigned char brightness)
+void print_tile(string tile, int x, int y, unsigned char brightness, bool animated)
 {
 	STACK_TRACE();
 	if (!brightness)
@@ -1214,6 +1381,7 @@ void print_tile(string tile, int x, int y, unsigned char brightness)
 	// Determine the location of the sprite on the grid.
 	SDL_Surface *chosen_sheet = tileset[sheet];
 	unsigned int loc_x = tile_pos * tileset_pixel_size, loc_y = 0;
+	if (animated && current_animation_frame) loc_x += tileset_pixel_size;
 	while (loc_x >= static_cast<unsigned int>(chosen_sheet->w)) { loc_y += tileset_pixel_size; loc_x -= chosen_sheet->w; }
 	SDL_Rect tile_rect = {static_cast<signed int>(loc_x), static_cast<signed int>(loc_y), static_cast<signed int>(tileset_pixel_size), static_cast<signed int>(tileset_pixel_size)};
 
@@ -1392,6 +1560,12 @@ unsigned int tile_pixel_size()
 	return tileset_pixel_size;
 }
 
+// Toggles the two-step animations.
+void toggle_animation_frame()
+{
+	current_animation_frame = !current_animation_frame;
+}
+
 // Unlocks the mutexes, if they're locked. Only for use by the Guru system.
 void unlock_surfaces()
 {
@@ -1433,169 +1607,18 @@ unsigned int wait_for_key(unsigned short max_ms)
 		return result;
 	}
 
-	SDL_Event e;
 	unsigned int elapsed = 0, key = 0;
-	bool shift = false, ctrl = false, caps = false, alt = false;
 	while (elapsed < max_ms || (!max_ms && !key))
 	{
-		if (SDL_PollEvent(&e))
+		if ((key = check_for_key()))
 		{
-			if (e.type == SDL_QUIT) { exit_functions(); exit(0); }
-			else if (e.type == SDL_KEYDOWN)
-			{
-				const unsigned short mod = e.key.keysym.mod;
-				if (!key)
-				{
-					key = e.key.keysym.sym;
-					if ((mod & KMOD_LSHIFT) || (mod & KMOD_RSHIFT) || (mod & KMOD_SHIFT)) shift = true;
-					if ((mod & KMOD_LCTRL) || (mod & KMOD_RCTRL) || (mod & KMOD_CTRL)) ctrl = true;
-					if ((mod & KMOD_LALT) || (mod & KMOD_RALT) || (mod & KMOD_ALT)) alt = true;
-					if (mod & KMOD_CAPS) caps = true;
-				}
-			}
-			// Mouse controls!
-			else if (e.type == SDL_MOUSEBUTTONDOWN)
-			{
-				if (e.button.button == SDL_BUTTON_LEFT || e.button.button == SDL_BUTTON_RIGHT)
-				{
-					if (ntsc_filter) mouse_clicked_x = SNES_NTSC_IN_WIDTH(e.button.x) / 8;
-					else mouse_clicked_x = e.button.x / 16;
-					mouse_clicked_y = e.button.y / 16;
-					if (e.button.button == SDL_BUTTON_LEFT) return LMB_KEY; else return RMB_KEY;
-				}
-			}
-			else if (e.type == SDL_MOUSEWHEEL)
-			{
-				if (e.wheel.y > 0) return MOUSEWHEEL_UP_KEY;
-				else if (e.wheel.y < 0) return MOUSEWHEEL_DOWN_KEY;
-			}
-			else if (e.type == SDL_WINDOWEVENT)
-			{
-				if (e.window.event == SDL_WINDOWEVENT_RESIZED)
-				{
-					glitch_vec.clear();
-					window_surface = SDL_GetWindowSurface(main_window);
-					if (!window_surface)
-					{
-						guru::console_ready(false);
-						guru::halt(SDL_GetError());
-					}
-					if ((window_surface->w != main_surface->w || window_surface->h != main_surface->h) && surface_scale != 3)
-					{
-						SDL_FreeSurface(main_surface);
-						SDL_FreeSurface(glitched_main_surface);
-						if (ntsc_filter) SDL_FreeSurface(snes_surface);
-						SDL_FreeSurface(glitch_hz_surface);
-						if (!(main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
-						{
-							guru::console_ready(false);
-							guru::halt(SDL_GetError());
-						}
-						if (!(glitched_main_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
-						{
-							guru::console_ready(false);
-							guru::halt(SDL_GetError());
-						}
-						if (ntsc_filter)
-						{
-							if (!(snes_surface = SDL_CreateRGBSurface(0, window_surface->w, window_surface->h, 16, 0, 0, 0, 0)))
-							{
-								guru::console_ready(false);
-								guru::halt(SDL_GetError());
-							}
-						}
-						if (!(glitch_hz_surface = SDL_CreateRGBSurface(0, window_surface->w + 16, 8, 16, 0, 0, 0, 0)))
-						{
-							guru::console_ready(false);
-							guru::halt(SDL_GetError());
-						}
-						if (SDL_SetColorKey(glitch_hz_surface, SDL_TRUE, SDL_MapRGB(glitch_hz_surface->format, 1, 1, 1)) < 0)
-						{
-							guru::console_ready(false);
-							guru::halt(SDL_GetError());
-						}
-						if (SDL_SetColorKey(glitch_sq_surface, SDL_TRUE, SDL_MapRGB(glitch_sq_surface->format, 1, 1, 1)) < 0)
-						{
-							guru::console_ready(false);
-							guru::halt(SDL_GetError());
-						}
-					}
-					else cls();
-					if (surface_scale != 3)
-					{
-						screen_x = unscaled_x = window_surface->w; screen_y = unscaled_y = window_surface->h;
-						if (surface_scale)
-						{
-							if (surface_scale == 1) screen_y = static_cast<int>(static_cast<float>(screen_y) / 1.333f);
-							else if (surface_scale == 2) { screen_x /= 2; screen_y /= 2; }
-						}
-						if (ntsc_filter)
-						{
-							cols = SNES_NTSC_IN_WIDTH(screen_x) / 8;
-							narrow_cols = SNES_NTSC_IN_WIDTH(screen_x) / 5;
-							tile_cols = SNES_NTSC_IN_WIDTH(unscaled_x) / tileset_pixel_size;
-							tile_rows = (unscaled_y - 112) / (tileset_pixel_size * 2);
-						}
-						else
-						{
-							cols = screen_x / 16;
-							narrow_cols = screen_x / 10;
-							tile_cols = screen_x / tileset_pixel_size;
-							tile_rows = screen_y / tileset_pixel_size;
-						}
-						rows = screen_y / 16;
-						mid_col = cols / 2;
-						mid_row = rows / 2;
-						mid_col_narrow = narrow_cols / 2;
-					}
-					return RESIZE_KEY;
-				}
-				else if (e.window.event == SDL_WINDOWEVENT_CLOSE) { exit_functions(); exit(0); }
-			}
+			SDL_FlushEvent(SDL_KEYDOWN);
+			return key;
 		}
-		if (key == SDLK_LCTRL || key == SDLK_RCTRL || key == SDLK_LALT || key == SDLK_RALT || key == SDLK_LSHIFT || key == SDLK_RSHIFT) key = 0;
 		if (!max_ms || max_ms >= 10) delay(10);
 		elapsed += 10;
 	}
-	if (key >= 'a' && key <= 'z')
-	{
-		if ((shift || caps) && ctrl && alt) key += (1 << 15) - 32;	// shift-ctrl-alt
-		else if (ctrl && alt) key += (1 << 15);						// ctrl-alt
-		else if ((shift || caps) && ctrl) key += (1 << 16) - 32;	// shift-ctrl
-		else if ((shift || caps) && alt) key += (1 << 17) - 32;		// shift-alt
-		else if (shift || caps) key -= 32;							// shift
-		else if (ctrl) key -= 96;									// ctrl
-		else if (alt) key += (1 << 17);								// alt
-	}
-	if ((key == SDLK_LEFT || key == SDLK_KP_4) && shift) key = SHIFT_LEFT;
-	else if ((key == SDLK_RIGHT || key == SDLK_KP_6) && shift) key = SHIFT_RIGHT;
-	else if ((key == SDLK_UP || key == SDLK_KP_8) && shift) key = SHIFT_UP;
-	else if ((key == SDLK_DOWN || key == SDLK_KP_2) && shift) key = SHIFT_DOWN;
-	if (key == prefs::keybind(Keys::SCREENSHOT))
-	{
-		// Create screenshot folder if needed.
-		filex::make_dir(FOLDER_SCREENS);
-
-		// Determine the filename for the screenshot.
-		int sshot = 0;
-		string filename;
-		while(true)
-		{
-			filename = (string)FOLDER_SCREENS + "/duskfall" + strx::itos(++sshot);
-			if (!(filex::file_exists(filename + ".png") || filex::file_exists(filename + ".bmp") || filex::file_exists(filename + ".jpg") || filex::file_exists(filename + ".tmp"))) break;
-			if (sshot > 1000000) return key;	// Just give up if we have an absurd amount of files.
-		}
-		if (prefs::screenshot_type == 2) SDL_SaveJPG((ntsc_filter ? snes_surface : main_surface), (filename + ".jpg").c_str(), -1);
-		else SDL_SaveBMP((ntsc_filter ? snes_surface : main_surface), (filename + (prefs::screenshot_type > 0 ? ".tmp" : ".bmp")).c_str());
-		if (prefs::screenshot_type == 1) std::thread(convert_png, filename).detach();
-	}
-
-	// This seems counter-intuitive, but it needs to be here, and I'm going to tell you why: Without it, holding down a directional key to run down a corridor or something will, thanks to the auto-repeat on
-	// keys, end up backlogging key events faster than we can process them -- so when the player releases the key, their character will keep running for a few more tiles. This is a REALLY REALLY BAD THING
-	// for a roguelike. By flushing the input every time we return a valid keypress, holding down keys to move still works just fine, but the game will react almost instantly as soon as the key is released.
-	// So with this in mind, trust me when I say that this is absolutely essential and should not be removed, even if it seems wrong.
-	SDL_FlushEvent(SDL_KEYDOWN);
-	return key;
+	return 0;
 }
 
 // Renders a yes/no popup box and returns the result.
