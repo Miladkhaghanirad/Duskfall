@@ -5,39 +5,35 @@
 
 // A basic type of door, used during dungeon generation.
 "BASIC_DOOR" : {
-	"colour" : "BROWN_LIGHT",
-	"glyph" : "+",
-	"name" : "door"
+	"name" : "door",
+	"tile" : "DOOR"
 },
 
 // As above, but opened.
 "BASIC_DOOR_OPEN" : {
-	"colour" : "BROWN_LIGHT",
-	"glyph" : "'",
-	"name" : "door (open)"
+	"name" : "door (open)",
+	"tile" : "DOOR_OPEN"
 },
 
 // The most basic and unremarkable of floor tiles, used during dungeon generation. Can be replaced to become more interesting floor types.
 "BASIC_FLOOR" : {
-	"colour" : "CGA_LGRAY",
-	"glyph" : "MIDDOT",
-	"name" : "floor"
+	"flags" : "FLOOR",
+	"name" : "floor",
+	"tile" : "FLOOR_3"
 },
 
 // A basic and unremarkable dungeon wall, used during dungeon generation. Can be replaced to become more interesting wall types.
 "BASIC_WALL" : {
-	"colour" : "CGA_LGRAY",
 	"flags" : "IMPASSIBLE OPAQUE WALL",
-	"glyph" : "BLOCK_SOLID",
-	"name" : "wall"
+	"name" : "wall",
+	"tile" : "WALL_3"
 },
 
 // The boundary wall which surrounds the dungeon. Regardless of dungeon generation, this is always used for the outermost layer.
 "BOUNDARY_WALL" : {
-	"colour" : "CGA_GRAY",
 	"flags" : "IMPASSIBLE OPAQUE PERMAWALL WALL",	// DO NOT MESS WITH THESE!
-	"glyph" : "BLOCK_SOLID",
-	"name" : "wall"
+	"name" : "wall",
+	"tile" : "WALL_4"
 }
 
 }

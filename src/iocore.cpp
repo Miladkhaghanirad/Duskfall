@@ -9,6 +9,7 @@
 #include "strx.h"
 #include "version.h"
 
+#include "jsoncpp/json/json.h"
 #include "lodepng/bmp2png.h"
 #include "sdl_savejpeg/SDL_savejpeg.h"
 #include "sdl2/SDL.h"
@@ -104,7 +105,7 @@ struct s_glitch
 
 SDL_Surface		*alagard = nullptr;		// The texture for the large bitmap font.
 bool			cleaned_up = false;		// Have we run the exit functions already?
-unsigned short	cols = 0, rows = 0, mid_col = 0, mid_row = 0, narrow_cols = 0, mid_col_narrow = 0;	// The number of columns and rows available, and the middle column/row.
+unsigned short	cols = 0, rows = 0, mid_col = 0, mid_row = 0, narrow_cols = 0, mid_col_narrow = 0, tile_cols = 0, tile_rows = 0;	// The number of columns and rows available, and the middle column/row.
 unsigned char	exit_func_level = 0;	// Keep track of what to clean up at exit.
 SDL_Surface		*font = nullptr;		// The bitmap font texture.
 SDL_Surface		*font_narrow = nullptr;	// The texture for the narrow bitmap font.
@@ -133,6 +134,10 @@ SDL_Surface		*snes_surface = nullptr;	// The SNES surface, for rendering the CRT
 SDL_Surface		*sprites = nullptr;		// The texture for larger sprites.
 unsigned char	surface_scale = 0;		// The surface scale modifier.
 SDL_Surface		*temp_surface = nullptr;	// Temporary surface used for blitting glyphs.
+SDL_Surface		**tileset = nullptr;	// The currently-loaded tileset.
+unsigned int	tileset_file_count = 0;	// How many files are loaded for this tileset?
+std::unordered_map<string, std::pair<unsigned int, unsigned int>>	tileset_map;	// The definitions map for the currently-loaded tileset.
+unsigned int	tileset_pixel_size = 0;	// The size of the tiles in pixels (e.g. 16 = 16x16 tiles)
 int				unscaled_x = 0, unscaled_y = 0;	// The unscaled resolution.
 SDL_Surface		*window_surface = nullptr;	// The actual window's surface.
 
@@ -571,10 +576,46 @@ bool get_ntsc_filter()
 	return ntsc_filter;
 }
 
+// Gets a pixel from the main surface.
+s_rgb get_pixel(int x, int y)
+{
+	STACK_TRACE();
+	int bpp = main_surface->format->BytesPerPixel;
+	uint8_t *p = (uint8_t*)main_surface->pixels + y * main_surface->pitch + x * bpp;
+	uint32_t pixel = 0;
+	switch(bpp)
+	{
+		case 1: pixel = *p; break;
+		case 2: pixel = *(uint16_t*)p; break;
+		case 3:
+			if (SDL_BYTEORDER == SDL_BIG_ENDIAN) pixel = p[0] << 16 | p[1] << 8 | p[2];
+			else pixel = p[0] | p[1] << 8 | p[2] << 16;
+			break;
+		case 4: pixel = *(uint32_t*)p; break;
+	}
+	s_rgb rgb;
+	SDL_GetRGB(pixel, main_surface->format, &rgb.r, &rgb.g, &rgb.b);
+	return rgb;
+}
+
 // Returns the number of rows on the screen.
 unsigned short get_rows()
 {
 	return rows;
+}
+
+// Returns the number of columns available for tile rendering.
+unsigned short get_tile_cols()
+{
+	STACK_TRACE();
+	return tile_cols;
+}
+
+// Returns the number of rows available for tile rendering.
+unsigned short get_tile_rows()
+{
+	STACK_TRACE();
+	return tile_rows;
 }
 
 // Offsets part of the display.
@@ -719,35 +760,10 @@ void init()
 
 	// Load the bitmap fonts and other PNGs into memory.
 	guru::log("Attempting to load bitmap fonts.", GURU_INFO);
-	auto load_and_optimize_png = [] (string filename, SDL_Surface **dest, SDL_Surface *main_surface)
-	{
-		SDL_Surface *surf_temp = IMG_Load(("data/png/" + filename).c_str());
-		if (!surf_temp) guru::halt(IMG_GetError());
-
-		// Double the size of the loaded graphics if we're not using the NTSC filter.
-		if (!ntsc_filter)
-		{
-			SDL_Surface *surface_temp_opt = SDL_ConvertSurface(surf_temp, main_surface->format, 0);
-			if (!surface_temp_opt) guru::halt(SDL_GetError());
-			SDL_FreeSurface(surf_temp);
-			SDL_Surface *surface_temp_scaled = SDL_CreateRGBSurface(0, surf_temp->w * 2, surf_temp->h * 2, 16, 0, 0, 0, 0);
-			if (SDL_BlitScaled(surface_temp_opt, nullptr, surface_temp_scaled, nullptr) < 0) guru::halt(SDL_GetError());
-			SDL_FreeSurface(surface_temp_opt);
-			*dest = surface_temp_scaled;
-		}
-		else
-		{
-			*dest = SDL_ConvertSurface(surf_temp, main_surface->format, 0);
-			if (!dest) guru::halt(SDL_GetError());
-			SDL_FreeSurface(surf_temp);
-		}
-		if (SDL_SetColorKey(*dest, SDL_TRUE, SDL_MapRGB((*dest)->format, 255, 255, 255)) < 0) guru::halt(SDL_GetError());
-	};
-
-	load_and_optimize_png("fonts.png", &font, main_surface);
-	load_and_optimize_png("alagard.png", &alagard, main_surface);
-	load_and_optimize_png("sprites.png", &sprites, main_surface);
-	load_and_optimize_png("ruthenia.png", &font_narrow, main_surface);
+	load_and_optimize_png("png/fonts.png", &font);
+	load_and_optimize_png("png/alagard.png", &alagard);
+	load_and_optimize_png("png/sprites.png", &sprites);
+	load_and_optimize_png("png/ruthenia.png", &font_narrow);
 	font_sheet_size = (font->w * font->h) / 8;
 	font_sheet_size_narrow = (font_narrow->w / 5) * (font_narrow->h / 8);
 	if (!ntsc_filter)
@@ -755,6 +771,7 @@ void init()
 		font_sheet_size /= 2;
 		font_sheet_size_narrow /= 2;
 	}
+	load_tileset("dawnlike");
 	exit_func_level = 4;
 
 	// Now that the font is loaded and SDL is initialized, we can activate Guru's error screen.
@@ -833,6 +850,82 @@ string key_to_name(unsigned int key)
 
 	if ((key > 0x7F && key < 0x40000039) || key > 0x4000011A) return "{5C}[unknown]";
 	return SDL_GetKeyName(key);
+}
+
+// Loads a PNG into memory and optimizes it for the main render surface.
+void load_and_optimize_png(string filename, SDL_Surface **dest)
+{
+	STACK_TRACE();
+	SDL_Surface *surf_temp = IMG_Load(("data/" + filename).c_str());
+	if (!surf_temp) guru::halt(IMG_GetError());
+
+	// Double the size of the loaded graphics if we're not using the NTSC filter.
+	if (!ntsc_filter)
+	{
+		SDL_Surface *surface_temp_opt = SDL_ConvertSurface(surf_temp, main_surface->format, 0);
+		if (!surface_temp_opt) guru::halt(SDL_GetError());
+		SDL_FreeSurface(surf_temp);
+		SDL_Surface *surface_temp_scaled = SDL_CreateRGBSurface(0, surface_temp_opt->w * 2, surface_temp_opt->h * 2, 16, 0, 0, 0, 0);
+		if (!surface_temp_scaled) guru::halt(SDL_GetError());
+		if (SDL_BlitScaled(surface_temp_opt, nullptr, surface_temp_scaled, nullptr) < 0) guru::halt(SDL_GetError());
+		SDL_FreeSurface(surface_temp_opt);
+		*dest = surface_temp_scaled;
+	}
+	else
+	{
+		*dest = SDL_ConvertSurface(surf_temp, main_surface->format, 0);
+		if (!dest) guru::halt(SDL_GetError());
+		SDL_FreeSurface(surf_temp);
+	}
+	if (SDL_SetColorKey(*dest, SDL_TRUE, SDL_MapRGB((*dest)->format, 255, 255, 255)) < 0) guru::halt(SDL_GetError());
+}
+
+// Loads a specified tileset into memory, discarding the previous tileset.
+void load_tileset(string dir)
+{
+	STACK_TRACE();
+	if (tileset_file_count)
+	{
+		for (unsigned int i = 0; i < tileset_file_count; i++)
+			SDL_FreeSurface(tileset[i]);
+		delete[] tileset;
+	}
+	Json::Value json = filex::load_json("tilesets/" + dir + "/tileset");
+	const Json::Value::Members jmem = json.getMemberNames();
+	tileset_file_count = json["TILESET_FILES"].asUInt();
+	tileset = new SDL_Surface*[tileset_file_count];
+	tileset_pixel_size = json["TILESET_PIXEL_SIZE"].asUInt();
+	string tileset_alpha_unparsed = json["TILESET_ALPHA"].asString();
+	if (tileset_alpha_unparsed.size() != 6) guru::halt("Invalid tileset alpha string.");
+	unsigned char alpha_r = strx::htoi(tileset_alpha_unparsed.substr(0, 2));
+	unsigned char alpha_g = strx::htoi(tileset_alpha_unparsed.substr(2, 2));
+	unsigned char alpha_b = strx::htoi(tileset_alpha_unparsed.substr(4, 2));
+	if (!ntsc_filter) tileset_pixel_size *= 2;
+	for (unsigned int i = 0; i < tileset_file_count; i++)
+	{
+		load_and_optimize_png("tilesets/" + dir + "/" + strx::itos(i) + ".png", &tileset[i]);
+		if (SDL_SetColorKey(tileset[i], SDL_TRUE, SDL_MapRGB(tileset[i]->format, alpha_r, alpha_g, alpha_b)) < 0) guru::halt(SDL_GetError());
+	}
+	for (unsigned int i = 0; i < jmem.size(); i++)
+	{
+		string def_id = jmem.at(i);
+		if (def_id == "TILESET_FILES" || def_id == "TILESET_PIXEL_SIZE" || def_id == "TILESET_ALPHA") continue;
+		const string def_unparsed = json[def_id].asString();
+		vector<string> def_parsed = strx::string_explode(def_unparsed, ":");
+		if (def_parsed.size() != 2) guru::halt("Formatting error in " + dir + " tileset: " + def_id);
+		std::pair<unsigned int, unsigned int> new_pair = std::pair<unsigned int, unsigned int>(atoi(def_parsed.at(0).c_str()), atoi(def_parsed.at(1).c_str()));
+		tileset_map.insert(std::pair<string, std::pair<unsigned int, unsigned int>>(def_id, new_pair));
+	}
+	if (ntsc_filter)
+	{
+		tile_cols = SNES_NTSC_IN_WIDTH(unscaled_x) / tileset_pixel_size;
+		tile_rows = (unscaled_y - 112) / (tileset_pixel_size * 2);
+	}
+	else
+	{
+		tile_cols = screen_x / tileset_pixel_size;
+		tile_rows = screen_y / tileset_pixel_size;
+	}
 }
 
 // Retrieves the middle column on the screen.
@@ -1087,6 +1180,94 @@ void print_at(char letter, int x, int y, unsigned char r, unsigned char g, unsig
 	print_at(static_cast<Glyph>(letter), x, y, r, g, b, print_flags);
 }
 
+// Renders a tile from the active tileset on the screen at the specified location.
+void print_tile(string tile, int x, int y, unsigned char brightness)
+{
+	STACK_TRACE();
+	if (!brightness)
+	{
+		rect(x * tileset_pixel_size, y * tileset_pixel_size, tileset_pixel_size, tileset_pixel_size, Colour::BLACK);
+		return;
+	}
+
+	// Sanity checks to ensure the tilesheet data is valid and we're not trying to load something that doesn't exist.
+	auto found = tileset_map.find(tile);
+	if (found == tileset_map.end())
+	{
+		guru::log("Missing tile: " + tile, GURU_ERROR);
+		if (tile != "ERROR") print_tile("ERROR", x, y, brightness);
+		else rect(x, y, tileset_pixel_size, tileset_pixel_size, Colour::ERROR_COLOUR);
+		return;
+	}
+	unsigned int sheet = found->second.first;
+	unsigned int tile_pos = found->second.second;
+	if (sheet >= tileset_file_count || tile_pos * tileset_pixel_size > static_cast<unsigned int>(tileset[sheet]->w * tileset[sheet]->h))
+	{
+		guru::log("Invalid tilesheet definition: " + tile, GURU_ERROR);
+		rect(x, y, tileset_pixel_size, tileset_pixel_size, Colour::ERROR_COLOUR);
+		return;
+	}
+
+	// If we're trying to draw off-screen, just exit quietly.
+	if (x < 0 || y < 0 || static_cast<signed int>(x * tileset_pixel_size) >= unscaled_x || static_cast<signed int>(y * tileset_pixel_size) >= unscaled_y) return;
+
+	// Determine the location of the sprite on the grid.
+	SDL_Surface *chosen_sheet = tileset[sheet];
+	unsigned int loc_x = tile_pos * tileset_pixel_size, loc_y = 0;
+	while (loc_x >= static_cast<unsigned int>(chosen_sheet->w)) { loc_y += tileset_pixel_size; loc_x -= chosen_sheet->w; }
+	SDL_Rect tile_rect = {static_cast<signed int>(loc_x), static_cast<signed int>(loc_y), static_cast<signed int>(tileset_pixel_size), static_cast<signed int>(tileset_pixel_size)};
+
+	// Print the sprite on the screen!
+	SDL_Rect scr_rect = {static_cast<signed int>(x * tileset_pixel_size), static_cast<signed int>(y * tileset_pixel_size), static_cast<signed int>(tileset_pixel_size), static_cast<signed int>(tileset_pixel_size)};
+	if (SDL_BlitSurface(chosen_sheet, &tile_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
+
+	// If the brightness is not maximum, edit the pixels to dim it.
+	if (brightness == 255) return;
+	float ratio = static_cast<float>(brightness) / 255.0f;
+	if (SDL_MUSTLOCK(main_surface)) SDL_LockSurface(main_surface);
+	for (int px = scr_rect.x; px < scr_rect.x + scr_rect.w; px++)
+	{
+		for (int py = scr_rect.y; py < scr_rect.y + scr_rect.h; py++)
+		{
+			s_rgb rgb = get_pixel(px, py);
+			rgb.r = round(static_cast<float>(rgb.r) * ratio);
+			rgb.g = round(static_cast<float>(rgb.g) * ratio);
+			rgb.b = round(static_cast<float>(rgb.b) * ratio);
+			put_pixel(rgb, px, py);
+		}
+	}
+	if (SDL_MUSTLOCK(main_surface)) SDL_UnlockSurface(main_surface);
+}
+
+// Writes a pixel to the main surface.
+void put_pixel(s_rgb rgb, int x, int y)
+{
+	STACK_TRACE();
+	uint32_t pixel = SDL_MapRGB(main_surface->format, rgb.r, rgb.g, rgb.b);
+	int bpp = main_surface->format->BytesPerPixel;
+	uint8_t *p = (uint8_t*)main_surface->pixels + y * main_surface->pitch + x * bpp;
+	switch(bpp)
+	{
+		case 1: *p = pixel; break;
+		case 2: *(uint16_t*)p = pixel; break;
+		case 3:
+			if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
+			{
+				p[0] = (pixel >> 16) & 0xff;
+				p[1] = (pixel >> 8) & 0xff;
+				p[2] = pixel & 0xff;
+			}
+			else
+			{
+				p[0] = pixel & 0xff;
+				p[1] = (pixel >> 8) & 0xff;
+				p[2] = (pixel >> 16) & 0xff;
+			}
+			break;
+		case 4: *(uint32_t*)p = pixel; break;
+	}
+}
+
 // Draws a coloured rectangle.
 void rect(int x, int y, int w, int h, Colour colour)
 {
@@ -1186,7 +1367,6 @@ void sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
 			}
 		}
 		return;
-
 	}
 	unsigned short loc_x = static_cast<unsigned short>(id) * sprite_size, loc_y = 0;
 	while (loc_x >= sprites->w) { loc_y += sprite_size; loc_x -= sprites->w; }
@@ -1204,6 +1384,12 @@ void sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
 	if (SDL_BlitSurface(sprites, &sprite_rect, temp_surface, &temp_rect) < 0) guru::halt(SDL_GetError());
 	if (SDL_SetColorKey(temp_surface, SDL_TRUE, SDL_MapRGB(temp_surface->format, 0, 0, 0)) < 0) guru::halt(SDL_GetError());
 	if (SDL_BlitSurface(temp_surface, &temp_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
+}
+
+// Returns the pixel size of the loaded tileset's individual tiles.
+unsigned int tile_pixel_size()
+{
+	return tileset_pixel_size;
 }
 
 // Unlocks the mutexes, if they're locked. Only for use by the Guru system.
@@ -1347,11 +1533,15 @@ unsigned int wait_for_key(unsigned short max_ms)
 						{
 							cols = SNES_NTSC_IN_WIDTH(screen_x) / 8;
 							narrow_cols = SNES_NTSC_IN_WIDTH(screen_x) / 5;
+							tile_cols = SNES_NTSC_IN_WIDTH(unscaled_x) / tileset_pixel_size;
+							tile_rows = (unscaled_y - 112) / (tileset_pixel_size * 2);
 						}
 						else
 						{
 							cols = screen_x / 16;
 							narrow_cols = screen_x / 10;
+							tile_cols = screen_x / tileset_pixel_size;
+							tile_rows = screen_y / tileset_pixel_size;
 						}
 						rows = screen_y / 16;
 						mid_col = cols / 2;

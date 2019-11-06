@@ -8,7 +8,6 @@
 #include "mathx.h"
 #include "message.h"
 #include "prefs.h"
-#include "sidebar.h"
 #include "static-data.h"
 #include "strx.h"
 #include "world.h"
@@ -32,7 +31,7 @@ Dungeon::Dungeon(unsigned short new_level, unsigned short new_width, unsigned sh
 	STACK_TRACE();
 	if (!new_width || !new_height) return;
 	tiles = new Tile[width * height]();
-	lighting = new s_rgb[width * height]();
+	lighting = new unsigned char[width * height]();
 }
 
 Dungeon::~Dungeon()
@@ -111,8 +110,8 @@ void Dungeon::cast_light(unsigned int x, unsigned int y, unsigned int radius, un
 			unsigned int radius2 = radius * radius;
 			if (static_cast<unsigned int>(dx * dx + dy * dy) < radius2)
 			{
-				const s_rgb existing_light = lighting[ax + ay * width];
-				if (always_visible || existing_light.r || existing_light.g || existing_light.b)
+				const unsigned char existing_light = lighting[ax + ay * width];
+				if (always_visible || existing_light)
 				{
 					std::pair<unsigned short, unsigned short> xy = { ax, ay };
 					if (dynamic_light_temp.find(xy) == dynamic_light_temp.end()) dynamic_light_temp.insert(xy);
@@ -144,15 +143,12 @@ void Dungeon::cast_light(unsigned int x, unsigned int y, unsigned int radius, un
 	}
 }
 
-// Dims a specified RGB colour.
-s_rgb Dungeon::diminish_light(s_rgb colour, float distance, float falloff)
+// Dims a specified light source.
+unsigned char Dungeon::diminish_light(float distance, float falloff)
 {
 	STACK_TRACE();
 	float divisor = pow(distance, falloff) - distance + 1;
-	colour.r = static_cast<unsigned char>(round(static_cast<float>(colour.r) / divisor));
-	colour.g = static_cast<unsigned char>(round(static_cast<float>(colour.g) / divisor));
-	colour.b = static_cast<unsigned char>(round(static_cast<float>(colour.b) / divisor));
-	return colour;
+	return static_cast<unsigned char>(round(255.0f / divisor));
 }
 
 // Marks a given tile as explored.
@@ -388,23 +384,6 @@ s_rgb Dungeon::light_surface(s_rgb surface_colour, s_rgb light_colour)
 	return lit_surface_colour;
 }
 
-// Applies light to a specified tile.
-void Dungeon::light_tile(unsigned short x, unsigned short y, s_rgb colour)
-{
-	STACK_TRACE();
-	s_rgb *existing_rgb = &lighting[x + y * width];
-
-	auto merge_light = [] (unsigned char &current, unsigned char extra)
-	{
-		if (static_cast<unsigned int>(current) + static_cast<unsigned int>(extra) > 255) current = 255;
-		else current += extra;
-	};
-
-	merge_light(existing_rgb->r, colour.r);
-	merge_light(existing_rgb->g, colour.g);
-	merge_light(existing_rgb->b, colour.b);
-}
-
 // Loads this dungeon from disk.
 void Dungeon::load()
 {
@@ -418,7 +397,7 @@ void Dungeon::load()
 			width = query.getColumn("width").getUInt();
 			height = query.getColumn("height").getUInt();
 			tiles = new Tile[width * height]();
-			lighting = new s_rgb[width * height]();
+			lighting = new unsigned char[width * height]();
 			const void* blob = query.getColumn("tiles").getBlob();
 			memcpy(tiles, blob, sizeof(Tile) * width * height);
 		}
@@ -506,14 +485,14 @@ bool Dungeon::los_check(unsigned short x1, unsigned short y1)
 }
 
 // View the dungeon map in its entirety. see_all should only be used in debugging/testing code.
-void Dungeon::map_view(bool see_lighting, bool see_all)
+void Dungeon::map_view(bool see_all)
 {
 	STACK_TRACE();
 	recalc_lighting();
 	while(true)
 	{
 		iocore::cls();
-		render(see_lighting, see_all);
+		render(see_all);
 		iocore::flip();
 		const unsigned int key = iocore::wait_for_key();
 		if (key == prefs::keybind(Keys::NORTH) || key == prefs::keybind(Keys::NORTHEAST) || key == prefs::keybind(Keys::NORTHWEST)) world::hero()->camera_off_y++;
@@ -536,11 +515,12 @@ void Dungeon::random_start_position(unsigned short &x, unsigned short &y)
 }
 
 // Recalculates a specific light source.
-void Dungeon::recalc_light_source(unsigned short x, unsigned short y, s_rgb colour, unsigned short radius, bool always_visible)
+void Dungeon::recalc_light_source(unsigned short x, unsigned short y, unsigned short radius, bool always_visible)
 {
 	STACK_TRACE();
 	for (unsigned int i = 0; i < 8; i++)
 		cast_light(x, y, radius, 1, 1.0, 0.0, shadowcast_multipliers[0][i], shadowcast_multipliers[1][i], shadowcast_multipliers[2][i], shadowcast_multipliers[3][i], always_visible);
+	lighting[x + y * width] = 255;
 
 	while (dynamic_light_temp.size())
 	{
@@ -554,15 +534,16 @@ void Dungeon::recalc_light_source(unsigned short x, unsigned short y, s_rgb colo
 		} else
 		{
 			float distance = mathx::grid_dist(x, y, xy.first, xy.second);
-			light_tile(xy.first, xy.second, diminish_light(colour, distance, 1.05f));
+			unsigned int total_light = lighting[xy.first + xy.second * width] + diminish_light(distance, 1.05f);
+			if (total_light > 255) total_light = 255;
+			lighting[xy.first + xy.second * width] = total_light;
 		}
 	}
 
 	// Brute-force check: look at all the *visible* (to the player) tiles surrounding the wall, and pick the brightest.
 	for (auto xy : dynamic_light_temp_walls)
 	{
-		s_rgb brightest = { 30, 30, 30 };
-		int brightest_total = 90;
+		unsigned char brightest = 30;
 		for (short dx = -1; dx <= 1; dx++)
 		{
 			if (dx + xy.first < 0 || dx + xy.first >= width) continue;
@@ -571,12 +552,8 @@ void Dungeon::recalc_light_source(unsigned short x, unsigned short y, s_rgb colo
 				if ((dx == 0 && dy == 0) || dy + xy.second < 0 || dy + xy.second >= height) continue;
 				if (tiles[xy.first + dx + (xy.second + dy) * width].opaque()) continue;
 				if (!los_check(xy.first + dx, xy.second + dy)) continue;
-				s_rgb light = lighting[xy.first + dx + (xy.second + dy) * width];
-				if (light.r + light.g + light.b > brightest_total)
-				{
-					brightest_total = light.r + light.g + light.b;
-					brightest = light;
-				}
+				unsigned char light = lighting[xy.first + dx + (xy.second + dy) * width];
+				if (light > brightest) brightest = light;
 			}
 		}
 		lighting[xy.first + xy.second * width] = brightest;
@@ -590,8 +567,8 @@ void Dungeon::recalc_light_source(unsigned short x, unsigned short y, s_rgb colo
 void Dungeon::recalc_lighting()
 {
 	STACK_TRACE();
-	memset(lighting, 0, sizeof(struct s_rgb) * width * height);
-	recalc_light_source(world::hero()->x, world::hero()->y, { 255, 255, 200 }, 100, true);
+	memset(lighting, 0, sizeof(unsigned char) * width * height);
+	recalc_light_source(world::hero()->x, world::hero()->y, 100, true);
 }
 
 // Flood-fills a specified area with a new region ID.
@@ -613,82 +590,46 @@ void Dungeon::region_floodfill(unsigned short x, unsigned short y, unsigned int 
 }
 
 // Renders the dungeon on the screen.
-void Dungeon::render(bool render_lighting, bool see_all)
+void Dungeon::render(bool see_all)
 {
 	STACK_TRACE();
 	iocore::cls();
-	sidebar::reset_lists();
 	for (unsigned int x = 0; x < width; x++)
 	{
 		int screen_x = static_cast<signed int>(x) + world::hero()->camera_off_x;
-		if (screen_x < 0 || screen_x >= iocore::get_cols() - SIDEBAR_WIDTH_8X8) continue;
+		if (screen_x < 0 || static_cast<unsigned int>(screen_x) >= iocore::get_tile_cols()) continue;
 		for (unsigned int y = 0; y < height; y++)
 		{
 			int screen_y = static_cast<signed int>(y) + world::hero()->camera_off_y;
-			if (screen_y < 0 || screen_y >= iocore::get_rows() - MESSAGE_LOG_SIZE) continue;
-
-			if (x == world::hero()->x && y == world::hero()->y) iocore::print_at('@', screen_x, screen_y, Colour::WHITE);
-			else
+			if (screen_y < 0 || static_cast<unsigned int>(screen_y) >= iocore::get_tile_rows()) continue;
+#
+			Tile &here = tiles[x + y * width];
+			unsigned char here_brightness = lighting[x + y * width];
+			if (see_all && here_brightness < 50) here_brightness = 50;
+			if (here_brightness >= 50)
 			{
-				Tile &here = tiles[x + y * width];
-				unsigned char r, g, b;
-				iocore::parse_colour(here.colour, r, g, b);
-				s_rgb here_col;
-				if (render_lighting) here_col = light_surface({r,g,b}, lighting[x + y * width]);
-				else here_col = { r, g, b };
-				if (see_all)
+				shared_ptr<Actor> actor_here = nullptr;
+				for (auto actor : actors)
 				{
-					if (here_col.r < 30 && here_col.g < 30 && here_col.b < 30)
+					if (actor->x == x && actor->y == y && !actor->invisible())
 					{
-						here_col.r += 30;
-						here_col.g += 30;
-						here_col.b += 30;
-					}
-				}
-				if (here_col.r >= 30 || here_col.g >= 30 || here_col.b >= 30)
-				{
-					shared_ptr<Actor> actor_here = nullptr;
-					for (auto actor : actors)
-					{
-						if (actor->x == x && actor->y == y && !actor->invisible())
+						if (actor_here)
 						{
-							if (actor_here)
-							{
-								if (actor_here->low_priority_rendering() && !actor->low_priority_rendering()) actor_here = actor;
-							}
-							else actor_here = actor;
+							if (actor_here->low_priority_rendering() && !actor->low_priority_rendering()) actor_here = actor;
 						}
+						else actor_here = actor;
 					}
-					if (actor_here)
-					{
-						sidebar::actor_in_sight(actor_here);
-						iocore::print_at(static_cast<Glyph>(actor_here->glyph), screen_x, screen_y, actor_here->colour);
-					}
-					else
-					{
-						sidebar::tile_in_sight(here);
-						if (here.inverse())
-						{
-							iocore::print_at(Glyph::BLOCK_SOLID, screen_x, screen_y, here_col.r, here_col.g, here_col.b);
-							iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, Colour::BLACK_LIGHT, PRINT_FLAG_ALPHA);
-						}
-						else iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, here_col.r, here_col.g, here_col.b);
-					}
-					explore(x, y);
 				}
-				else if (here.explored())
-				{
-					if (here.inverse())
-					{
-						iocore::print_at(Glyph::BLOCK_SOLID, screen_x, screen_y, 30, 30, 30);
-						iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, Colour::BLACK_LIGHT, PRINT_FLAG_ALPHA);
-					}
-					else iocore::print_at(static_cast<Glyph>(here.glyph), screen_x, screen_y, 30, 30, 30);
-				}
+				iocore::print_tile(here.get_sprite(x, y), screen_x, screen_y, here_brightness);
+				if (x == world::hero()->x && y == world::hero()->y) iocore::print_tile(world::hero()->tile, screen_x, screen_y, here_brightness);
+				else if (actor_here) iocore::print_tile(actor_here->tile, screen_x, screen_y, here_brightness);
+				explore(x, y);
 			}
+			else if (here.explored()) iocore::print_tile(here.get_sprite(x, y), screen_x, screen_y, 50);
 		}
 	}
 }
+
 // Saves this dungeon to disk.
 void Dungeon::save()
 {
@@ -810,4 +751,48 @@ bool Dungeon::viable_room_position(unsigned short x, unsigned short y, unsigned 
 		for (unsigned short ry = y - 1; ry < y + h + 2; ry++)
 			if (!tiles[rx + ry * width].destroyable_wall()) return false;
 	return true;
+}
+
+// Checks nearby tiles to modify floor and wall sprites.
+string Tile::check_neighbours(int x, int y, bool wall)
+{
+	STACK_TRACE();
+	const unsigned char wall_map[16] = { 5, 4, 2, 15, 2, 15, 2, 15, 4, 4, 11, 14, 11, 12, 11, 13 };
+
+	unsigned char neighbours = 0;
+	if (neighbour_identical(x, y - 1)) neighbours += 1;
+	if (neighbour_identical(x - 1, y)) neighbours += 2;
+	if (neighbour_identical(x + 1, y)) neighbours += 4;
+	if (neighbour_identical(x, y + 1)) neighbours += 8;
+
+	if (wall) return strx::itos(wall_map[neighbours]);
+	else return "5";
+}
+
+// Returns the name of this tile.
+string Tile::get_name()
+{
+	STACK_TRACE();
+	return data::tile_name(name);
+}
+
+// Returns the sprite name for rendering this tile.
+string Tile::get_sprite(int x, int y)
+{
+	STACK_TRACE();
+	string sprite_name = data::tile_sprite(sprite);
+
+	if (sprite_name.size() >= 7 && sprite_name.substr(0, 6) == "FLOOR_") return sprite_name.substr(0, 7) + "_" + check_neighbours(x, y, false);
+	else if (sprite_name.size() >= 6 && sprite_name.substr(0, 5) == "WALL_") return sprite_name.substr(0, 6) + "_" + check_neighbours(x, y, true);
+	return sprite_name;
+}
+
+// Check if a neighbour is an identical tile.
+bool Tile::neighbour_identical(int x, int y)
+{
+	STACK_TRACE();
+	if (x < 0 || y < 0 || x >= world::dungeon()->get_width() || y >= world::dungeon()->get_height()) return false;
+	shared_ptr<Tile> neighbour = world::dungeon()->tile(x, y);
+	if (neighbour->sprite == sprite) return true;
+	else return false;
 }

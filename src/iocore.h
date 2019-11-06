@@ -93,7 +93,10 @@ unsigned short	get_cols();		// Returns the number of columns on the screen.
 unsigned short	get_cols_narrow();	// As above, for the narrow font.
 bool	get_direction(int &x_dir, int &y_dir);	// Gets a direction key, or returns false if an invalid key is pressed.
 bool	get_ntsc_filter();		// Check if we're using an NTSC screen filter or not.
+s_rgb	get_pixel(int x, int y);	// Gets a pixel from the main surface.
 unsigned short	get_rows();		// Returns the number of rows on the screen.
+unsigned short	get_tile_cols();	// Returns the number of columns available for tile rendering.
+unsigned short	get_tile_rows();	// Returns the number of rows available for tile rendering.
 void	glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf);	// Offsets part of the display.
 void	glitch_horizontal();	// Horizontal displacement visual glitch.
 void	glitch_intensity(unsigned char value);	// Sets the glitch intensity level.
@@ -107,6 +110,8 @@ bool	is_right(unsigned int key);		// Returns true if the key is a chosen 'right'
 bool	is_select(unsigned int key);	// Returns true if the key is a chosen 'select' key.
 bool	is_up(unsigned int key);		// Returns true if the key is a chosen 'up' key.
 string	key_to_name(unsigned int key);	// Returns the name of a key.
+void	load_and_optimize_png(string filename, SDL_Surface **dest);	// Loads a PNG into memory and optimizes it for the main render surface.
+void	load_tileset(string dir);		// Loads a specified tileset into memory, discarding the previous tileset.
 unsigned short	midcol();				// Retrieves the middle column on the screen.
 unsigned short	midcol_narrow();		// As above, for the narrow font.
 unsigned short	midrow();				// Retrieves the middle row on the screen.
@@ -120,6 +125,8 @@ void	print_at(Glyph letter, int x, int y, Colour colour, unsigned int print_flag
 void	print_at(char letter, int x, int y, Colour colour, unsigned int print_flags = 0);	// As above, but with a char instead of a glyph.
 void	print_at(Glyph letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// Prints a character at a given coordinate on the screen, in RGB colours.
 void	print_at(char letter, int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned int print_flags = 0);	// As above, but with a char instead of a glyph.
+void	print_tile(string tile, int x, int y, unsigned char brightness = 255);	// Renders a tile from the active tileset on the screen at the specified location.
+void	put_pixel(s_rgb rgb, int x, int y);	// Writes a pixel to the main surface.
 void	rect(int x, int y, int w, int h, Colour colour);		// Draws a coloured rectangle
 void	rect_fine(int x, int y, int w, int h, Colour colour);	// Draws a rectangle at very specific coords.
 void	rect_fine(int x, int y, int w, int h, s_rgb colour);	// As above, but with direct RGB input.
@@ -127,6 +134,7 @@ void	render_glitches();		// Renders pre-calculated glitches.
 void	render_nebula(unsigned short seed, int off_x, int off_y);	// Renders a nebula on the screen.
 void	sleep_for(unsigned int amount);	// Do absolutely nothing for a little while.
 void	sprite_print(Sprite id, int x, int y, Colour colour = Colour::CGA_WHITE, unsigned char print_flags = 0);	// Prints a sprite at the given location.
+unsigned int	tile_pixel_size();	// Returns the pixel size of the loaded tileset's individual tiles.
 void	unlock_surfaces();		// Unlocks the mutexes, if they're locked. Only for use by the Guru system.
 void	update_ntsc_mode(int force = -1);	// Updates the NTSC filter.
 unsigned int	wait_for_key(unsigned short max_ms = 0);	// Polls SDL until a key is pressed. If a time is specified, it will abort after this time.

@@ -22,7 +22,7 @@ Hero::Hero(unsigned long long new_id, unsigned int new_dungeon_id, unsigned long
 	STACK_TRACE();
 	ai = std::make_shared<Controls>(this);
 	inventory = std::make_shared<Inventory>(this, world::unique_id());
-	glyph = '@';
+	tile = "PLAYER";
 	id = new_id;
 	dungeon_id = new_dungeon_id;
 	owner_id = new_owner_id;
@@ -63,14 +63,14 @@ void Hero::recenter_camera()
 void Hero::recenter_camera_horiz()
 {
 	STACK_TRACE();
-	camera_off_x = ((iocore::get_cols() - SIDEBAR_WIDTH_8X8) / 2) - x;
+	camera_off_x = (iocore::get_tile_cols() / 2) - x;
 }
 
 // Recenters the camera vertically on the Hero's position, not adjusting the horizontal.
 void Hero::recenter_camera_vert()
 {
 	STACK_TRACE();
-	camera_off_y = ((iocore::get_rows() - MESSAGE_LOG_SIZE) / 2) - y;
+	camera_off_y = (iocore::get_tile_rows() / 2) - y;
 }
 
 // Saves the Hero's data to disk, along with the rest of the game world.

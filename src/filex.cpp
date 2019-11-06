@@ -57,7 +57,7 @@ Json::Value	load_json(string filename)
 {
 	STACK_TRACE();
 	Json::Value json;
-	std::ifstream file_load("data/json/" + filename + ".json", std::ios::in);
+	std::ifstream file_load("data/" + filename + ".json", std::ios::in);
 	try
 	{
 		Json::CharReaderBuilder builder;

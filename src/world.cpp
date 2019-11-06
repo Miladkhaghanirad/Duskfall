@@ -188,8 +188,8 @@ void save(bool first_time)
 		if (first_time)
 			save_db_ptr->exec("CREATE TABLE world ( id INTEGER PRIMARY KEY AUTOINCREMENT, level INTEGER NOT NULL ); "
 					"CREATE TABLE hero ( id INTEGER PRIMARY KEY AUTOINCREMENT, difficulty INTEGER NOT NULL, style INTEGER NOT NULL, played INTEGER NOT NULL );"
-					"CREATE TABLE actors ( aid PRUMARY KEY INTEGER UNIQUE NOT NULL, did INTEGER NOT NULL, owner INTEGER NOT NULL, colour INTEGER NOT NULL, name TEXT, flags INTEGER NOT NULL, glyph INTEGER NOT NULL, "
-					"x INTEGER NOT NULL, y INTEGER NOT NULL, inventory INTEGER ); "
+					"CREATE TABLE actors ( aid PRUMARY KEY INTEGER UNIQUE NOT NULL, did INTEGER NOT NULL, owner INTEGER NOT NULL, name TEXT, flags INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, inventory INTEGER, "
+					"tile TEXT NOT NULL ); "
 					"CREATE TABLE id_seq (next_id INTEGER PRIMARY KEY AUTOINCREMENT); INSERT INTO id_seq DEFAULT VALUES; UPDATE sqlite_sequence SET seq = " + strx::itos(unique_id()) + " WHERE name='id_seq';" );
 
 		save_db_ptr->exec("DELETE FROM world; DELETE FROM hero; DELETE FROM actors;");

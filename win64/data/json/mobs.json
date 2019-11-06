@@ -6,20 +6,18 @@
 "ORC" : {
 	"armour" : 0,
 	"attack" : 3,
-	"colour" : "LIME_LIGHT",
-	"glyph" : "o",
 	"hp" : 10,
-	"name" : "orc"
+	"name" : "orc",
+	"tile" : "NPC_ORC"
 },
 
 "TROLL" : {
 	"armour" : 1,
 	"attack" : 4,
-	"colour" : "GREEN_LIGHT",
 	"flags" : "BLOCKS_LOS",
-	"glyph" : "T",
 	"hp" : 16,
-	"name" : "troll"
+	"name" : "troll",
+	"tile" : "NPC_TROLL"
 }
 
 }

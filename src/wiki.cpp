@@ -42,7 +42,7 @@ string get_wiki_data(string key)
 void init()
 {
 	STACK_TRACE();
-	Json::Value json = filex::load_json("wiki");
+	Json::Value json = filex::load_json("json/wiki");
 	const Json::Value::Members jmem = json.getMemberNames();
 	for (unsigned int i = 0; i < jmem.size(); i++)
 	{

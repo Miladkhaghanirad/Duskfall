@@ -49,6 +49,7 @@ void print(string text, unsigned int offset_x)
 void render()
 {
 	STACK_TRACE();
+	/*
 	iocore::rect(iocore::get_cols() - SIDEBAR_WIDTH_8X8 - 1, 0, SIDEBAR_WIDTH_8X8 + 1, iocore::get_rows() - 1, Colour::BLACK);
 	sidebar_row = 1;
 
@@ -97,6 +98,7 @@ void render()
 		}
 		sidebar_row++;
 	}
+	*/
 }
 
 // Tells the sidebar system to forget the Actors and Tiles it has stored.

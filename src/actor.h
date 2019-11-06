@@ -34,13 +34,12 @@ public:
 	void			set_flag(unsigned int flag);	// Sets a flag on this Actor.
 
 	shared_ptr<AI>	ai;			// If this Actor has AI, this is where its 'brain' is.
-	Colour			colour;		// The colour of this Actor's glyph.
 	unsigned int	dungeon_id;	// The ID of the dungeon level this Actor is on.
 	unsigned char	flags;		// The Actor's individual flags.
-	unsigned short	glyph;		// The glyph to represent this Actor in the world.
 	unsigned long long	id;		// The unique ID for this Actor.
 	shared_ptr<Inventory>	inventory;	// If this Actor has an Inventory, it attaches here.
 	string			name;		// The Actor's name.
 	unsigned long long	owner_id;	// ID of an Actor that 'owns' this Actor (e.g. an inventory containing items)
+	string			tile;		// The graphical tile used by this Actor.
 	unsigned short	x, y;		// X,Y coordinates on the current dungeon level.
 };

@@ -4,15 +4,13 @@
 {
 
 "JACKET_POTATO" : {
-	"colour" : "BROWN_LIGHT",
-	"glyph" : "*",
-	"name" : "jacket potato"
+	"name" : "jacket potato",
+	"tile" : "ITEM_POTATO"
 },
 
 "SQUIDDLYBOX" : {
-	"colour" : "PURPLE_BRIGHT",
-	"glyph" : "&",
-	"name" : "squiddlybox"
+	"name" : "squiddlybox",
+	"tile" : "ITEM_BOX"
 }
 
 }

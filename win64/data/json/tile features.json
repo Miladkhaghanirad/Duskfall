@@ -4,10 +4,9 @@
 {
 
 "DOOR_CLOSED" : {
-	"colour" : "BLACK",
 	"flags" : "BLOCKER BLOCKS_LOS DOOR INVISIBLE",
-	"glyph" : " ",
-	"name" : "door"
+	"name" : "door",
+	"tile" : "TRANSPARENT"
 }
 
 }
