@@ -58,7 +58,6 @@ extern bool				glitch_warn;		// Have we shown the user the glitch warning screen
 extern bool				message_log_dim;	// Dim the colours in the message log?
 extern bool				ntsc_filter;		// Whether or not the NTSC filter is enabled.
 extern unsigned char	ntsc_mode;			// NTSC post-processing level.
-extern unsigned char	palette;			// Which colour palette to use?
 extern unsigned char	scale_mod;			// Experimental surface scaling.
 extern short			screen_x, screen_y;	// The starting screen X,Y size.
 extern unsigned char	screenshot_type;	// The type of screenshots to take (BMP/UPNG/CPNG)

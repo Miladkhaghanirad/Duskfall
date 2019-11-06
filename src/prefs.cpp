@@ -67,14 +67,13 @@ namespace prefs
 #define MESSAGE_LOG_DIM_DEFAULT		true	// Dim the colours in the message log?
 #define NTSC_FILTER_DEFAULT			true	// Whether or not the NTSC filter is enabled.
 #define NTSC_MODE_DEFAULT			2		// Different post-processing modes (0 is least, 2 is most)
-#define PALETTE_DEFAULT				0		// Which colour palette to use?
 #define SCALE_MOD_DEFAULT			0		// Experimental surface scaling.
 #define SCREEN_X_DEFAULT			1024	// Horizontal screen resolution (minimum: 1024)
 #define SCREEN_Y_DEFAULT			600		// Vertical screen resolution (minimum: 600)
 #define SCREENSHOT_TYPE_DEFAULT		2		// The format of screenshots (0 = BMP, 1 = PNG, 2 = JPEG)
 #define VISUAL_GLITCHES_DEFAULT		0		// Do we want visual glitches?
 
-enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_PALETTE, ID_GLITCHES, ID_SS_FORMAT, ID_TEX_SCALING, ID_DEATH_REPORT, ID_MESSAGE_LOG_DIM, ID_NTSC_FILTER, ID_ANIMATION };
+enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_GLITCHES, ID_SS_FORMAT, ID_TEX_SCALING, ID_DEATH_REPORT, ID_MESSAGE_LOG_DIM, ID_NTSC_FILTER, ID_ANIMATION };
 
 }	// namespace prefs
 
@@ -239,7 +238,6 @@ bool			glitch_warn = false;	// Have we shown the user the glitch warning screen?
 bool			message_log_dim = MESSAGE_LOG_DIM_DEFAULT;	// Dim the colours in the message log?
 bool			ntsc_filter = NTSC_FILTER_DEFAULT;	// Whether or not the NTSC filter is enabled.
 unsigned char	ntsc_mode = NTSC_MODE_DEFAULT;	// NTSC post-processing level.
-unsigned char	palette = PALETTE_DEFAULT;	// Which colour palette to use?
 unsigned char	scale_mod = SCALE_MOD_DEFAULT;		// Experimental surface scaling.
 short			screen_x = SCREEN_X_DEFAULT, screen_y = SCREEN_Y_DEFAULT;	// The starting screen X,Y size.
 unsigned char	screenshot_type = SCREENSHOT_TYPE_DEFAULT;	// The type of screenshots to take (BMP/UPNG/CPNG)
@@ -289,7 +287,6 @@ void init()
 				else if (id == "ntsc_mode") ntsc_mode = value;
 				else if (id == "screenshot_type") screenshot_type = value;
 				else if (id == "visual_glitches") visual_glitches = value;
-				else if (id == "palette") palette = value;
 				else if (id == "scale_mod") scale_mod = value;
 				else if (id == "glitch_warn") glitch_warn = value;
 				else if (id == "death_reports") death_reports = value;
@@ -579,7 +576,7 @@ void prefs_window_graphics()
 	else if (actual_resolution >= 1024 * 768) resolution_choice = 1;
 	else resolution_choice = 0;
 
-	PrefsEntry pe_screen_res, pe_full_screen, pe_shader, pe_palette, pe_glitches, pe_ss_format, pe_tex_scaling, pe_ml_dim, pe_ntsc_filter, pe_animation;
+	PrefsEntry pe_screen_res, pe_full_screen, pe_shader, pe_glitches, pe_ss_format, pe_tex_scaling, pe_ml_dim, pe_ntsc_filter, pe_animation;
 	Prefs prefs_screen;
 	prefs_screen.name = "GRAPHICS";
 
@@ -641,16 +638,6 @@ void prefs_window_graphics()
 	pe_shader.options_str.push_back("MONOCHROME");
 	prefs_screen.add_item(pe_shader);
 
-	pe_palette.id = ID_PALETTE;
-	pe_palette.name = "Colour Palette";
-	pe_palette.selected = prefs::palette;
-	pe_palette.options_str.push_back("FULL");
-	pe_palette.options_str.push_back("CGA");
-	pe_palette.options_str.push_back("NES");
-	pe_palette.options_str.push_back("COLOURBLIND R/G");
-	pe_palette.options_str.push_back("COLOURBLIND B");
-	prefs_screen.add_item(pe_palette);
-
 	pe_animation.id = ID_ANIMATION;
 	pe_animation.name = "2-Frame Animation";
 	pe_animation.selected = prefs::animation;
@@ -690,7 +677,6 @@ void prefs_window_graphics()
 				case ID_SCREEN_RES: resolution_choice = val; break;
 				case ID_FULL_SCREEN: prefs::fullscreen = val; break;
 				case ID_SHADER: prefs::ntsc_mode = val; iocore::update_ntsc_mode(); break;
-				case ID_PALETTE: prefs::palette = val; break;
 				case ID_GLITCHES: prefs::visual_glitches = val; break;
 				case ID_SS_FORMAT: prefs::screenshot_type = val; break;
 				case ID_TEX_SCALING: prefs::scale_mod = val; break;
@@ -757,7 +743,6 @@ void save(SQLite::Database *prefs_db)
 		sql_insert_pref("ntsc_mode", ntsc_mode);
 		sql_insert_pref("screenshot_type", screenshot_type);
 		sql_insert_pref("visual_glitches", visual_glitches);
-		sql_insert_pref("palette", palette);
 		sql_insert_pref("scale_mod", scale_mod);
 		sql_insert_pref("glitch_warn", glitch_warn);
 		sql_insert_pref("death_reports", death_reports);
