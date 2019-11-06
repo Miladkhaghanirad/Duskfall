@@ -61,6 +61,7 @@ namespace prefs
 #define KEY_SOUTHWEST_DEFAULT		'z'
 #define KEY_WEST_DEFAULT			'a'
 
+#define ANIMATION_DEFAULT			true	// Two-frame animation enabled/disabled.
 #define DEATH_REPORTS_DEFAULT		true	// Generate death report text files?
 #define FULLSCREEN_DEFAULT			false	// Run the game in full-screen mode?
 #define MESSAGE_LOG_DIM_DEFAULT		true	// Dim the colours in the message log?
@@ -73,7 +74,7 @@ namespace prefs
 #define SCREENSHOT_TYPE_DEFAULT		2		// The format of screenshots (0 = BMP, 1 = PNG, 2 = JPEG)
 #define VISUAL_GLITCHES_DEFAULT		0		// Do we want visual glitches?
 
-enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_PALETTE, ID_GLITCHES, ID_SS_FORMAT, ID_TEX_SCALING, ID_DEATH_REPORT, ID_MESSAGE_LOG_DIM, ID_NTSC_FILTER };
+enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_PALETTE, ID_GLITCHES, ID_SS_FORMAT, ID_TEX_SCALING, ID_DEATH_REPORT, ID_MESSAGE_LOG_DIM, ID_NTSC_FILTER, ID_ANIMATION };
 
 }	// namespace prefs
 
@@ -231,6 +232,7 @@ vector<string>			key_longname;
 vector<unsigned int>	key_id;
 vector<unsigned int>	key_current;
 
+bool			animation = ANIMATION_DEFAULT;	// Two-frame animation enabled/disabled.
 bool			death_reports = DEATH_REPORTS_DEFAULT;	// Generate death report text files?
 bool			fullscreen = FULLSCREEN_DEFAULT;	// Fullscreen mode.
 bool			glitch_warn = false;	// Have we shown the user the glitch warning screen?
@@ -293,6 +295,7 @@ void init()
 				else if (id == "death_reports") death_reports = value;
 				else if (id == "message_log_dim") message_log_dim = value;
 				else if (id == "ntsc_filter") ntsc_filter = value;
+				else if (id == "animation") animation = value;
 				else guru::log("Unknown preference found in prefs.dat: " + id, GURU_WARN);
 			}
 
@@ -576,7 +579,7 @@ void prefs_window_graphics()
 	else if (actual_resolution >= 1024 * 768) resolution_choice = 1;
 	else resolution_choice = 0;
 
-	PrefsEntry pe_screen_res, pe_full_screen, pe_shader, pe_palette, pe_glitches, pe_ss_format, pe_tex_scaling, pe_ml_dim, pe_ntsc_filter;
+	PrefsEntry pe_screen_res, pe_full_screen, pe_shader, pe_palette, pe_glitches, pe_ss_format, pe_tex_scaling, pe_ml_dim, pe_ntsc_filter, pe_animation;
 	Prefs prefs_screen;
 	prefs_screen.name = "GRAPHICS";
 
@@ -624,7 +627,7 @@ void prefs_window_graphics()
 	pe_ntsc_filter.name = "NTSC Filter";
 	pe_ntsc_filter.selected = prefs::ntsc_filter;
 	pe_ntsc_filter.is_boolean = true;
-	pe_ntsc_filter.selected = (prefs::ntsc_filter ? 1 : 0);
+	pe_ntsc_filter.selected = prefs::ntsc_filter;
 	pe_ntsc_filter.must_restart = true;
 	pe_ntsc_filter.cpu_heavy = true;
 	prefs_screen.add_item(pe_ntsc_filter);
@@ -647,6 +650,13 @@ void prefs_window_graphics()
 	pe_palette.options_str.push_back("COLOURBLIND R/G");
 	pe_palette.options_str.push_back("COLOURBLIND B");
 	prefs_screen.add_item(pe_palette);
+
+	pe_animation.id = ID_ANIMATION;
+	pe_animation.name = "2-Frame Animation";
+	pe_animation.selected = prefs::animation;
+	pe_animation.is_boolean = true;
+	pe_animation.selected = prefs::animation;
+	prefs_screen.add_item(pe_animation);
 
 	pe_glitches.id = ID_GLITCHES;
 	pe_glitches.name = "Visual Glitches";
@@ -686,6 +696,7 @@ void prefs_window_graphics()
 				case ID_TEX_SCALING: prefs::scale_mod = val; break;
 				case ID_MESSAGE_LOG_DIM: prefs::message_log_dim = val; break;
 				case ID_NTSC_FILTER: prefs::ntsc_filter = val; break;
+				case ID_ANIMATION: prefs::animation = val; break;
 			}
 			if (prefs_screen.selected_id() == ID_SCREEN_RES)
 			{
@@ -752,6 +763,7 @@ void save(SQLite::Database *prefs_db)
 		sql_insert_pref("death_reports", death_reports);
 		sql_insert_pref("message_log_dim", message_log_dim);
 		sql_insert_pref("ntsc_filter", ntsc_filter);
+		sql_insert_pref("animation", animation);
 
 		auto sql_insert_keybind = [prefs_db] (string key, long long value)
 		{

@@ -51,6 +51,7 @@ private:
 namespace prefs
 {
 
+extern bool				animation;			// Two-frame animation enabled/disabled.
 extern bool				death_reports;		// Generate death report text files?
 extern bool				fullscreen;			// Fullscreen mode.
 extern bool				glitch_warn;		// Have we shown the user the glitch warning screen?

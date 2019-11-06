@@ -139,6 +139,7 @@ SDL_Surface		**tileset = nullptr;	// The currently-loaded tileset.
 unsigned int	tileset_file_count = 0;	// How many files are loaded for this tileset?
 std::unordered_map<string, std::pair<unsigned int, unsigned int>>	tileset_map;	// The definitions map for the currently-loaded tileset.
 unsigned int	tileset_pixel_size = 0;	// The size of the tiles in pixels (e.g. 16 = 16x16 tiles)
+bool			tileset_supports_animation = false;	// Set to true is the currently-loaded tileset supports two-frame animation.
 int				unscaled_x = 0, unscaled_y = 0;	// The unscaled resolution.
 SDL_Surface		*window_surface = nullptr;	// The actual window's surface.
 
@@ -1063,6 +1064,7 @@ void load_tileset(string dir)
 	tileset = new SDL_Surface*[tileset_file_count];
 	tileset_pixel_size = json["TILESET_PIXEL_SIZE"].asUInt();
 	string tileset_alpha_unparsed = json["TILESET_ALPHA"].asString();
+	tileset_supports_animation = json["TILESET_SUPPORTS_ANIMATION"].asBool();
 	if (tileset_alpha_unparsed.size() != 6) guru::halt("Invalid tileset alpha string.");
 	unsigned char alpha_r = strx::htoi(tileset_alpha_unparsed.substr(0, 2));
 	unsigned char alpha_g = strx::htoi(tileset_alpha_unparsed.substr(2, 2));
@@ -1076,7 +1078,7 @@ void load_tileset(string dir)
 	for (unsigned int i = 0; i < jmem.size(); i++)
 	{
 		string def_id = jmem.at(i);
-		if (def_id == "TILESET_FILES" || def_id == "TILESET_PIXEL_SIZE" || def_id == "TILESET_ALPHA") continue;
+		if (def_id.substr(0, 7) == "TILESET") continue;
 		const string def_unparsed = json[def_id].asString();
 		vector<string> def_parsed = strx::string_explode(def_unparsed, ":");
 		if (def_parsed.size() != 2) guru::halt("Formatting error in " + dir + " tileset: " + def_id);
@@ -1356,6 +1358,7 @@ void print_tile(string tile, int x, int y, unsigned char brightness, bool animat
 		rect(x * tileset_pixel_size, y * tileset_pixel_size, tileset_pixel_size, tileset_pixel_size, Colour::BLACK);
 		return;
 	}
+	if (!tileset_supports_animation || !prefs::animation) animated = false;
 
 	// Sanity checks to ensure the tilesheet data is valid and we're not trying to load something that doesn't exist.
 	auto found = tileset_map.find(tile);
