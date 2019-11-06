@@ -402,9 +402,8 @@ void glitch_warning()
 	{
 		const int midrow = iocore::midrow(), midcol = iocore::midcol();
 		iocore::box(midcol - 27, midrow - 18, 55, 37, UI_COLOUR_BOX);
-		vector<string> message = strx::ansi_vector_split("Duskfall is a text-based game and with the following exception, does not include flashing colours or images. However: {nl} "
-				"The game by default uses a 'glitching' screen effect, which causes the display to sometimes flicker and distort, to imitate an unreliable old computer screen. {nl} "
-				"{5F}This can occasionally result in flickering or flashing colours which may affect players who have epilepsy. Some players may also simply dislike this effect. {nl} "
+		vector<string> message = strx::ansi_vector_split("The game by default uses a 'glitching' screen effect, which causes the display to sometimes flicker and distort, to imitate an unreliable old computer screen. {nl} "
+				"{5F}This can occasionally result in flickering or flashing colours which may affect players who have epilepsy. Some players may also simply dislike this effect and find it distracting or unwelcome. {nl} "
 				"{5F}This message will only be shown once. Please decide now if you would like to enable or disable visual glitches, by {5F}pressing the {5A}Y {5F}key to enable glitches, or the "
 				"{5C}N {5F}key to disable glitches. {nl} {57}This option can be changed again later at any time via the in-game preferences menu.", 53);
 		for (unsigned int i = 0; i < 8; i++)
