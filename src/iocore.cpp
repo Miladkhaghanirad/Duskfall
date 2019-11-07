@@ -1006,6 +1006,7 @@ void load_tileset(string dir)
 		for (unsigned int i = 0; i < tileset_file_count; i++)
 			SDL_FreeSurface(tileset[i]);
 		delete[] tileset;
+		tileset_file_count = 0;
 	}
 	Json::Value json = filex::load_json("tilesets/" + dir + "/tileset");
 	const Json::Value::Members jmem = json.getMemberNames();
