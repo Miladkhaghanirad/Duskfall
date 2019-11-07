@@ -30,6 +30,13 @@ Hero::Hero(unsigned long long new_id, unsigned int new_dungeon_id, unsigned long
 
 Hero::~Hero() { }
 
+// Returns a pointer to this Hero's Controls AI.
+shared_ptr<Controls> Hero::controls()
+{
+	STACK_TRACE();
+	return std::dynamic_pointer_cast<Controls>(ai);
+}
+
 // Loads the Hero's data from disk.
 void Hero::load()
 {

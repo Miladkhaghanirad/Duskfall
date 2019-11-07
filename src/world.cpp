@@ -157,8 +157,8 @@ void main_loop()
 			iocore::exit_functions();
 			exit(0);
 		}
-		else if (key == prefs::keybind(Keys::OPEN)) Controls::open();
-		else if (key == prefs::keybind(Keys::CLOSE)) Controls::close();
+		else if (key == prefs::keybind(Keys::OPEN)) hero()->controls()->open();
+		else if (key == prefs::keybind(Keys::CLOSE)) hero()->controls()->close();
 		else action_taken = false;
 		if (action_taken) message::reset_count();
 	}

@@ -5,6 +5,8 @@
 #include "duskfall.h"
 #include "actor.h"
 
+class Controls;	// defined in controls.h
+
 class Hero : public Actor
 {
 public:
@@ -15,6 +17,7 @@ public:
 	void	recenter_camera_horiz();	// Recenters the camera horizontally on the Hero's position, not adjusting the vertical.
 	void	recenter_camera_vert();		// Recenters the camera vertically on the Hero's position, not adjusting the horizontal.
 	void	save() override;	// Saves the Hero's data to disk, along with the rest of the game world.
+	shared_ptr<Controls>	controls();	// Returns a pointer to this Hero's Controls AI.
 
 	short			camera_off_x, camera_off_y;	// The 'camera' offset, allowing us to scroll around a multi-screen dungeon.
 	unsigned char	difficulty;	// The current difficulty level.
