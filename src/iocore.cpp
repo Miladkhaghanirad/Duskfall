@@ -137,6 +137,7 @@ SDL_Surface		**tileset = nullptr;	// The currently-loaded tileset.
 unsigned int	tileset_file_count = 0;	// How many files are loaded for this tileset?
 std::unordered_map<string, std::pair<unsigned int, unsigned int>>	tileset_map;	// The definitions map for the currently-loaded tileset.
 unsigned int	tileset_pixel_size = 0;	// The size of the tiles in pixels (e.g. 16 = 16x16 tiles)
+bool			tileset_supports_alpha = false;		// Set to true if the currently-loaded tileset supports layering multiple sprites with alpha blending.
 bool			tileset_supports_animation = false;	// Set to true is the currently-loaded tileset supports two-frame animation.
 int				unscaled_x = 0, unscaled_y = 0;	// The unscaled resolution.
 SDL_Surface		*window_surface = nullptr;	// The actual window's surface.
@@ -1015,6 +1016,7 @@ void load_tileset(string dir)
 	tileset_pixel_size = json["TILESET_PIXEL_SIZE"].asUInt();
 	string tileset_alpha_unparsed = json["TILESET_ALPHA"].asString();
 	tileset_supports_animation = json["TILESET_SUPPORTS_ANIMATION"].asBool();
+	tileset_supports_alpha = json["TILESET_SUPPORTS_ALPHA"].asBool();
 	if (tileset_alpha_unparsed.size() != 6) guru::halt("Invalid tileset alpha string.");
 	unsigned char alpha_r = strx::htoi(tileset_alpha_unparsed.substr(0, 2));
 	unsigned char alpha_g = strx::htoi(tileset_alpha_unparsed.substr(2, 2));
@@ -1293,10 +1295,10 @@ void print_at(char letter, int x, int y, unsigned char r, unsigned char g, unsig
 void print_tile(string tile, int x, int y, unsigned char brightness, bool animated)
 {
 	STACK_TRACE();
-	if (!brightness)
+	if (!brightness || !tileset_supports_alpha)
 	{
-		rect(x * tileset_pixel_size, y * tileset_pixel_size, tileset_pixel_size, tileset_pixel_size, Colour::BLACK);
-		return;
+		rect_fine(x * tileset_pixel_size, y * tileset_pixel_size, tileset_pixel_size, tileset_pixel_size, Colour::BLACK);
+		if (!brightness) return;
 	}
 	if (!tileset_supports_animation || !prefs::animation) animated = false;
 

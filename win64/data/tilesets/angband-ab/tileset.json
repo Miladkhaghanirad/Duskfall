@@ -8,6 +8,7 @@
 "TILESET_NAME" : "Adam Bolt's Angband",
 "TILESET_PIXEL_SIZE" : 16,
 "TILESET_SUPPORTS_ANIMATION" : false,
+"TILESET_SUPPORTS_ALPHA" : true,
 
 "DOOR" : "0:67",
 "DOOR_BROKEN" : "0:69",
