@@ -22,6 +22,54 @@ void Actor::clear_flag(unsigned int flag)
 	if ((flags & flag) == flag) flags ^= flag;
 }
 
+// Does this Actor have lower-priority rendering (i.e. other Actors go on top)?
+bool Actor::has_low_priority_rendering() const
+{
+	return is_item();
+}
+
+// Does this Actor have an animated sprite?
+bool Actor::is_animated() const
+{
+	return (flags & ACTOR_FLAG_ANIMATED) == ACTOR_FLAG_ANIMATED;
+}
+
+// Does this Actor block movement into its tile?
+bool Actor::is_blocker() const
+{
+	return (flags & ACTOR_FLAG_BLOCKER) == ACTOR_FLAG_BLOCKER;
+}
+
+// Is this Actor some sort of door?
+bool Actor::is_door() const
+{
+	return (flags & ACTOR_FLAG_DOOR) == ACTOR_FLAG_DOOR;
+}
+
+// Is this Actor unable to be normally seen?
+bool Actor::is_invisible() const
+{
+	return (flags & ACTOR_FLAG_INVISIBLE) == ACTOR_FLAG_INVISIBLE;
+}
+
+// Is this Actor an item that can be picked up?
+bool Actor::is_item() const
+{
+	return (flags & ACTOR_FLAG_ITEM) == ACTOR_FLAG_ITEM;
+}
+
+// Does this Actor block line-of-sight?
+bool Actor::is_los_blocker() const
+{
+	return (flags & ACTOR_FLAG_BLOCKS_LOS) == ACTOR_FLAG_BLOCKS_LOS;
+}
+
+// Is this Actor an NPC or monster?
+bool Actor::is_monster() const
+{
+	return (flags & ACTOR_FLAG_MONSTER) == ACTOR_FLAG_MONSTER;
+}
+
 // Loads this Actor's data from disk.
 void Actor::load()
 {

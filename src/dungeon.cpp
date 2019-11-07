@@ -586,18 +586,18 @@ void Dungeon::render(bool see_all)
 				shared_ptr<Actor> actor_here = nullptr;
 				for (auto actor : actors)
 				{
-					if (actor->x == x && actor->y == y && !actor->invisible())
+					if (actor->x == x && actor->y == y && !actor->is_invisible())
 					{
 						if (actor_here)
 						{
-							if (actor_here->low_priority_rendering() && !actor->low_priority_rendering()) actor_here = actor;
+							if (actor_here->has_low_priority_rendering() && !actor->has_low_priority_rendering()) actor_here = actor;
 						}
 						else actor_here = actor;
 					}
 				}
 				iocore::print_tile(here.get_sprite(x, y), screen_x, screen_y, here_brightness);
 				if (x == world::hero()->x && y == world::hero()->y) iocore::print_tile(world::hero()->tile, screen_x, screen_y, here_brightness, true);
-				else if (actor_here) iocore::print_tile(actor_here->tile, screen_x, screen_y, here_brightness, actor_here->animated());
+				else if (actor_here) iocore::print_tile(actor_here->tile, screen_x, screen_y, here_brightness, actor_here->is_animated());
 				explore(x, y);
 			}
 			else if (here.is_explored()) iocore::print_tile(here.get_sprite(x, y), screen_x, screen_y, 50);
@@ -655,7 +655,7 @@ bool Dungeon::tile_contains_los_blocker(unsigned short x, unsigned short y) cons
 {
 	STACK_TRACE();
 	for (auto actor : actors)
-		if (actor->x == x && actor->y == y && actor->blocks_los()) return true;
+		if (actor->x == x && actor->y == y && actor->is_los_blocker()) return true;
 	return false;
 }
 

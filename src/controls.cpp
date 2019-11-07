@@ -28,7 +28,7 @@ void Controls::close()
 	shared_ptr<Actor> door = nullptr;
 	for (auto actor : dungeon->actors)
 	{
-		if (actor->x == world::hero()->x + x_dir && actor->y == world::hero()->y + y_dir && actor->door() && !actor->blocker())
+		if (actor->x == world::hero()->x + x_dir && actor->y == world::hero()->y + y_dir && actor->is_door() && !actor->is_blocker())
 		{
 			door = actor;
 			break;
@@ -65,7 +65,7 @@ void Controls::open()
 	shared_ptr<Actor> door = nullptr;
 	for (auto actor : dungeon->actors)
 	{
-		if (actor->x == world::hero()->x + x_dir && actor->y == world::hero()->y + y_dir && actor->door() && actor->blocker())
+		if (actor->x == world::hero()->x + x_dir && actor->y == world::hero()->y + y_dir && actor->is_door() && actor->is_blocker())
 		{
 			door = actor;
 			break;
@@ -105,9 +105,9 @@ bool Controls::travel(short x_dir, short y_dir)
 		shared_ptr<Dungeon> dungeon = world::dungeon();
 		for (auto actor : dungeon->actors)
 		{
-			if (actor->x == owner->x + x_dir && actor->y == owner->y + y_dir && actor->blocker())
+			if (actor->x == owner->x + x_dir && actor->y == owner->y + y_dir && actor->is_blocker())
 			{
-				if (actor->door()) open_door(actor);
+				if (actor->is_door()) open_door(actor);
 				else message::msg("The " + actor->name + " blocks your path!", MC::WARN);
 				return false;
 			}

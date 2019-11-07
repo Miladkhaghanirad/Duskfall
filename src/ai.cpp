@@ -15,7 +15,7 @@ bool AI::travel(short x_dir, short y_dir)
 	shared_ptr<Tile> target_tile = dungeon->tile(owner->x + x_dir, owner->y + y_dir);
 	if (target_tile->is_impassible()) return false;
 	for (auto actor : dungeon->actors)
-		if (actor->x == owner->x + x_dir && actor->y == owner->y + y_dir && actor->blocker()) return false;
+		if (actor->x == owner->x + x_dir && actor->y == owner->y + y_dir && actor->is_blocker()) return false;
 
 	owner->x += x_dir;
 	owner->y += y_dir;
