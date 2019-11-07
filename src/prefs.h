@@ -62,6 +62,7 @@ extern unsigned char	scale_mod;			// Experimental surface scaling.
 extern short			screen_x, screen_y;	// The starting screen X,Y size.
 extern unsigned char	screenshot_type;	// The type of screenshots to take (BMP/UPNG/CPNG)
 extern unsigned char	visual_glitches;	// Visual glitches enabled/disabled.
+extern string			tileset;			// The user's preferred tileset.
 
 void	init();	// Loads and configures the user's preferences.
 void	save(SQLite::Database *prefs_db = nullptr);	// Saves the updated preferences file.

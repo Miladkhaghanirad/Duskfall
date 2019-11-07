@@ -1,10 +1,11 @@
-// Tile definition file for Dawnlike tileset.
+// Tile definition file for DawnLike tileset.
 // Copyright (c) 2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
 {
 
 "TILESET_ALPHA" : "FF00FF",
 "TILESET_FILES" : 6,
+"TILESET_NAME" : "DawnLike",
 "TILESET_PIXEL_SIZE" : 16,
 "TILESET_SUPPORTS_ANIMATION" : true,
 

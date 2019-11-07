@@ -7,6 +7,7 @@
 #include "prefs.h"
 #include "strx.h"
 
+#include "jsoncpp/json/json.h"
 #include "sdl2/SDL.h"
 #include "SQLiteCpp/SQLiteCpp.h"
 
@@ -71,9 +72,10 @@ namespace prefs
 #define SCREEN_X_DEFAULT			1024	// Horizontal screen resolution (minimum: 1024)
 #define SCREEN_Y_DEFAULT			600		// Vertical screen resolution (minimum: 600)
 #define SCREENSHOT_TYPE_DEFAULT		2		// The format of screenshots (0 = BMP, 1 = PNG, 2 = JPEG)
+#define TILESET_DEFAULT				"dawnlike"	// The user's preferred tileset.
 #define VISUAL_GLITCHES_DEFAULT		0		// Do we want visual glitches?
 
-enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_GLITCHES, ID_SS_FORMAT, ID_TEX_SCALING, ID_DEATH_REPORT, ID_MESSAGE_LOG_DIM, ID_NTSC_FILTER, ID_ANIMATION };
+enum { ID_SCREEN_RES = 100, ID_FULL_SCREEN, ID_SHADER, ID_GLITCHES, ID_SS_FORMAT, ID_TEX_SCALING, ID_DEATH_REPORT, ID_MESSAGE_LOG_DIM, ID_NTSC_FILTER, ID_ANIMATION, ID_TILESET };
 
 }	// namespace prefs
 
@@ -241,6 +243,9 @@ unsigned char	ntsc_mode = NTSC_MODE_DEFAULT;	// NTSC post-processing level.
 unsigned char	scale_mod = SCALE_MOD_DEFAULT;		// Experimental surface scaling.
 short			screen_x = SCREEN_X_DEFAULT, screen_y = SCREEN_Y_DEFAULT;	// The starting screen X,Y size.
 unsigned char	screenshot_type = SCREENSHOT_TYPE_DEFAULT;	// The type of screenshots to take (BMP/UPNG/CPNG)
+string			tileset = TILESET_DEFAULT;	// The user's preferred tileset.
+unsigned int	tileset_id = 0;	// The index in tileset_list for the current active tileset.
+vector<std::pair<string, string>>	tileset_list;	// The list of available tilesets.
 unsigned char	visual_glitches = VISUAL_GLITCHES_DEFAULT;	// Visual glitches enabled/disabled.
 
 // Resets a keybind to default.
@@ -293,7 +298,13 @@ void init()
 				else if (id == "message_log_dim") message_log_dim = value;
 				else if (id == "ntsc_filter") ntsc_filter = value;
 				else if (id == "animation") animation = value;
+				else if (id == "tileset") tileset = prefs_query.getColumn("value_str").getString();
 				else guru::log("Unknown preference found in prefs.dat: " + id, GURU_WARN);
+			}
+			if (!filex::directory_exists("data/tilesets/" + tileset))
+			{
+				guru::log("Could not load tileset " + tileset + "! Falling back to the default, " + TILESET_DEFAULT + ".", GURU_ERROR);
+				tileset = TILESET_DEFAULT;
 			}
 
 			SQLite::Statement key_query(prefs_db, "SELECT * FROM keybinds");
@@ -321,6 +332,16 @@ void init()
 		guru::halt(e.what());
 	}
 	ui_init_keybinds();
+	vector<string> list_of_tilesets = filex::files_in_dir("data/tilesets");
+	for (auto the_tileset : list_of_tilesets)
+	{
+		std::pair<string, string> new_pair;
+		new_pair.first = the_tileset;
+		Json::Value json = filex::load_json("tilesets/" + the_tileset + "/tileset");
+		new_pair.second = json["TILESET_NAME"].asString();
+		tileset_list.push_back(new_pair);
+		if (tileset == the_tileset) tileset_id = tileset_list.size() - 1;
+	}
 }
 
 // Returns the specified bound key.
@@ -576,7 +597,7 @@ void prefs_window_graphics()
 	else if (actual_resolution >= 1024 * 768) resolution_choice = 1;
 	else resolution_choice = 0;
 
-	PrefsEntry pe_screen_res, pe_full_screen, pe_shader, pe_glitches, pe_ss_format, pe_tex_scaling, pe_ml_dim, pe_ntsc_filter, pe_animation;
+	PrefsEntry pe_screen_res, pe_full_screen, pe_shader, pe_glitches, pe_ss_format, pe_tex_scaling, pe_ml_dim, pe_ntsc_filter, pe_animation, pe_tileset;
 	Prefs prefs_screen;
 	prefs_screen.name = "GRAPHICS";
 
@@ -638,6 +659,13 @@ void prefs_window_graphics()
 	pe_shader.options_str.push_back("MONOCHROME");
 	prefs_screen.add_item(pe_shader);
 
+	pe_tileset.id = ID_TILESET;
+	pe_tileset.name = "Tileset";
+	pe_tileset.selected = prefs::tileset_id;
+	for (auto tslp : tileset_list)
+		pe_tileset.options_str.push_back(strx::str_toupper(tslp.second));
+	prefs_screen.add_item(pe_tileset);
+
 	pe_animation.id = ID_ANIMATION;
 	pe_animation.name = "2-Frame Animation";
 	pe_animation.selected = prefs::animation;
@@ -683,6 +711,7 @@ void prefs_window_graphics()
 				case ID_MESSAGE_LOG_DIM: prefs::message_log_dim = val; break;
 				case ID_NTSC_FILTER: prefs::ntsc_filter = val; break;
 				case ID_ANIMATION: prefs::animation = val; break;
+				case ID_TILESET: prefs::tileset_id = val; prefs::tileset = tileset_list.at(val).first; iocore::load_tileset(prefs::tileset); break;
 			}
 			if (prefs_screen.selected_id() == ID_SCREEN_RES)
 			{
@@ -726,12 +755,20 @@ void save(SQLite::Database *prefs_db)
 		}
 
 		SQLite::Transaction transaction(*prefs_db);
-		prefs_db->exec("DROP TABLE IF EXISTS prefs; CREATE TABLE prefs ( key INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, pref TEXT NOT NULL, value INTEGER NOT NULL ); "
+		prefs_db->exec("DROP TABLE IF EXISTS prefs; CREATE TABLE prefs ( key INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, pref TEXT NOT NULL, value INTEGER NOT NULL, value_str TEXT ); "
 				"DROP TABLE IF EXISTS keybinds; CREATE TABLE keybinds ( id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, key TEXT NOT NULL, value INTEGER NOT NULL );");
 
 		auto sql_insert_pref = [prefs_db] (string pref, long long value)
-				{
+		{
 			SQLite::Statement sqls(*prefs_db, "INSERT INTO prefs (pref,value) VALUES (?,?)");
+			sqls.bind(1, pref);
+			sqls.bind(2, value);
+			sqls.exec();
+		};
+
+		auto sql_insert_pref_text = [prefs_db] (string pref, string value)
+		{
+			SQLite::Statement sqls(*prefs_db, "INSERT INTO prefs (pref,value,value_str) VALUES (?,0,?)");
 			sqls.bind(1, pref);
 			sqls.bind(2, value);
 			sqls.exec();
@@ -749,6 +786,7 @@ void save(SQLite::Database *prefs_db)
 		sql_insert_pref("message_log_dim", message_log_dim);
 		sql_insert_pref("ntsc_filter", ntsc_filter);
 		sql_insert_pref("animation", animation);
+		sql_insert_pref_text("tileset", tileset);
 
 		auto sql_insert_keybind = [prefs_db] (string key, long long value)
 		{

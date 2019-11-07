@@ -888,7 +888,7 @@ void init()
 		font_sheet_size /= 2;
 		font_sheet_size_narrow /= 2;
 	}
-	load_tileset("dawnlike");
+	load_tileset(prefs::tileset);
 	exit_func_level = 4;
 
 	// Now that the font is loaded and SDL is initialized, we can activate Guru's error screen.
