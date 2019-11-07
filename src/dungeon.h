@@ -22,23 +22,23 @@ class Tile
 {
 public:
 			Tile() : flags(0) { }
-	bool	destroyable_wall() { return wall() && !permawall(); }
-	bool	explored() { return (flags & TILE_FLAG_EXPLORED) == TILE_FLAG_EXPLORED; }
-	bool	floor() { return (flags & TILE_FLAG_FLOOR) == TILE_FLAG_FLOOR; }
-	string	get_name();		// Returns the name of this tile.
-	string	get_sprite(int x, int y);	// Returns the sprite name for rendering this tile.
-	bool	impassible() { return (flags & TILE_FLAG_IMPASSIBLE) == TILE_FLAG_IMPASSIBLE; }
-	bool	opaque() { return (flags & TILE_FLAG_OPAQUE) == TILE_FLAG_OPAQUE; }
-	bool	permawall() { return (flags & TILE_FLAG_PERMAWALL) == TILE_FLAG_PERMAWALL; }
+	string	get_name() const;		// Returns the name of this tile.
+	string	get_sprite(int x, int y) const;	// Returns the sprite name for rendering this tile.
+	bool	is_destroyable_wall() const;	// Is this Tile a wall that can be destroyed?
+	bool	is_explored() const;	// Has this Tile been explored?
+	bool	is_floor() const;		// Is this Tile a floor of some kind?
+	bool	is_impassible() const;	// Is this Tile something that blocks movement?
+	bool	is_opaque() const;		// Does this Tile block line-of-sight?
+	bool	is_permawall() const;	// Is this Tile a wall that can never be destroyed under any circumstances?
+	bool	is_wall() const;		// Is this Tile a wall of some kind?
 	void	set_name(string new_name);		// Sets the name of this Tile.
 	void	set_sprite(string new_sprite);	// Sets the sprite for this Tile.
-	bool	wall() { return (flags & TILE_FLAG_WALL) == TILE_FLAG_WALL; }
 
 	unsigned char	flags;		// Various properties of this tile.
 
 private:
-	string	check_neighbours(int x, int y, bool wall);	// Checks nearby tiles to modify floor and wall sprites.
-	bool	neighbour_identical(int x, int y);	// Check if a neighbour is an identical tile.
+	string	check_neighbours(int x, int y, bool wall) const;	// Checks nearby tiles to modify floor and wall sprites.
+	bool	neighbour_identical(int x, int y) const;			// Check if a neighbour is an identical tile.
 
 	char	name[TILE_NAME_MAX];		// An integer for the tile's hashed name, which is decoded elsewhere.
 	char	sprite[TILE_SPRITE_MAX];	// An integer for the tile's hashed tile sprite, which is decoded elsewhere.
@@ -51,17 +51,17 @@ public:
 			~Dungeon();
 	void	generate();	// Generates a new dungeon level.
 	void	generate_type_a();	// Generates a type A dungeon level.
-	unsigned short	get_height() { return height; }	// Read-only access to the dungeon height.
-	unsigned short	get_width() { return width; }	// Read-only access to the dungeon width.
+	unsigned short	get_height() const { return height; }	// Read-only access to the dungeon height.
+	unsigned short	get_width() const { return width; }	// Read-only access to the dungeon width.
 	void	load();		// Loadds this dungeon from disk.
-	bool	los_check(unsigned short x1, unsigned short y1);	// Checks to see if a given tile is within the player's line of sight.
+	bool	los_check(unsigned short x1, unsigned short y1) const;	// Checks to see if a given tile is within the player's line of sight.
 	void	map_view(bool see_all = false);	// View the dungeon map in its entirety.
-	void	random_start_position(unsigned short &x, unsigned short &y);	// Picks a viable random starting location.
+	void	random_start_position(unsigned short &x, unsigned short &y) const;	// Picks a viable random starting location.
 	void	recalc_lighting();	// Clears the lighting array and recalculates all light sources.
 	void	render(bool see_all = false);	// Renders the dungeon on the screen.
 	void	save();		// Saves this dungeon to disk.
 	void	set_tile(unsigned short x, unsigned short y, Tile &tile);	// Sets a specified tile, with error checking.
-	shared_ptr<Tile>	tile(unsigned short x, unsigned short y);	// Retrieves a specified tile pointer.
+	shared_ptr<Tile>	tile(unsigned short x, unsigned short y) const;	// Retrieves a specified tile pointer.
 
 	vector<shared_ptr<Actor>>	actors;	// The Actors stored in this dungeon level.
 
@@ -75,16 +75,15 @@ private:
 
 	void	carve_room(unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned int new_region);	// Carves out a square room.
 	void	cast_light(unsigned int x, unsigned int y, unsigned int radius, unsigned int row, float start_slope, float end_slope, unsigned int xx, unsigned int xy, unsigned int yx, unsigned int yy,  bool always_visible);
-	unsigned char	diminish_light(float distance, float falloff);					// Dims a specified light source.
+	unsigned char	diminish_light(float distance, float falloff) const;	// Dims a specified light source.
 	void	explore(unsigned short x, unsigned short y);					// Marks a given tile as explored.
-	bool	find_empty_tile(unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned short &rx, unsigned short &ry);	// Attempts to find an empty tile within the specified space.
-	bool	is_dead_end(unsigned short x, unsigned short y);				// Check to see if this tile is a dead-end.
-	s_rgb	light_surface(s_rgb surface_colour, s_rgb light_colour);		// Applies a light source to a surface, affecting its colour.
+	bool	find_empty_tile(unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned short &rx, unsigned short &ry) const;	// Attempts to find an empty tile within the specified space.
+	bool	is_dead_end(unsigned short x, unsigned short y) const;			// Check to see if this tile is a dead-end.
 	void	recalc_light_source(unsigned short x, unsigned short y, unsigned short radius, bool always_visible = false);	// Recalculates a specific light source.
 	void	region_floodfill(unsigned short x, unsigned short y, unsigned int new_region);		// Flood-fills a specified area with a new region ID.
-	bool	tile_contains_los_blocker(unsigned short x, unsigned short y);	// Checks if a tile contains an Actor that blocks line-of-sight.
-	bool	touches_two_regions(unsigned short x, unsigned short y);	// Checks if this tile touches a different region.
-	bool	viable_doorway(unsigned short x, unsigned short y);			// Checks if this tile is a viable doorway.
-	bool	viable_maze_position(unsigned short x, unsigned short y);	// Checks if this tile is a viable position to build a maze corridor.
-	bool	viable_room_position(unsigned short x, unsigned short y, unsigned short w, unsigned short h);	// Checks if this is a viable position to place a new room.
+	bool	tile_contains_los_blocker(unsigned short x, unsigned short y) const;	// Checks if a tile contains an Actor that blocks line-of-sight.
+	bool	touches_two_regions(unsigned short x, unsigned short y) const;	// Checks if this tile touches a different region.
+	bool	viable_doorway(unsigned short x, unsigned short y) const;		// Checks if this tile is a viable doorway.
+	bool	viable_maze_position(unsigned short x, unsigned short y) const;	// Checks if this tile is a viable position to build a maze corridor.
+	bool	viable_room_position(unsigned short x, unsigned short y, unsigned short w, unsigned short h) const;	// Checks if this is a viable position to place a new room.
 };

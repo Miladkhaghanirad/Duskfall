@@ -31,8 +31,8 @@ public:
 					Prefs();
 	void			add_item(PrefsEntry entry);	// Adds a new entry to the list.
 	void			render();		// Renders the prefs list, processes input.
-	unsigned int	selected_id();	// Returns the ID of the currently selected preference.
-	unsigned int	selected_val();	// Returns the value on the selected preference.
+	unsigned int	selected_id() const;	// Returns the ID of the currently selected preference.
+	unsigned int	selected_val() const;	// Returns the value on the selected preference.
 
 	bool			changed;	// Did the user change an option?
 	bool			done;		// Are we done here?

@@ -203,14 +203,14 @@ void Prefs::render()
 }
 
 // Returns the ID of the currently selected preference.
-unsigned int Prefs::selected_id()
+unsigned int Prefs::selected_id() const
 {
 	STACK_TRACE();
 	return entries.at(selected).id;
 }
 
 // Returns the value on the selected preference.
-unsigned int Prefs::selected_val()
+unsigned int Prefs::selected_val() const
 {
 	STACK_TRACE();
 	return entries.at(selected).selected;

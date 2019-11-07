@@ -121,7 +121,7 @@ void Dungeon::cast_light(unsigned int x, unsigned int y, unsigned int radius, un
 			Tile *tile = &tiles[ax + ay * width];
 			if (blocked)
 			{
-				if (tile->opaque() || tile_contains_los_blocker(ax, ay))
+				if (tile->is_opaque() || tile_contains_los_blocker(ax, ay))
 				{
 					next_start_slope = r_slope;
 					continue;
@@ -132,7 +132,7 @@ void Dungeon::cast_light(unsigned int x, unsigned int y, unsigned int radius, un
 					start_slope = next_start_slope;
 				}
 			}
-			else if (tile->opaque() || tile_contains_los_blocker(ax, ay))
+			else if (tile->is_opaque() || tile_contains_los_blocker(ax, ay))
 			{
 				blocked = true;
 				next_start_slope = r_slope;
@@ -144,7 +144,7 @@ void Dungeon::cast_light(unsigned int x, unsigned int y, unsigned int radius, un
 }
 
 // Dims a specified light source.
-unsigned char Dungeon::diminish_light(float distance, float falloff)
+unsigned char Dungeon::diminish_light(float distance, float falloff) const
 {
 	STACK_TRACE();
 	float divisor = pow(distance, falloff) - distance + 1;
@@ -159,7 +159,7 @@ void Dungeon::explore(unsigned short x, unsigned short y)
 }
 
 // Attempts to find an empty tile within the specified space, aborts after too many failures.
-bool Dungeon::find_empty_tile(unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned short &rx, unsigned short &ry)
+bool Dungeon::find_empty_tile(unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned short &rx, unsigned short &ry) const
 {
 	STACK_TRACE();
 	unsigned int attempts = 0;
@@ -167,7 +167,7 @@ bool Dungeon::find_empty_tile(unsigned short x, unsigned short y, unsigned short
 	{
 		unsigned int tx = mathx::rnd(w) - 1 + x;
 		unsigned int ty = mathx::rnd(h) - 1 + y;
-		if (tiles[tx + ty * width].impassible()) continue;
+		if (tiles[tx + ty * width].is_impassible()) continue;
 		bool viable = true;
 		for (auto actor : actors)
 		{
@@ -316,10 +316,10 @@ void Dungeon::generate_type_a()
 		dead_ends.erase(dead_ends.begin());
 		if (!is_dead_end(xy.first, xy.second) || mathx::rnd(3) != 1) continue;
 		vector<std::pair<signed char, signed char>> viable_directions;
-		if (tiles[xy.first + 1 + xy.second * width].destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(1, 0));
-		if (tiles[xy.first - 1 + xy.second * width].destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(-1, 0));
-		if (tiles[xy.first + (xy.second + 1) * width].destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(0, 1));
-		if (tiles[xy.first + (xy.second - 1) * width].destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(0, -1));
+		if (tiles[xy.first + 1 + xy.second * width].is_destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(1, 0));
+		if (tiles[xy.first - 1 + xy.second * width].is_destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(-1, 0));
+		if (tiles[xy.first + (xy.second + 1) * width].is_destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(0, 1));
+		if (tiles[xy.first + (xy.second - 1) * width].is_destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(0, -1));
 		if (!viable_directions.size()) continue;
 		unsigned int choice = mathx::rnd(viable_directions.size()) - 1;
 		carve_room(xy.first + viable_directions.at(choice).first, xy.second + viable_directions.at(choice).second, 1, 1, 0);
@@ -346,42 +346,17 @@ void Dungeon::generate_type_a()
 }
 
 // Check to see if this tile is a dead-end.
-bool Dungeon::is_dead_end(unsigned short x, unsigned short y)
+bool Dungeon::is_dead_end(unsigned short x, unsigned short y) const
 {
 	STACK_TRACE();
 	unsigned int surrounding_walls = 0;
-	if (tiles[x + y * width].wall()) return false;
-	if (tiles[x + 1 + y * width].wall()) surrounding_walls++;
-	if (tiles[x - 1 + y * width].wall()) surrounding_walls++;
-	if (tiles[x + (y + 1) * width].wall()) surrounding_walls++;
-	if (tiles[x + (y - 1) * width].wall()) surrounding_walls++;
+	if (tiles[x + y * width].is_wall()) return false;
+	if (tiles[x + 1 + y * width].is_wall()) surrounding_walls++;
+	if (tiles[x - 1 + y * width].is_wall()) surrounding_walls++;
+	if (tiles[x + (y + 1) * width].is_wall()) surrounding_walls++;
+	if (tiles[x + (y - 1) * width].is_wall()) surrounding_walls++;
 	if (surrounding_walls == 3) return true;
 	else return false;
-}
-
-// Applies a light source to a surface, affecting its colour.
-s_rgb Dungeon::light_surface(s_rgb surface_colour, s_rgb light_colour)
-{
-	STACK_TRACE();
-	if (!light_colour.r && !light_colour.g && !light_colour.b) return { 0, 0, 0};
-	auto light_with = [](unsigned char surf, unsigned char light) -> unsigned char
-	{
-		float light_perc = static_cast<float>(light) / 255.0f;
-		unsigned char modified_surf = static_cast<unsigned char>(round(static_cast<float>(surf) * light_perc));
-		if (modified_surf < 20 && surf > 0 && light > 0)
-		{
-			if (surf >= 20) modified_surf = 20;
-			else modified_surf = 20;
-		}
-		return modified_surf;
-	};
-
-	s_rgb lit_surface_colour;
-	lit_surface_colour.r = light_with(surface_colour.r, light_colour.r);
-	lit_surface_colour.g = light_with(surface_colour.g, light_colour.g);
-	lit_surface_colour.b = light_with(surface_colour.b, light_colour.b);
-
-	return lit_surface_colour;
 }
 
 // Loads this dungeon from disk.
@@ -422,7 +397,7 @@ void Dungeon::load()
 
 // Checks to see if a given tile is within the player's line of sight.
 // Largely adapted from Bresenham's Line Algorithm on RogueBasin.
-bool Dungeon::los_check(unsigned short x1, unsigned short y1)
+bool Dungeon::los_check(unsigned short x1, unsigned short y1) const
 {
 	unsigned short x2 = world::hero()->x, y2 = world::hero()->y;
 
@@ -456,7 +431,7 @@ bool Dungeon::los_check(unsigned short x1, unsigned short y1)
 
 			// We're not calling tile_contains_los_blocker() here, as this function is used to see if a tile would be within a player's
 			// line of sight, for calculating things like dynamic lighting.
-			if (tiles[x1 + y1 * width].opaque()) return false;
+			if (tiles[x1 + y1 * width].is_opaque()) return false;
 		}
 	}
 	else
@@ -477,7 +452,7 @@ bool Dungeon::los_check(unsigned short x1, unsigned short y1)
 			error += delta_x;
 			y1 += iy;
 
-			if (tiles[x1 + y1 * width].opaque()) return false;
+			if (tiles[x1 + y1 * width].is_opaque()) return false;
 		}
 	}
 
@@ -503,14 +478,14 @@ void Dungeon::map_view(bool see_all)
 }
 
 // Picks a viable random starting location.
-void Dungeon::random_start_position(unsigned short &x, unsigned short &y)
+void Dungeon::random_start_position(unsigned short &x, unsigned short &y) const
 {
 	STACK_TRACE();
 	while(true)
 	{
 		x = mathx::rnd(width - 4) + 2;
 		y = mathx::rnd(height - 4) + 2;
-		if (tiles[x + y * width].floor()) return;
+		if (tiles[x + y * width].is_floor()) return;
 	}
 }
 
@@ -528,7 +503,7 @@ void Dungeon::recalc_light_source(unsigned short x, unsigned short y, unsigned s
 		std::pair<unsigned short, unsigned short> xy = *iterator;
 		dynamic_light_temp.erase(iterator);
 
-		if (!always_visible && tiles[xy.first + xy.second * width].opaque())
+		if (!always_visible && tiles[xy.first + xy.second * width].is_opaque())
 		{
 			if (los_check(xy.first, xy.second)) dynamic_light_temp_walls.insert(xy);
 		} else
@@ -550,7 +525,7 @@ void Dungeon::recalc_light_source(unsigned short x, unsigned short y, unsigned s
 			for (short dy = -1; dy <= 1; dy++)
 			{
 				if ((dx == 0 && dy == 0) || dy + xy.second < 0 || dy + xy.second >= height) continue;
-				if (tiles[xy.first + dx + (xy.second + dy) * width].opaque()) continue;
+				if (tiles[xy.first + dx + (xy.second + dy) * width].is_opaque()) continue;
 				if (!los_check(xy.first + dx, xy.second + dy)) continue;
 				unsigned char light = lighting[xy.first + dx + (xy.second + dy) * width];
 				if (light > brightest) brightest = light;
@@ -576,7 +551,7 @@ void Dungeon::region_floodfill(unsigned short x, unsigned short y, unsigned int 
 {
 	STACK_TRACE();
 	if (region[x + y * width] == new_region) return;
-	if (tiles[x + y * width].wall()) return;
+	if (tiles[x + y * width].is_wall()) return;
 
 	region[x + y * width] = new_region;
 	for (short dx = -1; dx <= 1; dx++)
@@ -625,7 +600,7 @@ void Dungeon::render(bool see_all)
 				else if (actor_here) iocore::print_tile(actor_here->tile, screen_x, screen_y, here_brightness, actor_here->animated());
 				explore(x, y);
 			}
-			else if (here.explored()) iocore::print_tile(here.get_sprite(x, y), screen_x, screen_y, 50);
+			else if (here.is_explored()) iocore::print_tile(here.get_sprite(x, y), screen_x, screen_y, 50);
 		}
 	}
 }
@@ -668,7 +643,7 @@ void Dungeon::set_tile(unsigned short x, unsigned short y, Tile &tile)
 }
 
 // Retrieves a specified tile pointer.
-shared_ptr<Tile> Dungeon::tile(unsigned short x, unsigned short y)
+shared_ptr<Tile> Dungeon::tile(unsigned short x, unsigned short y) const
 {
 	STACK_TRACE();
 	if (x >= width || y >= height) guru::halt("Attempted to set out-of-bounds tile.");
@@ -676,7 +651,7 @@ shared_ptr<Tile> Dungeon::tile(unsigned short x, unsigned short y)
 }
 
 // Checks if a tile contains an Actor that blocks line-of-sight.
-bool Dungeon::tile_contains_los_blocker(unsigned short x, unsigned short y)
+bool Dungeon::tile_contains_los_blocker(unsigned short x, unsigned short y) const
 {
 	STACK_TRACE();
 	for (auto actor : actors)
@@ -685,7 +660,7 @@ bool Dungeon::tile_contains_los_blocker(unsigned short x, unsigned short y)
 }
 
 // Checks if this tile touches a different region.
-bool Dungeon::touches_two_regions(unsigned short x, unsigned short y)
+bool Dungeon::touches_two_regions(unsigned short x, unsigned short y) const
 {
 	STACK_TRACE();
 	if (x < 2 || y < 2 || x >= width - 2 || y >= height - 2) return false;
@@ -699,44 +674,44 @@ bool Dungeon::touches_two_regions(unsigned short x, unsigned short y)
 }
 
 // Checks if this tile is a viable doorway.
-bool Dungeon::viable_doorway(unsigned short x, unsigned short y)
+bool Dungeon::viable_doorway(unsigned short x, unsigned short y) const
 {
 	STACK_TRACE();
 	if (x < 2 || y < 2 || x >= width - 2 || y >= height - 2) return false;
-	if (!tiles[x + y * width].floor()) return false;	// Only basic floor can become a door.
+	if (!tiles[x + y * width].is_floor()) return false;	// Only basic floor can become a door.
 
-	if (tiles[x - 1 + y * width].wall() && tiles[x + 1 + y * width].wall())
+	if (tiles[x - 1 + y * width].is_wall() && tiles[x + 1 + y * width].is_wall())
 	{
-		if (tiles[x + (y + 1) * width].wall()) return false;
-		if (tiles[x + (y - 1) * width].wall()) return false;
-		if (!tiles[x - 1 + (y + 1) * width].wall() && !tiles[x + 1 + (y + 1) * width].wall()) return true;
-		if (!tiles[x - 1 + (y - 1) * width].wall() && !tiles[x + 1 + (y - 1) * width].wall()) return true;
+		if (tiles[x + (y + 1) * width].is_wall()) return false;
+		if (tiles[x + (y - 1) * width].is_wall()) return false;
+		if (!tiles[x - 1 + (y + 1) * width].is_wall() && !tiles[x + 1 + (y + 1) * width].is_wall()) return true;
+		if (!tiles[x - 1 + (y - 1) * width].is_wall() && !tiles[x + 1 + (y - 1) * width].is_wall()) return true;
 	}
-	else if (tiles[x + (y - 1) * width].wall() && tiles[x + (y + 1) * width].wall())
+	else if (tiles[x + (y - 1) * width].is_wall() && tiles[x + (y + 1) * width].is_wall())
 	{
-		if (tiles[x - 1 + y * width].wall()) return false;
-		if (tiles[x + 1 + y * width].wall()) return false;
-		if (!tiles[x + 1 + (y - 1) * width].wall() && !tiles[x + 1 + (y + 1) * width].wall()) return true;
-		if (!tiles[x - 1 + (y - 1) * width].wall() && !tiles[x - 1 + (y + 1) * width].wall()) return true;
+		if (tiles[x - 1 + y * width].is_wall()) return false;
+		if (tiles[x + 1 + y * width].is_wall()) return false;
+		if (!tiles[x + 1 + (y - 1) * width].is_wall() && !tiles[x + 1 + (y + 1) * width].is_wall()) return true;
+		if (!tiles[x - 1 + (y - 1) * width].is_wall() && !tiles[x - 1 + (y + 1) * width].is_wall()) return true;
 	}
 
 	return false;
 }
 
 // Checks if this tile is a viable position to build a maze corridor.
-bool Dungeon::viable_maze_position(unsigned short x, unsigned short y)
+bool Dungeon::viable_maze_position(unsigned short x, unsigned short y) const
 {
 	STACK_TRACE();
 	if (x < 2 || y < 2 || x >= width - 2 || y >= height - 2) return false;
 
 	unsigned short current_exits = 0;
-	if (!tiles[x + y * width].wall()) return false;
+	if (!tiles[x + y * width].is_wall()) return false;
 	for (int ox = -1; ox <= 1; ox++)
 	{
 		for (int oy = -1; oy <= 1; oy++)
 		{
 			if (ox == 0 && oy == 0) continue;
-			if (!tiles[(x + ox) + ((y + oy) * width)].wall()) current_exits++;
+			if (!tiles[(x + ox) + ((y + oy) * width)].is_wall()) current_exits++;
 		}
 	}
 	if (current_exits <= 1) return true;
@@ -744,17 +719,17 @@ bool Dungeon::viable_maze_position(unsigned short x, unsigned short y)
 }
 
 // Checks if this is a viable position to place a new room.
-bool Dungeon::viable_room_position(unsigned short x, unsigned short y, unsigned short w, unsigned short h)
+bool Dungeon::viable_room_position(unsigned short x, unsigned short y, unsigned short w, unsigned short h) const
 {
 	STACK_TRACE();
 	for (unsigned short rx = x - 1; rx < x + w + 2; rx++)
 		for (unsigned short ry = y - 1; ry < y + h + 2; ry++)
-			if (!tiles[rx + ry * width].destroyable_wall()) return false;
+			if (!tiles[rx + ry * width].is_destroyable_wall()) return false;
 	return true;
 }
 
 // Checks nearby tiles to modify floor and wall sprites.
-string Tile::check_neighbours(int x, int y, bool wall)
+string Tile::check_neighbours(int x, int y, bool wall) const
 {
 	STACK_TRACE();
 	const unsigned char wall_map[16] = { 5, 4, 2, 15, 2, 15, 2, 15, 4, 4, 11, 14, 11, 12, 11, 13 };
@@ -770,14 +745,14 @@ string Tile::check_neighbours(int x, int y, bool wall)
 }
 
 // Returns the name of this tile.
-string Tile::get_name()
+string Tile::get_name() const
 {
 	STACK_TRACE();
 	return string(name);
 }
 
 // Returns the sprite name for rendering this tile.
-string Tile::get_sprite(int x, int y)
+string Tile::get_sprite(int x, int y) const
 {
 	STACK_TRACE();
 	string sprite_name = sprite;
@@ -787,8 +762,50 @@ string Tile::get_sprite(int x, int y)
 	return sprite_name;
 }
 
+// Is this Tile a wall that can be destroyed?
+bool Tile::is_destroyable_wall() const
+{
+	return is_wall() && !is_permawall();
+}
+
+// Has this Tile been explored?
+bool Tile::is_explored() const
+{
+	return (flags & TILE_FLAG_EXPLORED) == TILE_FLAG_EXPLORED;
+}
+
+// Is this Tile a floor of some kind?
+bool Tile::is_floor() const
+{
+	return (flags & TILE_FLAG_FLOOR) == TILE_FLAG_FLOOR;
+}
+
+// Is this Tile something that blocks movement?
+bool Tile::is_impassible() const
+{
+	return (flags & TILE_FLAG_IMPASSIBLE) == TILE_FLAG_IMPASSIBLE;
+}
+
+// Does this Tile block line-of-sight?
+bool Tile::is_opaque() const
+{
+	return (flags & TILE_FLAG_OPAQUE) == TILE_FLAG_OPAQUE;
+}
+
+// Is this Tile a wall that can never be destroyed under any circumstances?
+bool Tile::is_permawall() const
+{
+	return (flags & TILE_FLAG_PERMAWALL) == TILE_FLAG_PERMAWALL;
+}
+
+// Is this Tile a wall of some kind?
+bool Tile::is_wall() const
+{
+	return (flags & TILE_FLAG_WALL) == TILE_FLAG_WALL;
+}
+
 // Check if a neighbour is an identical tile.
-bool Tile::neighbour_identical(int x, int y)
+bool Tile::neighbour_identical(int x, int y) const
 {
 	STACK_TRACE();
 	if (x < 0 || y < 0 || x >= world::dungeon()->get_width() || y >= world::dungeon()->get_height()) return false;
