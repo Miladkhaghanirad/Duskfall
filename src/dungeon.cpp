@@ -773,8 +773,7 @@ string Tile::check_neighbours(int x, int y, bool wall)
 string Tile::get_name()
 {
 	STACK_TRACE();
-	string output = name;
-	return output;
+	return string(name);
 }
 
 // Returns the sprite name for rendering this tile.
@@ -794,7 +793,7 @@ bool Tile::neighbour_identical(int x, int y)
 	STACK_TRACE();
 	if (x < 0 || y < 0 || x >= world::dungeon()->get_width() || y >= world::dungeon()->get_height()) return false;
 	shared_ptr<Tile> neighbour = world::dungeon()->tile(x, y);
-	if (neighbour->sprite == sprite) return true;
+	if (string(neighbour->sprite) == string(sprite)) return true;
 	else return false;
 }
 
