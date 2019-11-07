@@ -663,7 +663,6 @@ void prefs_window_graphics()
 	pe_tileset.id = ID_TILESET;
 	pe_tileset.name = "Tileset";
 	pe_tileset.selected = prefs::tileset_id;
-	pe_tileset.must_restart = true;
 	for (auto tslp : tileset_list)
 		pe_tileset.options_str.push_back(strx::str_toupper(tslp.second));
 	prefs_screen.add_item(pe_tileset);
@@ -713,7 +712,11 @@ void prefs_window_graphics()
 				case ID_MESSAGE_LOG_DIM: prefs::message_log_dim = val; break;
 				case ID_NTSC_FILTER: prefs::ntsc_filter = val; break;
 				case ID_ANIMATION: prefs::animation = val; break;
-				case ID_TILESET: prefs::tileset_id = val; prefs::tileset = tileset_list.at(val).first; break;
+				case ID_TILESET:
+					prefs::tileset_id = val;
+					prefs::tileset = tileset_list.at(val).first;
+					iocore::load_tileset(prefs::tileset);
+					break;
 			}
 			if (prefs_screen.selected_id() == ID_SCREEN_RES)
 			{
