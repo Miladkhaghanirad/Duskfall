@@ -126,3 +126,22 @@ void Hero::save()
 	if (false) tag_file << 'X' << std::endl;	// X if this character is dead.
 	tag_file.close();
 }
+
+// Reacts to other Actors on the tile this Actor is standing on.
+void Hero::tile_react()
+{
+	STACK_TRACE();
+	vector<shared_ptr<Actor>> items_here;
+	for (auto actor : *world::actors())
+	{
+		if (actor->x != x || actor->y != y || actor->is_invisible()) continue;
+		if (actor->is_item()) items_here.push_back(actor);
+	}
+	if (items_here.size())
+	{
+		vector<string> item_names;
+		for (auto item : items_here)
+			item_names.push_back(item->name);
+		message::msg("You see " + strx::comma_list(item_names, true) + " here.");
+	}
+}

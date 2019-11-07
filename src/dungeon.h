@@ -52,7 +52,9 @@ public:
 	void	generate();	// Generates a new dungeon level.
 	void	generate_type_a();	// Generates a type A dungeon level.
 	unsigned short	get_height() const { return height; }	// Read-only access to the dungeon height.
+	unsigned int	get_level() const { return level; }	// Read-only access to the dungeon level.
 	unsigned short	get_width() const { return width; }	// Read-only access to the dungeon width.
+	bool	is_actor_here(shared_ptr<Actor> actor, unsigned int x, unsigned int y) const;	// Checks if an Actor is at the specified location in the Dungeon.
 	void	load();		// Loadds this dungeon from disk.
 	bool	los_check(unsigned short x1, unsigned short y1) const;	// Checks to see if a given tile is within the player's line of sight.
 	void	map_view(bool see_all = false);	// View the dungeon map in its entirety.
@@ -62,8 +64,6 @@ public:
 	void	save();		// Saves this dungeon to disk.
 	void	set_tile(unsigned short x, unsigned short y, Tile &tile);	// Sets a specified tile, with error checking.
 	shared_ptr<Tile>	tile(unsigned short x, unsigned short y) const;	// Retrieves a specified tile pointer.
-
-	vector<shared_ptr<Actor>>	actors;	// The Actors stored in this dungeon level.
 
 private:
 	unsigned short	level;			// The vertical level of this dungeon.

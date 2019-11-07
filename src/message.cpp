@@ -69,9 +69,7 @@ void msg(string message, MC colours)
 	{
 		if (key == RESIZE_KEY || redraw)
 		{
-			iocore::cls();
-			world::dungeon()->render();
-			message::render();
+			world::full_redraw();
 			iocore::print("-more-", iocore::get_cols_narrow(), iocore::get_rows() - 1, Colour::CGA_WHITE, PRINT_FLAG_NARROW);
 			iocore::flip();
 			redraw = false;
@@ -97,6 +95,7 @@ void msg(string message, MC colours)
 	output_raw.push_back(message_colour_str + message);
 	process_output_buffer();	// Reprocess the text, to make sure it's all where it should be.
 	render();
+	iocore::flip();
 }
 
 // Processes input while in message-window mode.

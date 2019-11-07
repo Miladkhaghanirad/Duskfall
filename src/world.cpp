@@ -22,6 +22,7 @@
 namespace world
 {
 
+vector<shared_ptr<Actor>>	the_actors;		// The Actors currently active in the game.
 bool				db_ready = false;		// Is the database available for reading/writing?
 unsigned short		level = 0;				// The current dungeon level depth.
 bool				recalc_lighting = true;	// Recalculate the dynamic lighting at the start of the next turn.
@@ -32,10 +33,25 @@ shared_ptr<Dungeon>	the_dungeon = nullptr;	// The current dungeon level.
 shared_ptr<Hero>	the_hero = nullptr;		// The main Hero object.
 
 
+// Returns the list of Actors active in the game.
+vector<shared_ptr<Actor>>* actors()
+{
+	return &the_actors;
+}
+
 // Returns a pointer to the Dungeon object.
 shared_ptr<Dungeon>	dungeon()
 {
 	return the_dungeon;
+}
+
+// Redraws the entire screen.
+void full_redraw()
+{
+	iocore::cls();
+	the_dungeon->render();
+	message::render();
+	STACK_TRACE();
 }
 
 // Returns a pointer to the Hero object.
@@ -115,9 +131,7 @@ void main_loop()
 		}
 		if (redraw_full)
 		{
-			iocore::cls();
-			the_dungeon->render();
-			message::render();
+			full_redraw();
 			iocore::flip();
 			redraw_full = false;
 		}
@@ -137,16 +151,6 @@ void main_loop()
 			game_clock = std::chrono::system_clock::now();
 			save();
 		}
-		else if (key == prefs::keybind(Keys::NORTH)) hero()->ai->travel(0, -1);
-		else if (key == prefs::keybind(Keys::SOUTH)) hero()->ai->travel(0, 1);
-		else if (key == prefs::keybind(Keys::EAST)) hero()->ai->travel(1, 0);
-		else if (key == prefs::keybind(Keys::WEST)) hero()->ai->travel(-1, 0);
-		else if (key == prefs::keybind(Keys::NORTHEAST)) hero()->ai->travel(1, -1);
-		else if (key == prefs::keybind(Keys::NORTHWEST)) hero()->ai->travel(-1, -1);
-		else if (key == prefs::keybind(Keys::SOUTHEAST)) hero()->ai->travel(1, 1);
-		else if (key == prefs::keybind(Keys::SOUTHWEST)) hero()->ai->travel(-1, 1);
-		else if (key == prefs::keybind(Keys::SCROLL_TOP) || key == prefs::keybind(Keys::SCROLL_BOTTOM) || key == prefs::keybind(Keys::SCROLL_PAGEUP) || key == prefs::keybind(Keys::SCROLL_PAGEDOWN) || key == MOUSEWHEEL_UP_KEY
-				|| key == MOUSEWHEEL_DOWN_KEY || key == prefs::keybind(Keys::SCROLL_UP) || key == prefs::keybind(Keys::SCROLL_DOWN)) message::process_input(key);
 		else if (key == prefs::keybind(Keys::OPTIONS_WINDOW))
 		{
 			prefs::prefs_window();
@@ -157,9 +161,7 @@ void main_loop()
 			iocore::exit_functions();
 			exit(0);
 		}
-		else if (key == prefs::keybind(Keys::OPEN)) hero()->controls()->open();
-		else if (key == prefs::keybind(Keys::CLOSE)) hero()->controls()->close();
-		else action_taken = false;
+		else action_taken = hero()->controls()->process_key(key);
 		if (action_taken) message::reset_count();
 	}
 }

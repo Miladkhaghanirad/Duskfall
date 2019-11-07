@@ -10,10 +10,17 @@ class Controls : public AI
 {
 public:
 			Controls(Actor* new_owner) : AI(new_owner) { }
-	void	close();	// Attempts to close a door.
-	void	open();		// Attempts to open a door.
+	void	close();		// Attempts to close a door.
+	void	drop();			// Picks an inventory item to drop.
+	void	inventory();	// Interacts with carried items.
+	void	open();			// Attempts to open a door.
+	bool	process_key(unsigned int key);	// Processes a keypress.
+	void	take();			// Picks up nearby items.
 	bool	travel(short x_dir, short y_dir) override;	// Attempts to travel in a given direction.
 
 private:
-	static void	open_door(shared_ptr<Actor> door);	// Opens a specified door.
+	void	drop_item(unsigned int id);	// Drops an item on the ground.
+	void	inventory_menu(unsigned int id);	// Item menu for a specified inventory item.
+	void	open_door(shared_ptr<Actor> door);	// Opens a specified door.
+	void	take_item(unsigned int id);	// Picks up a specific item.
 };

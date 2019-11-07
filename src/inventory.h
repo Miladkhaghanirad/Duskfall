@@ -11,12 +11,14 @@ class Inventory
 {
 public:
 			Inventory(Actor *new_owner, unsigned long long new_id) : id(new_id), owner(new_owner) { }
+	void	add_item(shared_ptr<Actor> item);	// Adds an item to this Inventory.
+	void	remove_item(unsigned int id);		// Removes an item from this Inventory. WARNING: This will leave the item ownerless and without a dungeon ID.
 	void	load();	// Loads this Inventory from disk.
 	void	save();	// Saves this Inventory to disk.
 
+	vector<shared_ptr<Actor>>	contents;	// The Actors stored in this Inventory.
 	unsigned long long	id;		// The unique ID for this Inventory.
 
 private:
-	vector<shared_ptr<Actor>>	contents;
 	Actor*				owner;	// The Actor that owns this Inventory. This should NOT be a shared_ptr, as that creates some nasty issues during object destruction.
 };

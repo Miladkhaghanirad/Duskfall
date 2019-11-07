@@ -69,7 +69,7 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 		new_mob->dungeon_id = level;
 		bool success = find_empty_tile(x, y, w, h, new_mob->x, new_mob->y);
 		if (!success) return;
-		actors.push_back(new_mob);
+		world::actors()->push_back(new_mob);
 	}
 	while (items_here)
 	{
@@ -80,7 +80,7 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 		new_item->dungeon_id = level;
 		bool success = find_empty_tile(x, y, w, h, new_item->x, new_item->y);
 		if (!success) return;
-		actors.push_back(new_item);
+		world::actors()->push_back(new_item);
 	}
 }
 
@@ -169,7 +169,7 @@ bool Dungeon::find_empty_tile(unsigned short x, unsigned short y, unsigned short
 		unsigned int ty = mathx::rnd(h) - 1 + y;
 		if (tiles[tx + ty * width].is_impassible()) continue;
 		bool viable = true;
-		for (auto actor : actors)
+		for (auto actor : *world::actors())
 		{
 			if (actor->x == tx && actor->y == ty)
 			{
@@ -337,12 +337,19 @@ void Dungeon::generate_type_a()
 				shared_ptr<Actor> door = data::get_tile_feature("DOOR_CLOSED");
 				door->dungeon_id = level;
 				door->x = x; door->y = y;
-				actors.push_back(door);
+				world::actors()->push_back(door);
 			}
 		}
 	}
 
 	delete[] region;
+}
+
+// Checks if an Actor is at the specified location in the Dungeon.
+bool Dungeon::is_actor_here(shared_ptr<Actor> actor, unsigned int x, unsigned int y) const
+{
+	if (actor->owner_id || actor->dungeon_id != level || actor->x != x || actor->y != y) return false;
+	return true;
 }
 
 // Check to see if this tile is a dead-end.
@@ -380,13 +387,13 @@ void Dungeon::load()
 		const unsigned int actor_count = world::save_db()->execAndGet("SELECT COUNT(*) FROM actors WHERE did = " + strx::itos(level));
 		SQLite::Statement actors_query(*world::save_db(), "SELECT * FROM actors WHERE did = ?");
 		actors_query.bind(1, level);
-		actors.reserve(actor_count);
+		world::actors()->reserve(world::actors()->size() + actor_count);
 		while (actors_query.executeStep())
 		{
 			unsigned int actor_id = actors_query.getColumn("aid").getUInt();
 			shared_ptr<Actor> new_actor = std::make_shared<Actor>(actor_id, level);
 			new_actor->load();
-			actors.push_back(new_actor);
+			world::actors()->push_back(new_actor);
 		}
 	}
 	catch(std::exception &e)
@@ -584,9 +591,9 @@ void Dungeon::render(bool see_all)
 			if (here_brightness >= 50)
 			{
 				shared_ptr<Actor> actor_here = nullptr;
-				for (auto actor : actors)
+				for (auto actor : *world::actors())
 				{
-					if (actor->x == x && actor->y == y && !actor->is_invisible())
+					if (actor->dungeon_id == level && actor->x == x && actor->y == y && !actor->is_invisible())
 					{
 						if (actor_here)
 						{
@@ -625,8 +632,8 @@ void Dungeon::save()
 		SQLite::Statement actors_sql(*world::save_db(), "DELETE FROM actors WHERE did = ?");
 		actors_sql.bind(1, level);
 		actors_sql.exec();
-		for (unsigned int a = 0; a < actors.size(); a++)
-			actors.at(a)->save();
+		for (unsigned int a = 0; a < world::actors()->size(); a++)
+			world::actors()->at(a)->save();
 	}
 	catch(std::exception &e)
 	{
@@ -654,7 +661,7 @@ shared_ptr<Tile> Dungeon::tile(unsigned short x, unsigned short y) const
 bool Dungeon::tile_contains_los_blocker(unsigned short x, unsigned short y) const
 {
 	STACK_TRACE();
-	for (auto actor : actors)
+	for (auto actor : *world::actors())
 		if (actor->x == x && actor->y == y && actor->is_los_blocker()) return true;
 	return false;
 }

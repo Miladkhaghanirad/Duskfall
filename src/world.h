@@ -5,6 +5,7 @@
 #include "duskfall.h"
 
 namespace SQLite { class Database; }	// defined in SQLiteCpp/SQLiteCpp.h
+class Actor;	// defined in actors.h
 class Dungeon;	// defined in dungeon.h
 class Hero;		// defined in hero.h
 
@@ -12,7 +13,9 @@ class Hero;		// defined in hero.h
 namespace world
 {
 
+vector<shared_ptr<Actor>>*	actors();	// Returns the list of Actors active in the game.
 shared_ptr<Dungeon>	dungeon();		// Returns a pointer to the Dungeon object.
+void				full_redraw();	// Redraws the entire screen.
 shared_ptr<Hero>	hero();			// Returns a pointer to the Hero object.
 void				load();			// Loads the game from disk.
 void				main_loop();	// The main game loop!

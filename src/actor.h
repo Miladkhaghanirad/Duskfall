@@ -34,6 +34,7 @@ public:
 	virtual void	load();	// Loads this Actor's data from disk.
 	virtual void	save();	// Saves this Actor's data to disk.
 	void			set_flag(unsigned int flag);	// Sets a flag on this Actor.
+	virtual void	tile_react() { }	// Reacts to other Actors on the tile this Actor is standing on.
 
 	shared_ptr<AI>	ai;			// If this Actor has AI, this is where its 'brain' is.
 	unsigned int	dungeon_id;	// The ID of the dungeon level this Actor is on.

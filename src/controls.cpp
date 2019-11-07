@@ -4,9 +4,13 @@
 #include "controls.h"
 #include "dungeon.h"
 #include "hero.h"
+#include "inventory.h"
 #include "iocore.h"
+#include "menu.h"
 #include "message.h"
+#include "prefs.h"
 #include "static-data.h"
+#include "strx.h"
 #include "world.h"
 
 
@@ -26,7 +30,7 @@ void Controls::close()
 	}
 	shared_ptr<Dungeon> dungeon = world::dungeon();
 	shared_ptr<Actor> door = nullptr;
-	for (auto actor : dungeon->actors)
+	for (auto actor : *world::actors())
 	{
 		if (actor->x == world::hero()->x + x_dir && actor->y == world::hero()->y + y_dir && actor->is_door() && !actor->is_blocker())
 		{
@@ -47,6 +51,67 @@ void Controls::close()
 	else message::msg("That isn't something you can close.", MC::WARN);
 }
 
+// Picks an inventory item to drop.
+void Controls::drop()
+{
+	STACK_TRACE();
+	if (!owner->inventory->contents.size())
+	{
+		message::msg("You are not carrying anything.", MC::WARN);
+		return;
+	}
+	auto inv_menu = std::make_shared<Menu>();
+	inv_menu->set_title("DROP ITEM");
+	for (auto item : owner->inventory->contents)
+		inv_menu->add_item(item->name);
+	int choice = inv_menu->render();
+	if (choice >= 0) drop_item(choice);
+}
+
+// Drops an item on the ground.
+void Controls::drop_item(unsigned int id)
+{
+	STACK_TRACE();
+	auto item_ptr = owner->inventory->contents.at(id);
+	owner->inventory->remove_item(id);
+	item_ptr->dungeon_id = 1;	// NOTE: When multiple dungeon levels are supported, set this to the current level.
+	item_ptr->x = owner->x;
+	item_ptr->y = owner->y;
+	message::msg("You drop the " + item_ptr->name + ".");
+}
+
+// Interacts with carried items.
+void Controls::inventory()
+{
+	STACK_TRACE();
+	if (!owner->inventory->contents.size())
+	{
+		message::msg("You are not carrying anything.", MC::WARN);
+		return;
+	}
+	auto inv_menu = std::make_shared<Menu>();
+	inv_menu->set_title("INVENTORY");
+	for (auto item : owner->inventory->contents)
+		inv_menu->add_item(item->name);
+	int choice = inv_menu->render();
+	if (choice >= 0) inventory_menu(choice);
+}
+
+// Item menu for a specified inventory item.
+void Controls::inventory_menu(unsigned int id)
+{
+	STACK_TRACE();
+	auto item = world::actors()->at(id);
+	auto inv_menu = std::make_shared<Menu>();
+	inv_menu->set_title(strx::str_toupper(item->name));
+	inv_menu->add_item("Drop");
+	int choice = inv_menu->render();
+	switch(choice)
+	{
+		case 0: drop_item(choice); break;
+	}
+}
+
 // Attempts to open a door.
 void Controls::open()
 {
@@ -63,9 +128,9 @@ void Controls::open()
 	}
 	shared_ptr<Dungeon> dungeon = world::dungeon();
 	shared_ptr<Actor> door = nullptr;
-	for (auto actor : dungeon->actors)
+	for (auto actor : *world::actors())
 	{
-		if (actor->x == world::hero()->x + x_dir && actor->y == world::hero()->y + y_dir && actor->is_door() && actor->is_blocker())
+		if (world::dungeon()->is_actor_here(actor, world::hero()->x + x_dir, world::hero()->y + y_dir) && actor->is_door() && actor->is_blocker())
 		{
 			door = actor;
 			break;
@@ -88,6 +153,80 @@ void Controls::open_door(shared_ptr<Actor> door)
 	world::queue_redraw();
 }
 
+// Processes a keypress.
+bool Controls::process_key(unsigned int key)
+{
+	STACK_TRACE();
+
+	if (key == prefs::keybind(Keys::NORTH)) { travel(0, -1); return true; }
+	if (key == prefs::keybind(Keys::SOUTH)) { travel(0, 1); return true; }
+	if (key == prefs::keybind(Keys::EAST)) { travel(1, 0); return true; }
+	if (key == prefs::keybind(Keys::WEST)) { travel(-1, 0); return true; }
+	if (key == prefs::keybind(Keys::NORTHEAST)) { travel(1, -1); return true; }
+	if (key == prefs::keybind(Keys::NORTHWEST)) { travel(-1, -1); return true; }
+	if (key == prefs::keybind(Keys::SOUTHEAST)) { travel(1, 1); return true; }
+	if (key == prefs::keybind(Keys::SOUTHWEST)) { travel(-1, 1); return true; }
+	if (key == prefs::keybind(Keys::SCROLL_TOP) || key == prefs::keybind(Keys::SCROLL_BOTTOM) || key == prefs::keybind(Keys::SCROLL_PAGEUP) || key == prefs::keybind(Keys::SCROLL_PAGEDOWN) || key == MOUSEWHEEL_UP_KEY
+			|| key == MOUSEWHEEL_DOWN_KEY || key == prefs::keybind(Keys::SCROLL_UP) || key == prefs::keybind(Keys::SCROLL_DOWN)) { message::process_input(key); return true; }
+	if (key == prefs::keybind(Keys::OPEN)) { open(); return true; }
+	if (key == prefs::keybind(Keys::CLOSE)) { close(); return true; }
+	if (key == prefs::keybind(Keys::TAKE)) { take(); return true; }
+	if (key == prefs::keybind(Keys::INVENTORY)) { inventory(); return true; }
+	if (key == prefs::keybind(Keys::DROP)) { drop(); return true; }
+	return false;
+}
+
+// Picks up nearby items.
+void Controls::take()
+{
+	STACK_TRACE();
+	vector<shared_ptr<Actor>> items_here;
+	vector<unsigned int> item_ids;
+	bool first_pick = true;
+	do
+	{
+		items_here.clear();
+		item_ids.clear();
+		for (unsigned int i = 0; i < world::actors()->size(); i++)
+		{
+			auto actor = world::actors()->at(i);
+			if (!world::dungeon()->is_actor_here(actor, owner->x, owner->y) || !actor->is_item() || actor->is_invisible()) continue;
+			items_here.push_back(actor);
+			item_ids.push_back(i);
+		}
+		if (!items_here.size())
+		{
+			message::msg("There is nothing here that you can pick up!", MC::WARN);
+			return;
+		}
+		else if (first_pick && items_here.size() == 1)
+		{
+			take_item(item_ids.at(0));
+			first_pick = false;
+		}
+		else
+		{
+			shared_ptr<Menu> items_menu = std::make_shared<Menu>();
+			for (auto item : items_here)
+				items_menu->add_item(item->name);
+			items_menu->set_title("TAKE ITEMS");
+			int choice = items_menu->render();
+			if (choice < 0) return;
+			take_item(item_ids.at(choice));
+			first_pick = false;
+		}
+	} while (items_here.size() > 1);
+}
+
+// Picks up a specific item.
+void Controls::take_item(unsigned int item)
+{
+	STACK_TRACE();
+	shared_ptr<Actor> item_ptr = world::actors()->at(item);
+	owner->inventory->add_item(item_ptr);
+	message::msg("You pick up the " + item_ptr->name + ".");
+}
+
 // Attempts to travel in a given direction.
 bool Controls::travel(short x_dir, short y_dir)
 {
@@ -103,9 +242,9 @@ bool Controls::travel(short x_dir, short y_dir)
 	else
 	{
 		shared_ptr<Dungeon> dungeon = world::dungeon();
-		for (auto actor : dungeon->actors)
+		for (auto actor : *world::actors())
 		{
-			if (actor->x == owner->x + x_dir && actor->y == owner->y + y_dir && actor->is_blocker())
+			if (world::dungeon()->is_actor_here(actor, owner->x + x_dir, owner->y + y_dir) && actor->is_blocker())
 			{
 				if (actor->is_door()) open_door(actor);
 				else message::msg("The " + actor->name + " blocks your path!", MC::WARN);
