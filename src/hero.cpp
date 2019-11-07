@@ -8,7 +8,6 @@
 #include "iocore.h"
 #include "hero.h"
 #include "message.h"
-#include "sidebar.h"
 #include "strx.h"
 #include "world.h"
 

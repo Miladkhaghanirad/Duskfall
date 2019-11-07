@@ -14,27 +14,34 @@ class Actor;	// defined in actor.h
 #define TILE_FLAG_EXPLORED		(1 << 4)
 #define TILE_FLAG_FLOOR			(1 << 5)
 
+#define TILE_NAME_MAX	16	// The longest possible name for a Tile.
+#define TILE_SPRITE_MAX	16	// The longest possible sprite name for a Tile.
+
 
 class Tile
 {
 public:
-	unsigned char	flags;	// Various properties of this tile.
-	unsigned int	name;	// An integer for the tile's hashed name, which is decoded elsewhere.
-	unsigned int	sprite;	// An integer for the tile's hashed tile sprite, which is decoded elsewhere.
-
-			Tile() : flags(0), name(0), sprite(0) { }
+			Tile() : flags(0) { }
 	bool	destroyable_wall() { return wall() && !permawall(); }
 	bool	explored() { return (flags & TILE_FLAG_EXPLORED) == TILE_FLAG_EXPLORED; }
+	bool	floor() { return (flags & TILE_FLAG_FLOOR) == TILE_FLAG_FLOOR; }
 	string	get_name();		// Returns the name of this tile.
 	string	get_sprite(int x, int y);	// Returns the sprite name for rendering this tile.
 	bool	impassible() { return (flags & TILE_FLAG_IMPASSIBLE) == TILE_FLAG_IMPASSIBLE; }
 	bool	opaque() { return (flags & TILE_FLAG_OPAQUE) == TILE_FLAG_OPAQUE; }
 	bool	permawall() { return (flags & TILE_FLAG_PERMAWALL) == TILE_FLAG_PERMAWALL; }
+	void	set_name(string new_name);		// Sets the name of this Tile.
+	void	set_sprite(string new_sprite);	// Sets the sprite for this Tile.
 	bool	wall() { return (flags & TILE_FLAG_WALL) == TILE_FLAG_WALL; }
+
+	unsigned char	flags;		// Various properties of this tile.
 
 private:
 	string	check_neighbours(int x, int y, bool wall);	// Checks nearby tiles to modify floor and wall sprites.
 	bool	neighbour_identical(int x, int y);	// Check if a neighbour is an identical tile.
+
+	char	name[TILE_NAME_MAX];		// An integer for the tile's hashed name, which is decoded elsewhere.
+	char	sprite[TILE_SPRITE_MAX];	// An integer for the tile's hashed tile sprite, which is decoded elsewhere.
 };
 
 class Dungeon

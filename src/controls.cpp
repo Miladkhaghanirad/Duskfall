@@ -6,7 +6,6 @@
 #include "hero.h"
 #include "iocore.h"
 #include "message.h"
-#include "sidebar.h"
 #include "static-data.h"
 #include "world.h"
 

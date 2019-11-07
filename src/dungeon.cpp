@@ -510,7 +510,7 @@ void Dungeon::random_start_position(unsigned short &x, unsigned short &y)
 	{
 		x = mathx::rnd(width - 4) + 2;
 		y = mathx::rnd(height - 4) + 2;
-		if (tiles[x + y * width].name == strx::hash("floor")) return;
+		if (tiles[x + y * width].floor()) return;
 	}
 }
 
@@ -703,7 +703,7 @@ bool Dungeon::viable_doorway(unsigned short x, unsigned short y)
 {
 	STACK_TRACE();
 	if (x < 2 || y < 2 || x >= width - 2 || y >= height - 2) return false;
-	if (tiles[x + y * width].name != strx::hash("floor")) return false;	// Only basic floor can become a door.
+	if (!tiles[x + y * width].floor()) return false;	// Only basic floor can become a door.
 
 	if (tiles[x - 1 + y * width].wall() && tiles[x + 1 + y * width].wall())
 	{
@@ -773,14 +773,15 @@ string Tile::check_neighbours(int x, int y, bool wall)
 string Tile::get_name()
 {
 	STACK_TRACE();
-	return data::tile_name(name);
+	string output = name;
+	return output;
 }
 
 // Returns the sprite name for rendering this tile.
 string Tile::get_sprite(int x, int y)
 {
 	STACK_TRACE();
-	string sprite_name = data::tile_sprite(sprite);
+	string sprite_name = sprite;
 
 	if (sprite_name.size() >= 7 && sprite_name.substr(0, 6) == "FLOOR_") return sprite_name.substr(0, 7) + "_" + check_neighbours(x, y, false);
 	else if (sprite_name.size() >= 6 && sprite_name.substr(0, 5) == "WALL_") return sprite_name.substr(0, 6) + "_" + check_neighbours(x, y, true);
@@ -795,4 +796,30 @@ bool Tile::neighbour_identical(int x, int y)
 	shared_ptr<Tile> neighbour = world::dungeon()->tile(x, y);
 	if (neighbour->sprite == sprite) return true;
 	else return false;
+}
+
+// Sets the name of this Tile.
+void Tile::set_name(string new_name)
+{
+	STACK_TRACE();
+	if (new_name.size() >= TILE_NAME_MAX)
+	{
+		guru::log("Tile name too long: " + new_name, GURU_ERROR);
+		new_name = new_name.substr(0, TILE_NAME_MAX - 1);
+	}
+	memset(&name[0], 0, TILE_NAME_MAX);
+	std::copy(new_name.begin(), new_name.end(), &name[0]);
+}
+
+// Sets the sprite for this Tile.
+void Tile::set_sprite(string new_sprite)
+{
+	STACK_TRACE();
+	if (new_sprite.size() >= TILE_SPRITE_MAX)
+	{
+		guru::log("Tile sprite name too long: " + new_sprite, GURU_ERROR);
+		new_sprite = new_sprite.substr(0, TILE_SPRITE_MAX - 1);
+	}
+	memset(&sprite[0], 0, TILE_SPRITE_MAX);
+	std::copy(new_sprite.begin(), new_sprite.end(), &sprite[0]);
 }

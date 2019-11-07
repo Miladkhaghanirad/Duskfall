@@ -24,8 +24,6 @@ std::unordered_map<string, shared_ptr<Actor>>	static_item_data;	// The data cont
 std::unordered_map<string, shared_ptr<Actor>>	static_mob_data;	// The data containing templates for monsters from mobs.json
 std::unordered_map<string, shared_ptr<Tile>>	static_tile_data;	// The data about dungeon tiles from tiles.json
 std::unordered_map<string, shared_ptr<Actor>>	static_tile_feature_data;	// The data containing templates for tile features from tile features.json
-std::unordered_map<unsigned int, string>		tile_names;			// The tile name strings, which are stored as integers on the tiles themselves.
-std::unordered_map<unsigned int, string>		tile_sprites;		// The tile  sprite strings, which are stored as integers on the tiles themselves.
 
 
 // Retrieves a copy of the specified item.
@@ -167,55 +165,21 @@ void init_tiles_json()
 		const string tile_name = jval.get("name", "").asString();
 		if (!tile_name.size())
 		{
-			new_tile->name = 0;
+			new_tile->set_name("");
 			guru::log("No name specified in tiles.json for " + tile_id, GURU_ERROR);
 		}
-		else
-		{
-			const unsigned int hashed_name = strx::hash(tile_name);
-			if (tile_names.find(hashed_name) == tile_names.end()) tile_names.insert(std::pair<unsigned int, string>(hashed_name, tile_name));
-			new_tile->name = hashed_name;
-		}
+		else new_tile->set_name(tile_name);
 
 		const string tile_sprite = jval.get("tile", "").asString();
 		if (!tile_sprite.size())
 		{
-			new_tile->sprite = 0;
+			new_tile->set_sprite("");
 			guru::log("No tile sprite specified in tiles.json for " + tile_id, GURU_ERROR);
 		}
-		else
-		{
-			const unsigned int hashed_sprite = strx::hash(tile_sprite);
-			if (tile_sprites.find(hashed_sprite) == tile_sprites.end()) tile_sprites.insert(std::pair<unsigned int, string>(hashed_sprite, tile_sprite));
-			new_tile->sprite = hashed_sprite;
-		}
+		else new_tile->set_sprite(tile_sprite);
 
 		static_tile_data.insert(std::pair<string, shared_ptr<Tile>>(tile_id, new_tile));
 	}
-}
-
-// Parses a tile name ID into a string.
-string tile_name(unsigned int name_id)
-{
-	auto found = tile_names.find(name_id);
-	if (found == tile_names.end())
-	{
-		guru::log("Could not decode tile name ID " + strx::itos(name_id) + "!", GURU_ERROR);
-		return "[unknown]";
-	}
-	return found->second;
-}
-
-// Parses a tile sprite ID into a string.
-string tile_sprite(unsigned int sprite_id)
-{
-	auto found = tile_sprites.find(sprite_id);
-	if (found == tile_sprites.end())
-	{
-		guru::log("Could not decode tile sprite ID " + strx::itos(sprite_id) + "!", GURU_ERROR);
-		return "";
-	}
-	return found->second;
 }
 
 }	// namespace data

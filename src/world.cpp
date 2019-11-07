@@ -9,7 +9,6 @@
 #include "iocore.h"
 #include "message.h"
 #include "prefs.h"
-#include "sidebar.h"
 #include "strx.h"
 #include "world.h"
 
@@ -119,7 +118,6 @@ void main_loop()
 			iocore::cls();
 			the_dungeon->render();
 			message::render();
-			sidebar::render();
 			iocore::flip();
 			redraw_full = false;
 		}
@@ -190,7 +188,11 @@ void queue_redraw()
 void save(bool first_time)
 {
 	STACK_TRACE();
-	if (!first_time) message::msg("Saving game...", MC::INFO);
+	if (!first_time)
+	{
+		message::msg("Saving game...", MC::INFO);
+		iocore::flip();
+	}
 	try
 	{
 		SQLite::Transaction transaction(*save_db_ptr);

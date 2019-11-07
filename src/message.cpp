@@ -6,7 +6,6 @@
 #include "iocore.h"
 #include "message.h"
 #include "prefs.h"
-#include "sidebar.h"
 #include "strx.h"
 #include "world.h"
 
@@ -64,7 +63,7 @@ void msg(string message, MC colours)
 {
 	STACK_TRACE();
 	bool redraw = true;
-	iocore::rect(iocore::get_cols() - SIDEBAR_WIDTH_8X8 - 1, iocore::get_rows() - 1, SIDEBAR_WIDTH_8X8 + 1, 1, Colour::BLACK);
+	iocore::rect(iocore::get_cols() - 6, iocore::get_rows() - 1, 6, 1, Colour::BLACK);
 	unsigned int key = 0;
 	while (++messages_since_last_reset > MESSAGE_LOG_SIZE)
 	{
@@ -73,8 +72,7 @@ void msg(string message, MC colours)
 			iocore::cls();
 			world::dungeon()->render();
 			message::render();
-			sidebar::render();
-			iocore::print("-more-", iocore::get_cols_narrow() - SIDEBAR_WIDTH_5X8, iocore::get_rows() - 1, Colour::CGA_WHITE, PRINT_FLAG_NARROW);
+			iocore::print("-more-", iocore::get_cols_narrow(), iocore::get_rows() - 1, Colour::CGA_WHITE, PRINT_FLAG_NARROW);
 			iocore::flip();
 			redraw = false;
 		}
@@ -182,7 +180,7 @@ void purge_buffer()
 void render()
 {
 	STACK_TRACE();
-	iocore::rect(0, iocore::get_rows() - MESSAGE_LOG_SIZE, iocore::get_cols() - SIDEBAR_WIDTH_8X8 - 1, MESSAGE_LOG_SIZE, Colour::BLACK);
+	iocore::rect(0, iocore::get_rows() - MESSAGE_LOG_SIZE, iocore::get_cols() - 1, MESSAGE_LOG_SIZE, Colour::BLACK);
 	if (output_prc.size())
 	{
 		unsigned int end = output_prc.size();

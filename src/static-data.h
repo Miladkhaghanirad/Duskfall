@@ -24,7 +24,5 @@ void				init_actors_json(string filename, ActorType type, std::unordered_map<str
 void				init_items_json();	// Load the data from items.json
 void				init_mobs_json();	// Load the data from mobs.json
 void				init_tiles_json();	// Load the data from tiles.json
-string				tile_name(unsigned int name_id);			// Parses a tile name ID into a string.
-string				tile_sprite(unsigned int sprite_id);		// Parses a tile sprite ID into a string.
 
 }	// namespace data
