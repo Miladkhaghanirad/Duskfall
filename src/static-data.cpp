@@ -100,7 +100,7 @@ void init_actors_json(string filename, ActorType type, std::unordered_map<string
 
 		const string actor_tile = jval.get("tile", "").asString();
 		if (!actor_tile.size()) guru::log("No tile specified for " + actor_id, GURU_WARN);
-		else actor->tile = actor_tile;
+		else actor->sprite = actor_tile;
 
 		const string actor_flags_unparsed = jval.get("flags", "").asString();
 		actor->flags = 0;

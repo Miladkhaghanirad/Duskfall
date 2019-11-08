@@ -45,10 +45,10 @@ void Controls::close()
 	if (door)
 	{
 		message::msg("You close the door.");
-		Tile new_tile = data::get_tile("BASIC_DOOR");
-		world::dungeon()->set_tile(door->x, door->y, new_tile);
 		door->set_flag(ACTOR_FLAG_BLOCKER);
 		door->set_flag(ACTOR_FLAG_BLOCKS_LOS);
+		door->sprite = door->sprite.substr(0, door->sprite.size() - 5);
+		door->name = door->name.substr(0, door->name.size() - 9);
 		world::dungeon()->recalc_lighting();
 		world::queue_redraw();
 	}
@@ -131,17 +131,9 @@ void Controls::open()
 		return;
 	}
 	shared_ptr<Dungeon> dungeon = world::dungeon();
-	shared_ptr<Actor> door = nullptr;
 	Tile* tile = dungeon->tile(owner->x + x_dir, owner->y + y_dir);
-	for (auto actor : *tile->actors())
-	{
-		if (actor->is_door() && actor->is_blocker())
-		{
-			door = actor;
-			break;
-		}
-	}
-	if (door) open_door(door);
+	const unsigned int door_id = tile->has_door();
+	if (door_id != UINT_MAX) open_door(tile->actors()->at(door_id));
 	else message::msg("That isn't something you can open.", MC::WARN);
 }
 
@@ -150,10 +142,10 @@ void Controls::open_door(shared_ptr<Actor> door)
 {
 	STACK_TRACE();
 	message::msg("You open the door.");
-	Tile new_tile = data::get_tile("BASIC_DOOR_OPEN");
-	world::dungeon()->set_tile(door->x, door->y, new_tile);
 	door->clear_flag(ACTOR_FLAG_BLOCKER);
 	door->clear_flag(ACTOR_FLAG_BLOCKS_LOS);
+	door->name += " (open)";
+	door->sprite += "_OPEN";
 	world::dungeon()->recalc_lighting();
 	world::queue_redraw();
 }

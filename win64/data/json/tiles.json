@@ -3,18 +3,6 @@
 
 {
 
-// A basic type of door, used during dungeon generation.
-"BASIC_DOOR" : {
-	"name" : "door",
-	"tile" : "DOOR"
-},
-
-// As above, but opened.
-"BASIC_DOOR_OPEN" : {
-	"name" : "door (open)",
-	"tile" : "DOOR_OPEN"
-},
-
 // The most basic and unremarkable of floor tiles, used during dungeon generation. Can be replaced to become more interesting floor types.
 "BASIC_FLOOR" : {
 	"flags" : "FLOOR",

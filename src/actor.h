@@ -41,6 +41,6 @@ public:
 	unsigned long long	id;		// The unique ID for this Actor.
 	shared_ptr<Inventory>	inventory;	// If this Actor has an Inventory, it attaches here.
 	string			name;		// The Actor's name.
-	string			tile;		// The graphical tile used by this Actor.
+	string			sprite;		// The graphical tile used by this Actor.
 	unsigned short	x, y;		// X,Y coordinates on the current dungeon level.
 };

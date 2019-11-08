@@ -81,7 +81,7 @@ void Actor::load(unsigned long long owner_id)
 		if (query.executeStep())
 		{
 			name = query.getColumn("name").getString();
-			tile = query.getColumn("tile").getString();
+			sprite = query.getColumn("sprite").getString();
 			flags = query.getColumn("flags").getUInt();
 			x = query.getColumn("x").getUInt();
 			y = query.getColumn("y").getUInt();
@@ -109,7 +109,7 @@ void Actor::save(unsigned long long owner_id)
 		SQLite::Statement delete_statement(*world::save_db(), "DELETE FROM actors WHERE id = ?");
 		delete_statement.bind(1, static_cast<signed long long>(id));
 		delete_statement.exec();
-		SQLite::Statement query(*world::save_db(), "INSERT INTO actors (id, owner, name, flags, x, y, inventory, tile) VALUES (?,?,?,?,?,?,?,?)");
+		SQLite::Statement query(*world::save_db(), "INSERT INTO actors (id, owner, name, flags, x, y, inventory, sprite) VALUES (?,?,?,?,?,?,?,?)");
 		query.bind(1, static_cast<long long>(id));
 		query.bind(2, static_cast<long long>(owner_id));
 		query.bind(3, name);
@@ -118,7 +118,7 @@ void Actor::save(unsigned long long owner_id)
 		query.bind(6, y);
 		if (inventory) query.bind(7, static_cast<long long>(inventory->id));
 		else query.bind(7);
-		query.bind(8, tile);
+		query.bind(8, sprite);
 		query.exec();
 	}
 	catch(std::exception &e)

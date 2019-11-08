@@ -21,7 +21,7 @@ Hero::Hero(unsigned long long new_id) : Actor(new_id), camera_off_x(0), camera_o
 	STACK_TRACE();
 	ai = std::make_shared<Controls>(this);
 	inventory = std::make_shared<Inventory>(this, world::unique_id());
-	tile = "PLAYER";
+	sprite = "PLAYER";
 	flags |= ACTOR_FLAG_ANIMATED;
 }
 

@@ -309,15 +309,13 @@ void Dungeon::generate_type_a()
 	}
 
 	// Attempt to place doors in room entrances.
-	Tile regular_door = data::get_tile("BASIC_DOOR");
 	for (unsigned short x = 2; x < width - 2; x++)
 	{
 		for (unsigned short y = 2; y < height - 2; y++)
 		{
 			if (viable_doorway(x, y) && mathx::rnd(3) == 1)
 			{
-				set_tile(x, y, regular_door);
-				shared_ptr<Actor> door = data::get_tile_feature("DOOR_CLOSED");
+				shared_ptr<Actor> door = data::get_tile_feature("DOOR");
 				tile(x, y)->add_actor(door);
 			}
 		}
@@ -589,8 +587,8 @@ void Dungeon::render(bool see_all)
 					}
 				}
 				iocore::print_tile(here->get_sprite(), screen_x, screen_y, here_brightness);
-				if (x == world::hero()->x && y == world::hero()->y) iocore::print_tile(world::hero()->tile, screen_x, screen_y, here_brightness, true);
-				else if (actor_here) iocore::print_tile(actor_here->tile, screen_x, screen_y, here_brightness, actor_here->is_animated());
+				if (x == world::hero()->x && y == world::hero()->y) iocore::print_tile(world::hero()->sprite, screen_x, screen_y, here_brightness, true);
+				else if (actor_here) iocore::print_tile(actor_here->sprite, screen_x, screen_y, here_brightness, actor_here->is_animated());
 				explore(x, y);
 			}
 			else if (here->is_explored()) iocore::print_tile(here->get_sprite(), screen_x, screen_y, 50);
@@ -673,6 +671,7 @@ bool Dungeon::viable_doorway(unsigned short x, unsigned short y) const
 	STACK_TRACE();
 	if (x < 2 || y < 2 || x >= width - 2 || y >= height - 2) return false;
 	if (!tile(x, y)->is_floor()) return false;	// Only basic floor can become a door.
+	if (tile(x, y)->has_door() != UINT_MAX) return false;	// Don't place a door where one already exists.
 
 	if (tile(x - 1, y)->is_wall() && tile(x + 1, y)->is_wall())
 	{
@@ -765,6 +764,15 @@ string Tile::get_sprite() const
 	if (sprite_name.size() >= 7 && sprite_name.substr(0, 6) == "FLOOR_") return sprite_name.substr(0, 7) + "_" + check_neighbours(x, y, false);
 	else if (sprite_name.size() >= 6 && sprite_name.substr(0, 5) == "WALL_") return sprite_name.substr(0, 6) + "_" + check_neighbours(x, y, true);
 	return sprite_name;
+}
+
+// Checks if a door is present here, and returns the Actor vector ID if so.
+unsigned int Tile::has_door() const
+{
+	STACK_TRACE();
+	for (unsigned int i = 0; i < contained_actors.size(); i++)
+		if (contained_actors.at(i)->is_door()) return i;
+	return UINT_MAX;
 }
 
 // Is this Tile a wall that can be destroyed?

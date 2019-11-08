@@ -3,10 +3,10 @@
 
 {
 
-"DOOR_CLOSED" : {
-	"flags" : "BLOCKER BLOCKS_LOS DOOR INVISIBLE",
+"DOOR" : {
+	"flags" : "BLOCKER BLOCKS_LOS DOOR",
 	"name" : "door",
-	"tile" : "TRANSPARENT"
+	"tile" : "DOOR"
 }
 
 }

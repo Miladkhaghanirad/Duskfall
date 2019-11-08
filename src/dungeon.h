@@ -24,6 +24,7 @@ public:
 	void	add_actor(shared_ptr<Actor> actor);	// Adds an Actor to this Tile.
 	bool	contains_los_blocker() const;	// Checks if this Tile contains an Actor that blocks line-of-sight.
 	string	get_sprite() const;		// Returns the sprite name for rendering this tile.
+	unsigned int	has_door() const;	// Checks if a door is present here, and returns the Actor vector ID if so.
 	bool	is_destroyable_wall() const;	// Is this Tile a wall that can be destroyed?
 	bool	is_explored() const;	// Has this Tile been explored?
 	bool	is_floor() const;		// Is this Tile a floor of some kind?

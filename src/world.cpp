@@ -182,7 +182,7 @@ void save(bool first_time)
 			save_db_ptr->exec("CREATE TABLE dungeon ( id INTEGER PRIMARY KEY UNIQUE NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL ); "
 					"CREATE TABLE tiles ( dungeon_id INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, name TEXT NOT NULL, sprite TEXT NOT NULL, flags INTEGER, PRIMARY KEY (dungeon_id, x, y) ); "
 					"CREATE TABLE hero ( id INTEGER PRIMARY KEY AUTOINCREMENT, difficulty INTEGER NOT NULL, style INTEGER NOT NULL, played INTEGER NOT NULL ); "
-					"CREATE TABLE actors ( id PRUMARY KEY INTEGER UNIQUE NOT NULL, owner INTEGER NOT NULL, name TEXT, flags INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, inventory INTEGER, tile TEXT NOT NULL ); "
+					"CREATE TABLE actors ( id PRUMARY KEY INTEGER UNIQUE NOT NULL, owner INTEGER NOT NULL, name TEXT, flags INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, inventory INTEGER, sprite TEXT NOT NULL ); "
 					"CREATE TABLE id_seq (next_id INTEGER PRIMARY KEY AUTOINCREMENT); INSERT INTO id_seq DEFAULT VALUES; UPDATE sqlite_sequence SET seq = " + strx::itos(unique_id()) + " WHERE name='id_seq';");
 			db_ready = true;
 		}
