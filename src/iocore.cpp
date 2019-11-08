@@ -506,6 +506,7 @@ void exit_functions()
 	STACK_TRACE();
 	if (cleaned_up) return;
 	cleaned_up = true;
+	guru::game_output(false);
 	guru::log("Running cleanup at level " + strx::itos(exit_func_level) + ".", GURU_INFO);
 
 	if (exit_func_level >= 3)

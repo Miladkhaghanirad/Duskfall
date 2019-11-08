@@ -20,7 +20,7 @@ enum class Colour : unsigned char;	// defined in iocore.h
 class Actor
 {
 public:
-					Actor(unsigned long long new_id, unsigned int new_dungeon_id = 0, unsigned long long new_owner_id = 0);
+					Actor(unsigned long long new_id);
 	virtual			~Actor();
 	void			clear_flag(unsigned int flag);	// Clears a flag on this Actor.
 	bool			has_low_priority_rendering() const;	// Does this Actor have lower-priority rendering (i.e. other Actors go on top)?
@@ -31,18 +31,16 @@ public:
 	bool			is_item() const;		// Is this Actor an item that can be picked up?
 	bool			is_los_blocker() const;	// Does this Actor block line-of-sight?
 	bool			is_monster() const;		// Is this Actor an NPC or monster?
-	virtual void	load();	// Loads this Actor's data from disk.
-	virtual void	save();	// Saves this Actor's data to disk.
+	virtual void	load(unsigned long long owner_id);	// Loads this Actor's data from disk.
+	virtual void	save(unsigned long long owner_id);	// Saves this Actor's data to disk.
 	void			set_flag(unsigned int flag);	// Sets a flag on this Actor.
 	virtual void	tile_react() { }	// Reacts to other Actors on the tile this Actor is standing on.
 
 	shared_ptr<AI>	ai;			// If this Actor has AI, this is where its 'brain' is.
-	unsigned int	dungeon_id;	// The ID of the dungeon level this Actor is on.
 	unsigned char	flags;		// The Actor's individual flags.
 	unsigned long long	id;		// The unique ID for this Actor.
 	shared_ptr<Inventory>	inventory;	// If this Actor has an Inventory, it attaches here.
 	string			name;		// The Actor's name.
-	unsigned long long	owner_id;	// ID of an Actor that 'owns' this Actor (e.g. an inventory containing items)
 	string			tile;		// The graphical tile used by this Actor.
 	unsigned short	x, y;		// X,Y coordinates on the current dungeon level.
 };

@@ -16,15 +16,12 @@
 #include <fstream>
 
 
-Hero::Hero(unsigned long long new_id, unsigned int new_dungeon_id, unsigned long long new_owner_id) : Actor(new_id, new_dungeon_id, new_owner_id), camera_off_x(0), camera_off_y(0), difficulty(1), played(0), style(1)
+Hero::Hero(unsigned long long new_id) : Actor(new_id), camera_off_x(0), camera_off_y(0), difficulty(1), played(0), style(1)
 {
 	STACK_TRACE();
 	ai = std::make_shared<Controls>(this);
 	inventory = std::make_shared<Inventory>(this, world::unique_id());
 	tile = "PLAYER";
-	id = new_id;
-	dungeon_id = new_dungeon_id;
-	owner_id = new_owner_id;
 	flags |= ACTOR_FLAG_ANIMATED;
 }
 
@@ -38,7 +35,7 @@ shared_ptr<Controls> Hero::controls()
 }
 
 // Loads the Hero's data from disk.
-void Hero::load()
+void Hero::load(unsigned long long owner_id)
 {
 	STACK_TRACE();
 	try
@@ -50,7 +47,7 @@ void Hero::load()
 			style = query.getColumn("style").getUInt();
 			played = query.getColumn("played").getUInt();
 		}
-		Actor::load();
+		Actor::load(owner_id);
 	}
 	catch(std::exception &e)
 	{
@@ -81,11 +78,12 @@ void Hero::recenter_camera_vert()
 }
 
 // Saves the Hero's data to disk, along with the rest of the game world.
-void Hero::save()
+void Hero::save(unsigned long long owner_id)
 {
 	STACK_TRACE();
 	try
 	{
+		world::save_db()->exec("DELETE FROM hero");
 		SQLite::Statement query(*world::save_db(), "INSERT INTO hero (difficulty,style,played) VALUES (?,?,?)");
 		query.bind(1, difficulty);
 		query.bind(2, style);
@@ -96,7 +94,7 @@ void Hero::save()
 	{
 		guru::halt(e.what());
 	}
-	Actor::save();
+	Actor::save(owner_id);
 
 	std::ofstream tag_file("userdata/save/" + strx::itos(world::slot()) + "/tag.dat");
 	tag_file << name << std::endl;	// The character's name.
@@ -131,12 +129,10 @@ void Hero::save()
 void Hero::tile_react()
 {
 	STACK_TRACE();
+	auto tile = world::dungeon()->tile(x, y);
 	vector<shared_ptr<Actor>> items_here;
-	for (auto actor : *world::actors())
-	{
-		if (actor->x != x || actor->y != y || actor->is_invisible()) continue;
-		if (actor->is_item()) items_here.push_back(actor);
-	}
+	for (unsigned int id : tile->items_here())
+		items_here.push_back(tile->actors()->at(id));
 	if (items_here.size())
 	{
 		vector<string> item_names;

@@ -163,19 +163,11 @@ void init_tiles_json()
 		}
 
 		const string tile_name = jval.get("name", "").asString();
-		if (!tile_name.size())
-		{
-			new_tile->set_name("");
-			guru::log("No name specified in tiles.json for " + tile_id, GURU_ERROR);
-		}
-		else new_tile->set_name(tile_name);
+		if (!tile_name.size()) guru::log("No name specified in tiles.json for " + tile_id, GURU_ERROR);
+		else new_tile->name = tile_name;
 
 		const string tile_sprite = jval.get("tile", "").asString();
-		if (!tile_sprite.size())
-		{
-			new_tile->set_sprite("");
-			guru::log("No tile sprite specified in tiles.json for " + tile_id, GURU_ERROR);
-		}
+		if (!tile_sprite.size()) guru::log("No tile sprite specified in tiles.json for " + tile_id, GURU_ERROR);
 		else new_tile->set_sprite(tile_sprite);
 
 		static_tile_data.insert(std::pair<string, shared_ptr<Tile>>(tile_id, new_tile));

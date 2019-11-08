@@ -13,6 +13,7 @@
 #include "strx.h"
 #include "world.h"
 
+#include "guru.h"
 
 // Attempts to close a door.
 void Controls::close()
@@ -29,15 +30,18 @@ void Controls::close()
 		return;
 	}
 	shared_ptr<Dungeon> dungeon = world::dungeon();
+	Tile* tile = dungeon->tile(owner->x + x_dir, owner->y + y_dir);
 	shared_ptr<Actor> door = nullptr;
-	for (auto actor : *world::actors())
+	for (auto actor : *tile->actors())
 	{
-		if (actor->x == world::hero()->x + x_dir && actor->y == world::hero()->y + y_dir && actor->is_door() && !actor->is_blocker())
+		guru::log(actor->name);
+		if (actor->is_door() && !actor->is_blocker())
 		{
 			door = actor;
 			break;
 		}
 	}
+
 	if (door)
 	{
 		message::msg("You close the door.");
@@ -73,10 +77,10 @@ void Controls::drop_item(unsigned int id)
 {
 	STACK_TRACE();
 	auto item_ptr = owner->inventory->contents.at(id);
-	owner->inventory->remove_item(id);
-	item_ptr->dungeon_id = 1;	// NOTE: When multiple dungeon levels are supported, set this to the current level.
+	owner->inventory->contents.erase(owner->inventory->contents.begin() + id);
 	item_ptr->x = owner->x;
 	item_ptr->y = owner->y;
+	world::dungeon()->tile(owner->x, owner->y)->add_actor(item_ptr);
 	message::msg("You drop the " + item_ptr->name + ".");
 }
 
@@ -101,7 +105,7 @@ void Controls::inventory()
 void Controls::inventory_menu(unsigned int id)
 {
 	STACK_TRACE();
-	auto item = world::actors()->at(id);
+	auto item = owner->inventory->contents.at(id);
 	auto inv_menu = std::make_shared<Menu>();
 	inv_menu->set_title(strx::str_toupper(item->name));
 	inv_menu->add_item("Drop");
@@ -128,9 +132,10 @@ void Controls::open()
 	}
 	shared_ptr<Dungeon> dungeon = world::dungeon();
 	shared_ptr<Actor> door = nullptr;
-	for (auto actor : *world::actors())
+	Tile* tile = dungeon->tile(owner->x + x_dir, owner->y + y_dir);
+	for (auto actor : *tile->actors())
 	{
-		if (world::dungeon()->is_actor_here(actor, world::hero()->x + x_dir, world::hero()->y + y_dir) && actor->is_door() && actor->is_blocker())
+		if (actor->is_door() && actor->is_blocker())
 		{
 			door = actor;
 			break;
@@ -187,10 +192,12 @@ void Controls::take()
 	{
 		items_here.clear();
 		item_ids.clear();
-		for (unsigned int i = 0; i < world::actors()->size(); i++)
+		const auto tile = world::dungeon()->tile(owner->x, owner->y);
+		const auto item_list = tile->items_here();
+		for (unsigned int i = 0; i < item_list.size(); i++)
 		{
-			auto actor = world::actors()->at(i);
-			if (!world::dungeon()->is_actor_here(actor, owner->x, owner->y) || !actor->is_item() || actor->is_invisible()) continue;
+			auto actor = tile->actors()->at(item_list.at(i));
+			if (actor->is_invisible()) continue;
 			items_here.push_back(actor);
 			item_ids.push_back(i);
 		}
@@ -222,8 +229,10 @@ void Controls::take()
 void Controls::take_item(unsigned int item)
 {
 	STACK_TRACE();
-	shared_ptr<Actor> item_ptr = world::actors()->at(item);
-	owner->inventory->add_item(item_ptr);
+	Tile* tile = world::dungeon()->tile(owner->x, owner->y);
+	auto item_ptr = tile->actors()->at(item);
+	tile->actors()->erase(tile->actors()->begin() + item);
+	owner->inventory->contents.push_back(item_ptr);
 	message::msg("You pick up the " + item_ptr->name + ".");
 }
 
@@ -242,9 +251,10 @@ bool Controls::travel(short x_dir, short y_dir)
 	else
 	{
 		shared_ptr<Dungeon> dungeon = world::dungeon();
-		for (auto actor : *world::actors())
+		const auto tile = world::dungeon()->tile(owner->x + x_dir, owner->y + y_dir);
+		for (auto actor : *tile->actors())
 		{
-			if (world::dungeon()->is_actor_here(actor, owner->x + x_dir, owner->y + y_dir) && actor->is_blocker())
+			if (actor->is_blocker())
 			{
 				if (actor->is_door()) open_door(actor);
 				else message::msg("The " + actor->name + " blocks your path!", MC::WARN);

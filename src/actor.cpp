@@ -12,7 +12,7 @@
 #include "SQLiteCpp/SQLiteCpp.h"
 
 
-Actor::Actor(unsigned long long new_id, unsigned int new_dungeon_id, unsigned long long new_owner_id) : ai(nullptr), dungeon_id(new_dungeon_id), flags(0), id(new_id), inventory(nullptr), owner_id(new_owner_id), x(0), y(0) { }
+Actor::Actor(unsigned long long new_id) : ai(nullptr), flags(0), id(new_id), inventory(nullptr), x(0), y(0) { }
 
 Actor::~Actor() { }
 
@@ -71,57 +71,54 @@ bool Actor::is_monster() const
 }
 
 // Loads this Actor's data from disk.
-void Actor::load()
+void Actor::load(unsigned long long owner_id)
 {
 	STACK_TRACE();
 	try
 	{
-		SQLite::Statement query(*world::save_db(), "SELECT * FROM actors WHERE aid = ? AND did = ? AND owner = ?");
-		query.bind(1, static_cast<long long>(id));
-		query.bind(2, dungeon_id);
-		query.bind(3, static_cast<long long>(owner_id));
-		while (query.executeStep())
+		SQLite::Statement query(*world::save_db(), "SELECT * FROM actors WHERE id = ?");
+		query.bind(1, static_cast<signed long long>(id));
+		if (query.executeStep())
 		{
 			name = query.getColumn("name").getString();
-			flags = query.getColumn("flags").getUInt();
 			tile = query.getColumn("tile").getString();
+			flags = query.getColumn("flags").getUInt();
 			x = query.getColumn("x").getUInt();
 			y = query.getColumn("y").getUInt();
 			if (!query.isColumnNull("inventory"))
 			{
 				unsigned long long inventory_id = query.getColumn("inventory").getInt64();
-				shared_ptr<Inventory> new_inv = std::make_shared<Inventory>(this, 0);
-				new_inv->id = inventory_id;
-				new_inv->load();
+				inventory = std::make_shared<Inventory>(this, inventory_id);
+				inventory->load();
 			}
 		}
+		else guru::halt("Could not load Actor " + strx::uitos(owner_id));
 	}
 	catch(std::exception &e)
 	{
 		guru::halt(e.what());
 	}
-
-	if (inventory) inventory->load();
 }
 
 // Saves this Actor's data to disk.
-void Actor::save()
+void Actor::save(unsigned long long owner_id)
 {
 	STACK_TRACE();
 	try
 	{
-		world::save_db()->exec("DELETE FROM actors WHERE aid = " + strx::uitos(id));
-		SQLite::Statement query(*world::save_db(), "INSERT INTO actors (aid, did, owner, name, flags, x, y, inventory, tile) VALUES (?,?,?,?,?,?,?,?,?)");
+		SQLite::Statement delete_statement(*world::save_db(), "DELETE FROM actors WHERE id = ?");
+		delete_statement.bind(1, static_cast<signed long long>(id));
+		delete_statement.exec();
+		SQLite::Statement query(*world::save_db(), "INSERT INTO actors (id, owner, name, flags, x, y, inventory, tile) VALUES (?,?,?,?,?,?,?,?)");
 		query.bind(1, static_cast<long long>(id));
-		query.bind(2, dungeon_id);
-		query.bind(3, static_cast<long long>(owner_id));
-		query.bind(4, name);
-		query.bind(5, flags);
-		query.bind(6, x);
-		query.bind(7, y);
-		if (inventory) query.bind(8, static_cast<long long>(inventory->id));
-		else query.bind(8);
-		query.bind(9, tile);
+		query.bind(2, static_cast<long long>(owner_id));
+		query.bind(3, name);
+		query.bind(4, flags);
+		query.bind(5, x);
+		query.bind(6, y);
+		if (inventory) query.bind(7, static_cast<long long>(inventory->id));
+		else query.bind(7);
+		query.bind(8, tile);
 		query.exec();
 	}
 	catch(std::exception &e)

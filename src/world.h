@@ -13,7 +13,6 @@ class Hero;		// defined in hero.h
 namespace world
 {
 
-vector<shared_ptr<Actor>>*	actors();	// Returns the list of Actors active in the game.
 shared_ptr<Dungeon>	dungeon();		// Returns a pointer to the Dungeon object.
 void				full_redraw();	// Redraws the entire screen.
 shared_ptr<Hero>	hero();			// Returns a pointer to the Hero object.

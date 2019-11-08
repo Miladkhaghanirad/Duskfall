@@ -22,7 +22,6 @@
 namespace world
 {
 
-vector<shared_ptr<Actor>>	the_actors;		// The Actors currently active in the game.
 bool				db_ready = false;		// Is the database available for reading/writing?
 unsigned short		level = 0;				// The current dungeon level depth.
 bool				recalc_lighting = true;	// Recalculate the dynamic lighting at the start of the next turn.
@@ -32,12 +31,6 @@ unsigned short		save_slot = 0;			// The save file slot.
 shared_ptr<Dungeon>	the_dungeon = nullptr;	// The current dungeon level.
 shared_ptr<Hero>	the_hero = nullptr;		// The main Hero object.
 
-
-// Returns the list of Actors active in the game.
-vector<shared_ptr<Actor>>* actors()
-{
-	return &the_actors;
-}
 
 // Returns a pointer to the Dungeon object.
 shared_ptr<Dungeon>	dungeon()
@@ -65,21 +58,7 @@ void load()
 {
 	STACK_TRACE();
 	db_ready = true;
-	try
-	{
-		SQLite::Statement query(*save_db_ptr, "SELECT * FROM world");
-		if (query.executeStep())
-		{
-			level = query.getColumn("level").getUInt();
-		}
-		else guru::halt("Saved game file is damaged!");
-	}
-	catch (std::exception &e)
-	{
-		guru::halt(e.what());
-	}
-
-	the_dungeon = std::make_shared<Dungeon>(level);
+	the_dungeon = std::make_shared<Dungeon>(1002);
 	the_dungeon->load();
 	the_hero->load();
 	the_hero->recenter_camera();
@@ -99,7 +78,7 @@ void new_world(unsigned short slot, bool new_save)
 	{
 		guru::halt(e.what());
 	}
-	the_hero = std::make_shared<Hero>(1, 0, 0);
+	the_hero = std::make_shared<Hero>(1);
 }
 
 // Queues up a recalculation of the game's dynamic lighting.
@@ -172,7 +151,7 @@ void new_game()
 	STACK_TRACE();
 	level = 1;
 	hero()->x = hero()->y = 5;
-	the_dungeon = std::make_shared<Dungeon>(1, 100, 100);
+	the_dungeon = std::make_shared<Dungeon>(unique_id(), 100, 100);
 	the_dungeon->generate();
 	the_dungeon->random_start_position(hero()->x, hero()->y);
 	the_hero->recenter_camera();
@@ -199,17 +178,14 @@ void save(bool first_time)
 	{
 		SQLite::Transaction transaction(*save_db_ptr);
 		if (first_time)
-			save_db_ptr->exec("CREATE TABLE world ( id INTEGER PRIMARY KEY AUTOINCREMENT, level INTEGER NOT NULL ); "
-					"CREATE TABLE hero ( id INTEGER PRIMARY KEY AUTOINCREMENT, difficulty INTEGER NOT NULL, style INTEGER NOT NULL, played INTEGER NOT NULL );"
-					"CREATE TABLE actors ( aid PRUMARY KEY INTEGER UNIQUE NOT NULL, did INTEGER NOT NULL, owner INTEGER NOT NULL, name TEXT, flags INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, inventory INTEGER, "
-					"tile TEXT NOT NULL ); "
-					"CREATE TABLE id_seq (next_id INTEGER PRIMARY KEY AUTOINCREMENT); INSERT INTO id_seq DEFAULT VALUES; UPDATE sqlite_sequence SET seq = " + strx::itos(unique_id()) + " WHERE name='id_seq';" );
-
-		save_db_ptr->exec("DELETE FROM world; DELETE FROM hero; DELETE FROM actors;");
-		SQLite::Statement query(*save_db_ptr, "INSERT INTO world (level) VALUES (?)");
-		query.bind(1, level);
-		query.exec();
-		db_ready = true;
+		{
+			save_db_ptr->exec("CREATE TABLE dungeon ( id INTEGER PRIMARY KEY UNIQUE NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL ); "
+					"CREATE TABLE tiles ( dungeon_id INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, name TEXT NOT NULL, sprite TEXT NOT NULL, flags INTEGER, PRIMARY KEY (dungeon_id, x, y) ); "
+					"CREATE TABLE hero ( id INTEGER PRIMARY KEY AUTOINCREMENT, difficulty INTEGER NOT NULL, style INTEGER NOT NULL, played INTEGER NOT NULL ); "
+					"CREATE TABLE actors ( id PRUMARY KEY INTEGER UNIQUE NOT NULL, owner INTEGER NOT NULL, name TEXT, flags INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, inventory INTEGER, tile TEXT NOT NULL ); "
+					"CREATE TABLE id_seq (next_id INTEGER PRIMARY KEY AUTOINCREMENT); INSERT INTO id_seq DEFAULT VALUES; UPDATE sqlite_sequence SET seq = " + strx::itos(unique_id()) + " WHERE name='id_seq';");
+			db_ready = true;
+		}
 
 		hero()->save();
 		the_dungeon->save();

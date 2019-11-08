@@ -5,6 +5,7 @@
 #include "guru.h"
 #include "hero.h"
 #include "iocore.h"
+#include "loading.h"
 #include "mathx.h"
 #include "message.h"
 #include "prefs.h"
@@ -14,6 +15,7 @@
 
 #include "SQLiteCpp/SQLiteCpp.h"
 
+#include <chrono>
 #include <cmath>
 
 
@@ -26,7 +28,7 @@ static signed char shadowcast_multipliers[4][8] = {
 };
 
 
-Dungeon::Dungeon(unsigned short new_level, unsigned short new_width, unsigned short new_height) : level(new_level), width(new_width), height(new_height), region(nullptr)
+Dungeon::Dungeon(unsigned short new_id, unsigned short new_width, unsigned short new_height) : height(new_height), id(new_id), region(nullptr), width(new_width)
 {
 	STACK_TRACE();
 	if (!new_width || !new_height) return;
@@ -51,7 +53,7 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 	{
 		for (unsigned int ry = y; ry < y + h; ry++)
 		{
-			tiles[rx + ry * width] = basic_floor;
+			set_tile(rx, ry, basic_floor);
 			if (region) region[rx + ry * width] = new_region;
 		}
 	}
@@ -60,16 +62,16 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 	if (w <= 1 || h <= 1) return;
 	unsigned int monsters_here = mathx::rnd(4) - 1;
 	unsigned int items_here = mathx::rnd(3) - 1;
+	monsters_here = items_here = 2;
 	while (monsters_here)
 	{
 		monsters_here--;
 		shared_ptr<Actor> new_mob;
 		if (mathx::rnd(10) >= 8) new_mob = data::get_mob("TROLL");
 		else new_mob = data::get_mob("ORC");
-		new_mob->dungeon_id = level;
-		bool success = find_empty_tile(x, y, w, h, new_mob->x, new_mob->y);
-		if (!success) return;
-		world::actors()->push_back(new_mob);
+		auto success = find_empty_tile(x, y, w, h);
+		if (success.first >= width || success.second >= height) break;
+		tile(success.first, success.second)->add_actor(new_mob);
 	}
 	while (items_here)
 	{
@@ -77,10 +79,9 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 		shared_ptr<Actor> new_item;
 		if (mathx::rnd(2) == 1) new_item = data::get_item("SQUIDDLYBOX");
 		else new_item = data::get_item("JACKET_POTATO");
-		new_item->dungeon_id = level;
-		bool success = find_empty_tile(x, y, w, h, new_item->x, new_item->y);
-		if (!success) return;
-		world::actors()->push_back(new_item);
+		auto success = find_empty_tile(x, y, w, h);
+		if (success.first >= width || success.second >= height) break;
+		tile(success.first, success.second)->add_actor(new_item);
 	}
 }
 
@@ -118,10 +119,10 @@ void Dungeon::cast_light(unsigned int x, unsigned int y, unsigned int radius, un
 				}
 			}
 
-			Tile *tile = &tiles[ax + ay * width];
+			Tile* the_tile = tile(ax, ay);
 			if (blocked)
 			{
-				if (tile->is_opaque() || tile_contains_los_blocker(ax, ay))
+				if (the_tile->is_opaque() || the_tile->contains_los_blocker())
 				{
 					next_start_slope = r_slope;
 					continue;
@@ -132,7 +133,7 @@ void Dungeon::cast_light(unsigned int x, unsigned int y, unsigned int radius, un
 					start_slope = next_start_slope;
 				}
 			}
-			else if (tile->is_opaque() || tile_contains_los_blocker(ax, ay))
+			else if (the_tile->is_opaque() || the_tile->contains_los_blocker())
 			{
 				blocked = true;
 				next_start_slope = r_slope;
@@ -159,7 +160,7 @@ void Dungeon::explore(unsigned short x, unsigned short y)
 }
 
 // Attempts to find an empty tile within the specified space, aborts after too many failures.
-bool Dungeon::find_empty_tile(unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned short &rx, unsigned short &ry) const
+std::pair<unsigned short, unsigned short> Dungeon::find_empty_tile(unsigned short x, unsigned short y, unsigned short w, unsigned short h) const
 {
 	STACK_TRACE();
 	unsigned int attempts = 0;
@@ -167,24 +168,10 @@ bool Dungeon::find_empty_tile(unsigned short x, unsigned short y, unsigned short
 	{
 		unsigned int tx = mathx::rnd(w) - 1 + x;
 		unsigned int ty = mathx::rnd(h) - 1 + y;
-		if (tiles[tx + ty * width].is_impassible()) continue;
-		bool viable = true;
-		for (auto actor : *world::actors())
-		{
-			if (actor->x == tx && actor->y == ty)
-			{
-				viable = false;
-				break;
-			}
-		}
-		if (viable)
-		{
-			rx = tx;
-			ry = ty;
-			return true;
-		}
+		if (tile(tx, ty)->is_impassible() || tile(tx, ty)->actors()->size()) continue;
+		return std::pair<unsigned short, unsigned short>(tx, ty);
 	}
-	return false;
+	return std::pair<unsigned short, unsigned short>(USHRT_MAX, USHRT_MAX);
 }
 
 // Generates a new dungeon level.
@@ -201,14 +188,14 @@ void Dungeon::generate()
 		if (y == 0 || y == height - 1)
 		{
 			for (unsigned short x = 0; x < width; x++)
-				tiles[x + y * width] = indestructible_wall;
+				set_tile(x, y, indestructible_wall);
 		}
 		else
 		{
 			for (unsigned short x = 0; x < width; x++)
 			{
-				if (x == 0 || x == width - 1) tiles[x + y * width] = indestructible_wall;
-				else tiles[x + y * width] = regular_wall;
+				if (x == 0 || x == width - 1) set_tile(x, y, indestructible_wall);
+				else set_tile(x, y, regular_wall);
 			}
 		}
 	}
@@ -240,12 +227,8 @@ void Dungeon::generate_type_a()
 	// Pretty sure I didn't implement it quite right, but it's working okay for now.
 	vector<std::pair<unsigned short, unsigned short>> viable_maze_cells;
 	for (unsigned short x = 2; x < width - 2; x += 2)
-	{
 		for (unsigned short y = 2; y < height - 2; y += 2)
-		{
 			if (viable_maze_position(x, y)) viable_maze_cells.push_back(std::pair<unsigned short, unsigned short>(x, y));
-		}
-	}
 
 	while (viable_maze_cells.size())
 	{
@@ -316,10 +299,10 @@ void Dungeon::generate_type_a()
 		dead_ends.erase(dead_ends.begin());
 		if (!is_dead_end(xy.first, xy.second) || mathx::rnd(3) != 1) continue;
 		vector<std::pair<signed char, signed char>> viable_directions;
-		if (tiles[xy.first + 1 + xy.second * width].is_destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(1, 0));
-		if (tiles[xy.first - 1 + xy.second * width].is_destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(-1, 0));
-		if (tiles[xy.first + (xy.second + 1) * width].is_destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(0, 1));
-		if (tiles[xy.first + (xy.second - 1) * width].is_destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(0, -1));
+		if (tile(xy.first + 1, xy.second)->is_destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(1, 0));
+		if (tile(xy.first - 1, xy.second)->is_destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(-1, 0));
+		if (tile(xy.first, xy.second + 1)->is_destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(0, 1));
+		if (tile(xy.first, xy.second - 1)->is_destroyable_wall()) viable_directions.push_back(std::pair<signed char, signed char>(0, -1));
 		if (!viable_directions.size()) continue;
 		unsigned int choice = mathx::rnd(viable_directions.size()) - 1;
 		carve_room(xy.first + viable_directions.at(choice).first, xy.second + viable_directions.at(choice).second, 1, 1, 0);
@@ -333,11 +316,9 @@ void Dungeon::generate_type_a()
 		{
 			if (viable_doorway(x, y) && mathx::rnd(3) == 1)
 			{
-				tiles[x + y * width] = regular_door;
+				set_tile(x, y, regular_door);
 				shared_ptr<Actor> door = data::get_tile_feature("DOOR_CLOSED");
-				door->dungeon_id = level;
-				door->x = x; door->y = y;
-				world::actors()->push_back(door);
+				tile(x, y)->add_actor(door);
 			}
 		}
 	}
@@ -345,23 +326,16 @@ void Dungeon::generate_type_a()
 	delete[] region;
 }
 
-// Checks if an Actor is at the specified location in the Dungeon.
-bool Dungeon::is_actor_here(shared_ptr<Actor> actor, unsigned int x, unsigned int y) const
-{
-	if (actor->owner_id || actor->dungeon_id != level || actor->x != x || actor->y != y) return false;
-	return true;
-}
-
 // Check to see if this tile is a dead-end.
 bool Dungeon::is_dead_end(unsigned short x, unsigned short y) const
 {
 	STACK_TRACE();
 	unsigned int surrounding_walls = 0;
-	if (tiles[x + y * width].is_wall()) return false;
-	if (tiles[x + 1 + y * width].is_wall()) surrounding_walls++;
-	if (tiles[x - 1 + y * width].is_wall()) surrounding_walls++;
-	if (tiles[x + (y + 1) * width].is_wall()) surrounding_walls++;
-	if (tiles[x + (y - 1) * width].is_wall()) surrounding_walls++;
+	if (tile(x, y)->is_wall()) return false;
+	if (tile(x + 1, y)->is_wall()) surrounding_walls++;
+	if (tile(x - 1, y)->is_wall()) surrounding_walls++;
+	if (tile(x, y + 1)->is_wall()) surrounding_walls++;
+	if (tile(x, y - 1)->is_wall()) surrounding_walls++;
 	if (surrounding_walls == 3) return true;
 	else return false;
 }
@@ -372,28 +346,38 @@ void Dungeon::load()
 	STACK_TRACE();
 	try
 	{
-		SQLite::Statement query(*world::save_db(), "SELECT * FROM dungeon WHERE level = ?");
-		query.bind(1, level);
-		while (query.executeStep())
+		SQLite::Statement query(*world::save_db(), "SELECT width, height FROM dungeon WHERE id = ?");
+		query.bind(1, static_cast<signed long long>(id));
+		if (query.executeStep())
 		{
 			width = query.getColumn("width").getUInt();
 			height = query.getColumn("height").getUInt();
 			tiles = new Tile[width * height]();
 			lighting = new unsigned char[width * height]();
-			const void* blob = query.getColumn("tiles").getBlob();
-			memcpy(tiles, blob, sizeof(Tile) * width * height);
 		}
+		else guru::halt("Could not load data for dungeon ID " + strx::uitos(id));
 
-		const unsigned int actor_count = world::save_db()->execAndGet("SELECT COUNT(*) FROM actors WHERE did = " + strx::itos(level));
-		SQLite::Statement actors_query(*world::save_db(), "SELECT * FROM actors WHERE did = ?");
-		actors_query.bind(1, level);
-		world::actors()->reserve(world::actors()->size() + actor_count);
-		while (actors_query.executeStep())
+		auto last_redraw = std::chrono::system_clock::now();
+		loading::loading_screen(0, "Loading Dungeon...");
+		SQLite::Statement tile_query(*world::save_db(), "SELECT * FROM tiles WHERE dungeon_id = ?");
+		tile_query.bind(1, static_cast<signed long long>(id));
+		unsigned int tile_count = 0;
+		while (tile_query.executeStep())
 		{
-			unsigned int actor_id = actors_query.getColumn("aid").getUInt();
-			shared_ptr<Actor> new_actor = std::make_shared<Actor>(actor_id, level);
-			new_actor->load();
-			world::actors()->push_back(new_actor);
+			const auto time_now = std::chrono::system_clock::now();
+			const std::chrono::duration<float> elapsed_seconds = time_now - last_redraw;
+			if (elapsed_seconds.count() >= 0.1f)
+			{
+				last_redraw = time_now;
+				const unsigned int current_percent = round((static_cast<float>(tile_count) / static_cast<float>(width * height)) * 100);
+				loading::loading_screen(current_percent, "Loading Dungeon...");
+			}
+			unsigned short x = tile_query.getColumn("x").getUInt();
+			unsigned short y = tile_query.getColumn("y").getUInt();
+			tile(x, y)->x = x;
+			tile(x, y)->y = y;
+			tile(x, y)->load(tile_query, id);
+			tile_count++;
 		}
 	}
 	catch(std::exception &e)
@@ -436,9 +420,9 @@ bool Dungeon::los_check(unsigned short x1, unsigned short y1) const
 			error += delta_y;
 			x1 += ix;
 
-			// We're not calling tile_contains_los_blocker() here, as this function is used to see if a tile would be within a player's
+			// We're not calling contains_los_blocker() here, as this function is used to see if a tile would be within a player's
 			// line of sight, for calculating things like dynamic lighting.
-			if (tiles[x1 + y1 * width].is_opaque()) return false;
+			if (tile(x1, y1)->is_opaque()) return false;
 		}
 	}
 	else
@@ -459,7 +443,7 @@ bool Dungeon::los_check(unsigned short x1, unsigned short y1) const
 			error += delta_x;
 			y1 += iy;
 
-			if (tiles[x1 + y1 * width].is_opaque()) return false;
+			if (tile(x1, y1)->is_opaque()) return false;
 		}
 	}
 
@@ -492,7 +476,7 @@ void Dungeon::random_start_position(unsigned short &x, unsigned short &y) const
 	{
 		x = mathx::rnd(width - 4) + 2;
 		y = mathx::rnd(height - 4) + 2;
-		if (tiles[x + y * width].is_floor()) return;
+		if (tile(x, y)->is_floor()) return;
 	}
 }
 
@@ -510,7 +494,7 @@ void Dungeon::recalc_light_source(unsigned short x, unsigned short y, unsigned s
 		std::pair<unsigned short, unsigned short> xy = *iterator;
 		dynamic_light_temp.erase(iterator);
 
-		if (!always_visible && tiles[xy.first + xy.second * width].is_opaque())
+		if (!always_visible && tile(xy.first, xy.second)->is_opaque())
 		{
 			if (los_check(xy.first, xy.second)) dynamic_light_temp_walls.insert(xy);
 		} else
@@ -532,7 +516,7 @@ void Dungeon::recalc_light_source(unsigned short x, unsigned short y, unsigned s
 			for (short dy = -1; dy <= 1; dy++)
 			{
 				if ((dx == 0 && dy == 0) || dy + xy.second < 0 || dy + xy.second >= height) continue;
-				if (tiles[xy.first + dx + (xy.second + dy) * width].is_opaque()) continue;
+				if (tile(xy.first + dx, xy.second + dy)->is_opaque()) continue;
 				if (!los_check(xy.first + dx, xy.second + dy)) continue;
 				unsigned char light = lighting[xy.first + dx + (xy.second + dy) * width];
 				if (light > brightest) brightest = light;
@@ -558,7 +542,7 @@ void Dungeon::region_floodfill(unsigned short x, unsigned short y, unsigned int 
 {
 	STACK_TRACE();
 	if (region[x + y * width] == new_region) return;
-	if (tiles[x + y * width].is_wall()) return;
+	if (tile(x, y)->is_wall()) return;
 
 	region[x + y * width] = new_region;
 	for (short dx = -1; dx <= 1; dx++)
@@ -585,16 +569,18 @@ void Dungeon::render(bool see_all)
 			int screen_y = static_cast<signed int>(y) + world::hero()->camera_off_y;
 			if (screen_y < 0 || static_cast<unsigned int>(screen_y) >= iocore::get_tile_rows()) continue;
 #
-			Tile &here = tiles[x + y * width];
+			Tile* here = tile(x, y);
 			unsigned char here_brightness = lighting[x + y * width];
 			if (see_all && here_brightness < 50) here_brightness = 50;
 			if (here_brightness >= 50)
 			{
 				shared_ptr<Actor> actor_here = nullptr;
-				for (auto actor : *world::actors())
+				const auto actors = here->actors();
+				if (actors)
 				{
-					if (actor->dungeon_id == level && actor->x == x && actor->y == y && !actor->is_invisible())
+					for (auto actor : *actors)
 					{
+						if (actor->is_invisible()) continue;
 						if (actor_here)
 						{
 							if (actor_here->has_low_priority_rendering() && !actor->has_low_priority_rendering()) actor_here = actor;
@@ -602,12 +588,12 @@ void Dungeon::render(bool see_all)
 						else actor_here = actor;
 					}
 				}
-				iocore::print_tile(here.get_sprite(x, y), screen_x, screen_y, here_brightness);
+				iocore::print_tile(here->get_sprite(), screen_x, screen_y, here_brightness);
 				if (x == world::hero()->x && y == world::hero()->y) iocore::print_tile(world::hero()->tile, screen_x, screen_y, here_brightness, true);
 				else if (actor_here) iocore::print_tile(actor_here->tile, screen_x, screen_y, here_brightness, actor_here->is_animated());
 				explore(x, y);
 			}
-			else if (here.is_explored()) iocore::print_tile(here.get_sprite(x, y), screen_x, screen_y, 50);
+			else if (here->is_explored()) iocore::print_tile(here->get_sprite(), screen_x, screen_y, 50);
 		}
 	}
 }
@@ -618,52 +604,53 @@ void Dungeon::save()
 	STACK_TRACE();
 	try
 	{
-		world::save_db()->exec("CREATE TABLE IF NOT EXISTS dungeon ( level INTEGER PRIMARY KEY UNIQUE NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, tiles BLOB NOT NULL );");
-		SQLite::Statement delete_level(*world::save_db(), "DELETE FROM dungeon WHERE level = ?");
-		delete_level.bind(1, level);
-		delete_level.exec();
-		SQLite::Statement sql(*world::save_db(), "INSERT INTO dungeon (level,width,height,tiles) VALUES (?,?,?,?)");
-		sql.bind(1, level);
-		sql.bind(2, width);
-		sql.bind(3, height);
-		sql.bind(4, (void*)tiles, sizeof(Tile) * width * height);
-		sql.exec();
+		SQLite::Statement clear_dungeon(*world::save_db(), "DELETE FROM dungeon WHERE id = ?");
+		clear_dungeon.bind(1, static_cast<signed long long>(id));
+		clear_dungeon.exec();
+		SQLite::Statement clear_tiles(*world::save_db(), "DELETE FROM tiles WHERE dungeon_id = ?");
+		clear_tiles.bind(1, static_cast<signed long long>(id));
+		clear_tiles.exec();
 
-		SQLite::Statement actors_sql(*world::save_db(), "DELETE FROM actors WHERE did = ?");
-		actors_sql.bind(1, level);
-		actors_sql.exec();
-		for (unsigned int a = 0; a < world::actors()->size(); a++)
-			world::actors()->at(a)->save();
+		SQLite::Statement statement(*world::save_db(), "INSERT INTO dungeon (id, width, height) VALUES (?, ?, ?)");
+		statement.bind(1, static_cast<signed long long>(id));
+		statement.bind(2, width);
+		statement.bind(3, height);
+		statement.exec();
 	}
 	catch(std::exception &e)
 	{
 		guru::halt(e.what());
 	}
+	for (unsigned int x = 0; x < width; x++)
+		for (unsigned int y = 0; y < height; y++)
+			tile(x, y)->save(id);
 }
 
 // Sets a specified tile, with error checking.
-void Dungeon::set_tile(unsigned short x, unsigned short y, Tile &tile)
+void Dungeon::set_tile(unsigned short x, unsigned short y, Tile &new_tile)
 {
 	STACK_TRACE();
 	if (x >= width || y >= height) guru::halt("Attempted to set out-of-bounds tile.");
-	tiles[x + y * width] = tile;
+
+	Tile* old_tile = tile(x, y);
+	vector<shared_ptr<Actor>> old_actors;
+	for (auto actor : *old_tile->actors())
+		old_actors.push_back(actor);
+
+	tiles[x + y * width] = new_tile;
+	tiles[x + y * width].x = x;
+	tiles[x + y * width].y = y;
+
+	for (auto actor : old_actors)
+		tiles[x + y * width].actors()->push_back(actor);
 }
 
 // Retrieves a specified tile pointer.
-shared_ptr<Tile> Dungeon::tile(unsigned short x, unsigned short y) const
+Tile* Dungeon::tile(unsigned short x, unsigned short y) const
 {
 	STACK_TRACE();
 	if (x >= width || y >= height) guru::halt("Attempted to set out-of-bounds tile.");
-	return std::make_shared<Tile>(tiles[x + y * width]);
-}
-
-// Checks if a tile contains an Actor that blocks line-of-sight.
-bool Dungeon::tile_contains_los_blocker(unsigned short x, unsigned short y) const
-{
-	STACK_TRACE();
-	for (auto actor : *world::actors())
-		if (actor->x == x && actor->y == y && actor->is_los_blocker()) return true;
-	return false;
+	return &tiles[x + y * width];
 }
 
 // Checks if this tile touches a different region.
@@ -685,21 +672,21 @@ bool Dungeon::viable_doorway(unsigned short x, unsigned short y) const
 {
 	STACK_TRACE();
 	if (x < 2 || y < 2 || x >= width - 2 || y >= height - 2) return false;
-	if (!tiles[x + y * width].is_floor()) return false;	// Only basic floor can become a door.
+	if (!tile(x, y)->is_floor()) return false;	// Only basic floor can become a door.
 
-	if (tiles[x - 1 + y * width].is_wall() && tiles[x + 1 + y * width].is_wall())
+	if (tile(x - 1, y)->is_wall() && tile(x + 1, y)->is_wall())
 	{
-		if (tiles[x + (y + 1) * width].is_wall()) return false;
-		if (tiles[x + (y - 1) * width].is_wall()) return false;
-		if (!tiles[x - 1 + (y + 1) * width].is_wall() && !tiles[x + 1 + (y + 1) * width].is_wall()) return true;
-		if (!tiles[x - 1 + (y - 1) * width].is_wall() && !tiles[x + 1 + (y - 1) * width].is_wall()) return true;
+		if (tile(x, y + 1)->is_wall()) return false;
+		if (tile(x, y - 1)->is_wall()) return false;
+		if (!tile(x - 1, y + 1)->is_wall() && !tile(x + 1, y + 1)->is_wall()) return true;
+		if (!tile(x - 1, y - 1)->is_wall() && !tile(x + 1, y - 1)->is_wall()) return true;
 	}
-	else if (tiles[x + (y - 1) * width].is_wall() && tiles[x + (y + 1) * width].is_wall())
+	else if (tile(x, y - 1)->is_wall() && tile(x, y + 1)->is_wall())
 	{
-		if (tiles[x - 1 + y * width].is_wall()) return false;
-		if (tiles[x + 1 + y * width].is_wall()) return false;
-		if (!tiles[x + 1 + (y - 1) * width].is_wall() && !tiles[x + 1 + (y + 1) * width].is_wall()) return true;
-		if (!tiles[x - 1 + (y - 1) * width].is_wall() && !tiles[x - 1 + (y + 1) * width].is_wall()) return true;
+		if (tile(x - 1, y)->is_wall()) return false;
+		if (tile(x + 1, y)->is_wall()) return false;
+		if (!tile(x + 1, y - 1)->is_wall() && !tile(x + 1, y + 1)->is_wall()) return true;
+		if (!tile(x - 1, y - 1)->is_wall() && !tile(x - 1, y + 1)->is_wall()) return true;
 	}
 
 	return false;
@@ -712,13 +699,13 @@ bool Dungeon::viable_maze_position(unsigned short x, unsigned short y) const
 	if (x < 2 || y < 2 || x >= width - 2 || y >= height - 2) return false;
 
 	unsigned short current_exits = 0;
-	if (!tiles[x + y * width].is_wall()) return false;
+	if (!tile(x, y)->is_wall()) return false;
 	for (int ox = -1; ox <= 1; ox++)
 	{
 		for (int oy = -1; oy <= 1; oy++)
 		{
 			if (ox == 0 && oy == 0) continue;
-			if (!tiles[(x + ox) + ((y + oy) * width)].is_wall()) current_exits++;
+			if (!tile(x + ox, y + oy)->is_wall()) current_exits++;
 		}
 	}
 	if (current_exits <= 1) return true;
@@ -731,8 +718,17 @@ bool Dungeon::viable_room_position(unsigned short x, unsigned short y, unsigned 
 	STACK_TRACE();
 	for (unsigned short rx = x - 1; rx < x + w + 2; rx++)
 		for (unsigned short ry = y - 1; ry < y + h + 2; ry++)
-			if (!tiles[rx + ry * width].is_destroyable_wall()) return false;
+			if (!tile(rx, ry)->is_destroyable_wall()) return false;
 	return true;
+}
+
+// Adds an Actor to this Tile.
+void Tile::add_actor(shared_ptr<Actor> actor)
+{
+	STACK_TRACE();
+	contained_actors.push_back(actor);
+	actor->x = x;
+	actor->y = y;
 }
 
 // Checks nearby tiles to modify floor and wall sprites.
@@ -751,15 +747,17 @@ string Tile::check_neighbours(int x, int y, bool wall) const
 	else return "5";
 }
 
-// Returns the name of this tile.
-string Tile::get_name() const
+// Checks if this Tile contains an Actor that blocks line-of-sight.
+bool Tile::contains_los_blocker() const
 {
 	STACK_TRACE();
-	return string(name);
+	for (auto actor : contained_actors)
+		if (actor->is_los_blocker()) return true;
+	return false;
 }
 
 // Returns the sprite name for rendering this tile.
-string Tile::get_sprite(int x, int y) const
+string Tile::get_sprite() const
 {
 	STACK_TRACE();
 	string sprite_name = sprite;
@@ -811,38 +809,91 @@ bool Tile::is_wall() const
 	return (flags & TILE_FLAG_WALL) == TILE_FLAG_WALL;
 }
 
+// Returns a list of all contained Actors with the ACTOR_FLAG_ITEM flag.
+vector<unsigned int> Tile::items_here() const
+{
+	STACK_TRACE();
+	vector<unsigned int> result;
+	for (unsigned int i = 0; i < contained_actors.size(); i++)
+		if (contained_actors.at(i)->is_item()) result.push_back(i);
+	return result;
+}
+
+// Loads this Tile from disk.
+void Tile::load(SQLite::Statement &query, unsigned long long dungeon_id)
+{
+	STACK_TRACE();
+	try
+	{
+		name = query.getColumn("name").getString();
+		flags = query.getColumn("flags").getUInt();
+		sprite = query.getColumn("sprite").getString();
+
+		SQLite::Statement actor_query(*world::save_db(), "SELECT id FROM actors WHERE owner = ? AND x = ? AND y = ?");
+		actor_query.bind(1, static_cast<signed long long>(dungeon_id));
+		actor_query.bind(2, x);
+		actor_query.bind(3, y);
+		while (actor_query.executeStep())
+		{
+			unsigned long long new_id = actor_query.getColumn("id").getInt64();
+			auto new_actor = std::make_shared<Actor>(new_id);
+			new_actor->load(dungeon_id);
+			contained_actors.push_back(new_actor);
+		}
+	}
+	catch (std::exception &e)
+	{
+		guru::halt(e.what());
+	}
+}
+
+// Returns a list of all contained Actors with the ACTOR_FLAG_MONSTER flag.
+vector<unsigned int> Tile::mobs_here() const
+{
+	STACK_TRACE();
+	vector<unsigned int> result;
+	for (unsigned int i = 0; i < contained_actors.size(); i++)
+		if (contained_actors.at(i)->is_monster()) result.push_back(i);
+	return result;
+}
+
 // Check if a neighbour is an identical tile.
 bool Tile::neighbour_identical(int x, int y) const
 {
 	STACK_TRACE();
 	if (x < 0 || y < 0 || x >= world::dungeon()->get_width() || y >= world::dungeon()->get_height()) return false;
-	shared_ptr<Tile> neighbour = world::dungeon()->tile(x, y);
-	if (string(neighbour->sprite) == string(sprite)) return true;
+	Tile* neighbour = world::dungeon()->tile(x, y);
+	if (neighbour->sprite == sprite) return true;
 	else return false;
 }
 
-// Sets the name of this Tile.
-void Tile::set_name(string new_name)
+// Removes an Actor from this Tile.
+void Tile::remove_actor(unsigned int id)
 {
 	STACK_TRACE();
-	if (new_name.size() >= TILE_NAME_MAX)
-	{
-		guru::log("Tile name too long: " + new_name, GURU_ERROR);
-		new_name = new_name.substr(0, TILE_NAME_MAX - 1);
-	}
-	memset(&name[0], 0, TILE_NAME_MAX);
-	std::copy(new_name.begin(), new_name.end(), &name[0]);
+	if (contained_actors.size() <= id) guru::halt("Out-of-bounds Actor ID in removal request.");
+	contained_actors.erase(contained_actors.begin() + id);
 }
 
-// Sets the sprite for this Tile.
-void Tile::set_sprite(string new_sprite)
+// Saves this Tile to disk.
+void Tile::save(unsigned long long dungeon_id)
 {
 	STACK_TRACE();
-	if (new_sprite.size() >= TILE_SPRITE_MAX)
+	try
 	{
-		guru::log("Tile sprite name too long: " + new_sprite, GURU_ERROR);
-		new_sprite = new_sprite.substr(0, TILE_SPRITE_MAX - 1);
+		SQLite::Statement statement(*world::save_db(), "INSERT INTO tiles (dungeon_id, x, y, name, sprite, flags) VALUES (?, ?, ?, ?, ?, ?)");
+		statement.bind(1, static_cast<signed long long>(dungeon_id));
+		statement.bind(2, x);
+		statement.bind(3, y);
+		statement.bind(4, name);
+		statement.bind(5, sprite);
+		statement.bind(6, flags);
+		statement.exec();
 	}
-	memset(&sprite[0], 0, TILE_SPRITE_MAX);
-	std::copy(new_sprite.begin(), new_sprite.end(), &sprite[0]);
+	catch (std::exception &e)
+	{
+		guru::halt(e.what());
+	}
+	for (auto actor : contained_actors)
+		actor->save(dungeon_id);
 }
