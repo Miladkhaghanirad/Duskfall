@@ -313,10 +313,12 @@ void Dungeon::generate_type_a()
 	{
 		for (unsigned short y = 2; y < height - 2; y++)
 		{
-			if (viable_doorway(x, y) && mathx::rnd(3) == 1)
+			const int door_type = viable_doorway(x, y);
+			if (door_type && mathx::rnd(3) == 1)
 			{
 				shared_ptr<Actor> door = data::get_tile_feature("DOOR");
 				tile(x, y)->add_actor(door);
+				if (door_type == 2) door->sprite += "_HORIZ";
 			}
 		}
 	}
@@ -666,7 +668,7 @@ bool Dungeon::touches_two_regions(unsigned short x, unsigned short y) const
 }
 
 // Checks if this tile is a viable doorway.
-bool Dungeon::viable_doorway(unsigned short x, unsigned short y) const
+int Dungeon::viable_doorway(unsigned short x, unsigned short y) const
 {
 	STACK_TRACE();
 	if (x < 2 || y < 2 || x >= width - 2 || y >= height - 2) return false;
@@ -675,20 +677,20 @@ bool Dungeon::viable_doorway(unsigned short x, unsigned short y) const
 
 	if (tile(x - 1, y)->is_wall() && tile(x + 1, y)->is_wall())
 	{
-		if (tile(x, y + 1)->is_wall()) return false;
-		if (tile(x, y - 1)->is_wall()) return false;
-		if (!tile(x - 1, y + 1)->is_wall() && !tile(x + 1, y + 1)->is_wall()) return true;
-		if (!tile(x - 1, y - 1)->is_wall() && !tile(x + 1, y - 1)->is_wall()) return true;
+		if (tile(x, y + 1)->is_wall()) return 0;
+		if (tile(x, y - 1)->is_wall()) return 0;
+		if (!tile(x - 1, y + 1)->is_wall() && !tile(x + 1, y + 1)->is_wall()) return 1;
+		if (!tile(x - 1, y - 1)->is_wall() && !tile(x + 1, y - 1)->is_wall()) return 1;
 	}
 	else if (tile(x, y - 1)->is_wall() && tile(x, y + 1)->is_wall())
 	{
-		if (tile(x - 1, y)->is_wall()) return false;
-		if (tile(x + 1, y)->is_wall()) return false;
-		if (!tile(x + 1, y - 1)->is_wall() && !tile(x + 1, y + 1)->is_wall()) return true;
-		if (!tile(x - 1, y - 1)->is_wall() && !tile(x - 1, y + 1)->is_wall()) return true;
+		if (tile(x - 1, y)->is_wall()) return 0;
+		if (tile(x + 1, y)->is_wall()) return 0;
+		if (!tile(x + 1, y - 1)->is_wall() && !tile(x + 1, y + 1)->is_wall()) return 2;
+		if (!tile(x - 1, y - 1)->is_wall() && !tile(x - 1, y + 1)->is_wall()) return 2;
 	}
 
-	return false;
+	return 0;
 }
 
 // Checks if this tile is a viable position to build a maze corridor.

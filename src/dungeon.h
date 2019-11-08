@@ -89,7 +89,7 @@ private:
 	void	recalc_light_source(unsigned short x, unsigned short y, unsigned short radius, bool always_visible = false);	// Recalculates a specific light source.
 	void	region_floodfill(unsigned short x, unsigned short y, unsigned int new_region);		// Flood-fills a specified area with a new region ID.
 	bool	touches_two_regions(unsigned short x, unsigned short y) const;	// Checks if this tile touches a different region.
-	bool	viable_doorway(unsigned short x, unsigned short y) const;		// Checks if this tile is a viable doorway.
+	int		viable_doorway(unsigned short x, unsigned short y) const;		// Checks if this tile is a viable doorway.
 	bool	viable_maze_position(unsigned short x, unsigned short y) const;	// Checks if this tile is a viable position to build a maze corridor.
 	bool	viable_room_position(unsigned short x, unsigned short y, unsigned short w, unsigned short h) const;	// Checks if this is a viable position to place a new room.
 };
