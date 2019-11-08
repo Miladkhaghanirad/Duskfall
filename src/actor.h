@@ -5,6 +5,8 @@
 #include "duskfall.h"
 
 class AI;			// defined in ai.h
+class Attacker;		// defined in attacker.h
+class Defender;		// defined in defender.h
 class Inventory;	// defined in inventory.h
 enum class Colour : unsigned char;	// defined in iocore.h
 
@@ -37,6 +39,8 @@ public:
 	virtual void	tile_react() { }	// Reacts to other Actors on the tile this Actor is standing on.
 
 	shared_ptr<AI>	ai;			// If this Actor has AI, this is where its 'brain' is.
+	shared_ptr<Attacker>	attacker;	// If this Actor is an Attacker, it attaches here.
+	shared_ptr<Defender>	defender;	// If this Actor is a Defender, it attaches here.
 	unsigned char	flags;		// The Actor's individual flags.
 	unsigned long long	id;		// The unique ID for this Actor.
 	shared_ptr<Inventory>	inventory;	// If this Actor has an Inventory, it attaches here.

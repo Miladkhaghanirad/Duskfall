@@ -2,9 +2,12 @@
 // Copyright (c) 2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
 #include "actor.h"
+#include "attacker.h"
+#include "defender.h"
 #include "dungeon.h"
 #include "filex.h"
 #include "guru.h"
+#include "inventory.h"
 #include "iocore.h"
 #include "static-data.h"
 #include "strx.h"
@@ -12,6 +15,7 @@
 
 #include "jsoncpp/json/json.h"
 
+#include <algorithm>
 #include <unordered_map>
 
 enum class ActorType : unsigned int { MONSTER, ITEM, TILE_FEATURE };
@@ -26,26 +30,45 @@ std::unordered_map<string, shared_ptr<Tile>>	static_tile_data;	// The data about
 std::unordered_map<string, shared_ptr<Actor>>	static_tile_feature_data;	// The data containing templates for tile features from tile features.json
 
 
+// Internal code used by get_item(), get_mob() and get_tile_feature().
+shared_ptr<Actor> get_actor(std::unordered_map<string, shared_ptr<Actor>> &map, string id, string type)
+{
+	STACK_TRACE();
+	auto found = map.find(id);
+	if (found == map.end()) guru::halt("Could not find " + type + " ID " + id + "!");
+	shared_ptr<Actor> result = std::make_shared<Actor>(*found->second);
+	result->id = world::unique_id();
+	guru::log(result->name);
+	if (result->attacker)
+	{
+		result->attacker = std::make_shared<Attacker>(*result->attacker);
+		result->attacker->id = world::unique_id();
+	}
+	if (result->defender)
+	{
+		result->defender = std::make_shared<Defender>(*result->defender);
+		result->defender->id = world::unique_id();
+	}
+	if (result->inventory)
+	{
+		result->inventory = std::make_shared<Inventory>(*result->inventory);
+		result->inventory->id = world::unique_id();
+	}
+	return result;
+}
+
 // Retrieves a copy of the specified item.
 shared_ptr<Actor> get_item(string item_id)
 {
 	STACK_TRACE();
-	auto found = static_item_data.find(item_id);
-	if (found == static_item_data.end()) guru::halt("Could not find item ID " + item_id + "!");
-	shared_ptr<Actor> result = std::make_shared<Actor>(*found->second);
-	result->id = world::unique_id();
-	return result;
+	return get_actor(static_item_data, item_id, "item");
 }
 
 // Retrieves a copy of a specified mob.
 shared_ptr<Actor> get_mob(string mob_id)
 {
 	STACK_TRACE();
-	auto found = static_mob_data.find(mob_id);
-	if (found == static_mob_data.end()) guru::halt("Could not find mob ID " + mob_id + "!");
-	shared_ptr<Actor> result = std::make_shared<Actor>(*found->second);
-	result->id = world::unique_id();
-	return result;
+	return get_actor(static_mob_data, mob_id, "mob");
 }
 
 // Retrieves a copy of a specified Tile
@@ -61,11 +84,7 @@ Tile get_tile(string tile_id)
 shared_ptr<Actor> get_tile_feature(string feature_id)
 {
 	STACK_TRACE();
-	auto found = static_tile_feature_data.find(feature_id);
-	if (found == static_tile_feature_data.end()) guru::halt("Could not find tile feature ID " + feature_id + "!");
-	shared_ptr<Actor> result = std::make_shared<Actor>(*found->second);
-	result->id = world::unique_id();
-	return result;
+	return get_actor(static_tile_feature_data, feature_id, "tile feature");
 }
 
 // Loads the static data from JSON files.
@@ -92,6 +111,7 @@ void init_actors_json(string filename, ActorType type, std::unordered_map<string
 	{
 		const string actor_id = jmem.at(i);
 		const Json::Value jval = json[actor_id];
+		const Json::Value::Members jmem_actor = jval.getMemberNames();
 		auto actor = std::make_shared<Actor>(0);
 
 		const string actor_name = jval.get("name", "").asString();
@@ -120,6 +140,24 @@ void init_actors_json(string filename, ActorType type, std::unordered_map<string
 				}
 				else actor->flags |= found->second;
 			}
+		}
+
+		auto attacker_pos = std::find(jmem_actor.begin(), jmem_actor.end(), "attacker");
+		if (attacker_pos != jmem_actor.end())
+		{
+			Json::Value attacker_jval = jval["attacker"];
+			actor->attacker = std::make_shared<Attacker>(0);
+			actor->attacker->power = attacker_jval.get("power", 0).asUInt();
+		}
+
+		auto defender_pos = std::find(jmem_actor.begin(), jmem_actor.end(), "defender");
+		if (defender_pos != jmem_actor.end())
+		{
+			Json::Value defender_jval = jval["defender"];
+			actor->defender = std::make_shared<Defender>(0);
+			actor->defender->armour = defender_jval.get("armour", 0).asUInt();
+			actor->defender->hp_max = defender_jval.get("hp", 0).asUInt();
+			actor->defender->hp = actor->defender->hp_max;
 		}
 
 		if (type == ActorType::MONSTER)

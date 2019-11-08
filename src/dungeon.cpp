@@ -66,22 +66,20 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 	while (monsters_here)
 	{
 		monsters_here--;
-		shared_ptr<Actor> new_mob;
-		if (mathx::rnd(10) >= 8) new_mob = data::get_mob("TROLL");
-		else new_mob = data::get_mob("ORC");
+		string new_mob = "ORC";
+		if (mathx::rnd(10) >= 8) new_mob = "TROLL";
 		auto success = find_empty_tile(x, y, w, h);
 		if (success.first >= width || success.second >= height) break;
-		tile(success.first, success.second)->add_actor(new_mob);
+		tile(success.first, success.second)->add_actor(data::get_mob(new_mob));
 	}
 	while (items_here)
 	{
 		items_here--;
-		shared_ptr<Actor> new_item;
-		if (mathx::rnd(2) == 1) new_item = data::get_item("SQUIDDLYBOX");
-		else new_item = data::get_item("JACKET_POTATO");
+		string new_item = "JACKET_POTATO";
+		if (mathx::rnd(2) == 1) new_item = "SQUIDDLYBOX";
 		auto success = find_empty_tile(x, y, w, h);
 		if (success.first >= width || success.second >= height) break;
-		tile(success.first, success.second)->add_actor(new_item);
+		tile(success.first, success.second)->add_actor(data::get_item(new_item));
 	}
 }
 

@@ -1,7 +1,9 @@
 // hero.cpp -- The Hero class, where the player data and other important stuff about the world is stored.
 // Copyright (c) 2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
+#include "attacker.h"
 #include "controls.h"
+#include "defender.h"
 #include "dungeon.h"
 #include "guru.h"
 #include "inventory.h"
@@ -19,10 +21,15 @@
 Hero::Hero(unsigned long long new_id) : Actor(new_id), camera_off_x(0), camera_off_y(0), difficulty(1), played(0), style(1)
 {
 	STACK_TRACE();
-	ai = std::make_shared<Controls>(this);
-	inventory = std::make_shared<Inventory>(this, world::unique_id());
 	sprite = "PLAYER";
 	flags |= ACTOR_FLAG_ANIMATED;
+	ai = std::make_shared<Controls>(this);
+	inventory = std::make_shared<Inventory>(world::unique_id());
+	attacker = std::make_shared<Attacker>(world::unique_id());
+	attacker->power = 5;
+	defender = std::make_shared<Defender>(world::unique_id());
+	defender->hp = defender->hp_max = 30;
+	defender->armour = 2;
 }
 
 Hero::~Hero() { }

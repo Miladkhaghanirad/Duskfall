@@ -15,6 +15,7 @@ namespace Json { class Value; }			// defined in json.cpp/json/json.h
 namespace data
 {
 
+shared_ptr<Actor>	get_actor(std::unordered_map<string, shared_ptr<Actor>> &map, string id, string type);	// Internal code used by get_item(), get_mob() and get_tile_feature().
 shared_ptr<Actor>	get_item(string item_id);	// Retrieves a copy of the specified item.
 shared_ptr<Actor>	get_mob(string mob_id);		// Retrieves a copy of a specified mob.
 Tile				get_tile(string tile_id);	// Retrieves a copy of a specified Tile.

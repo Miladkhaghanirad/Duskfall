@@ -4,19 +4,27 @@
 {
 
 "ORC" : {
-	"armour" : 0,
-	"attack" : 3,
+	"attacker" : {
+		"power" : 3
+	},
+	"defender" : {
+		"armour" : 0,
+		"hp" : 10
+	},
 	"flags" : "ANIMATED",
-	"hp" : 10,
 	"name" : "orc",
 	"tile" : "NPC_ORC"
 },
 
 "TROLL" : {
-	"armour" : 1,
-	"attack" : 4,
+	"attacker" : {
+		"power" : 4
+	},
+	"defender" : {
+		"armour" : 1,
+		"hp" : 16
+	},
 	"flags" : "ANIMATED BLOCKS_LOS",
-	"hp" : 16,
 	"name" : "troll",
 	"tile" : "NPC_TROLL"
 }

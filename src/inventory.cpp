@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Raine "Gravecat" Simmons. All rights reserved.
 
 #include "actor.h"
+#include "graveyard.h"
 #include "guru.h"
 #include "inventory.h"
 #include "strx.h"
@@ -10,7 +11,7 @@
 #include "SQLiteCpp/SQLiteCpp.h"
 
 
-// Loads this Inventory from disk.	// todo: rewrite this
+// Loads this Inventory from disk.
 void Inventory::load()
 {
 	STACK_TRACE();
@@ -35,7 +36,7 @@ void Inventory::load()
 }
 
 // Saves this Inventory to disk.
-void Inventory::save()	// todo: rewrite this
+void Inventory::save()
 {
 	STACK_TRACE();
 	for (auto actor : contents)

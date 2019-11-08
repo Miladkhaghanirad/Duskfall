@@ -3,6 +3,9 @@
 
 #include "actor.h"
 #include "ai.h"
+#include "attacker.h"
+#include "defender.h"
+#include "graveyard.h"
 #include "guru.h"
 #include "inventory.h"
 #include "iocore.h"
@@ -88,8 +91,20 @@ void Actor::load(unsigned long long owner_id)
 			if (!query.isColumnNull("inventory"))
 			{
 				unsigned long long inventory_id = query.getColumn("inventory").getInt64();
-				inventory = std::make_shared<Inventory>(this, inventory_id);
+				inventory = std::make_shared<Inventory>(inventory_id);
 				inventory->load();
+			}
+			if (!query.isColumnNull("attacker"))
+			{
+				unsigned long long attacker_id = query.getColumn("attacker").getInt64();
+				attacker = std::make_shared<Attacker>(attacker_id);
+				attacker->load();
+			}
+			if (!query.isColumnNull("defender"))
+			{
+				unsigned long long defender_id = query.getColumn("defender").getInt64();
+				defender = std::make_shared<Defender>(defender_id);
+				defender->load();
 			}
 		}
 		else guru::halt("Could not load Actor " + strx::uitos(owner_id));
@@ -109,16 +124,17 @@ void Actor::save(unsigned long long owner_id)
 		SQLite::Statement delete_statement(*world::save_db(), "DELETE FROM actors WHERE id = ?");
 		delete_statement.bind(1, static_cast<signed long long>(id));
 		delete_statement.exec();
-		SQLite::Statement query(*world::save_db(), "INSERT INTO actors (id, owner, name, flags, x, y, inventory, sprite) VALUES (?,?,?,?,?,?,?,?)");
+		SQLite::Statement query(*world::save_db(), "INSERT INTO actors (id, owner, name, sprite, flags, x, y, inventory, attacker, defender) VALUES (?,?,?,?,?,?,?,?,?,?)");
 		query.bind(1, static_cast<long long>(id));
 		query.bind(2, static_cast<long long>(owner_id));
 		query.bind(3, name);
-		query.bind(4, flags);
-		query.bind(5, x);
-		query.bind(6, y);
-		if (inventory) query.bind(7, static_cast<long long>(inventory->id));
-		else query.bind(7);
-		query.bind(8, sprite);
+		query.bind(4, sprite);
+		query.bind(5, flags);
+		query.bind(6, x);
+		query.bind(7, y);
+		if (inventory) query.bind(8, static_cast<signed long long>(inventory->id)); else query.bind(8);
+		if (attacker) query.bind(9, static_cast<signed long long>(attacker->id)); else query.bind(9);
+		if (defender) query.bind(10, static_cast<signed long long>(defender->id)); else query.bind(10);
 		query.exec();
 	}
 	catch(std::exception &e)
@@ -127,6 +143,8 @@ void Actor::save(unsigned long long owner_id)
 	}
 
 	if (inventory) inventory->save();
+	if (attacker) attacker->save();
+	if (defender) defender->save();
 }
 
 // Sets a flag on this Actor.
