@@ -34,7 +34,6 @@ void Controls::close()
 	shared_ptr<Actor> door = nullptr;
 	for (auto actor : *tile->actors())
 	{
-		guru::log(actor->name);
 		if (actor->is_door() && !actor->is_blocker())
 		{
 			door = actor;
