@@ -27,9 +27,11 @@ Hero::Hero(unsigned long long new_id) : Actor(new_id), camera_off_x(0), camera_o
 	inventory = std::make_shared<Inventory>(world::unique_id());
 	attacker = std::make_shared<Attacker>(world::unique_id());
 	attacker->power = 5;
+	attacker->flags = ATTACKER_FLAG_IS_HERO;
 	defender = std::make_shared<Defender>(world::unique_id());
 	defender->hp = defender->hp_max = 30;
 	defender->armour = 2;
+	defender->flags = DEFENDER_FLAG_IS_HERO;
 }
 
 Hero::~Hero() { }

@@ -1,6 +1,7 @@
 // controls.cpp -- The Controls class, which translates input from the player into game actions.
 // Copyright (c) 2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
+#include "attacker.h"
 #include "controls.h"
 #include "dungeon.h"
 #include "hero.h"
@@ -248,7 +249,8 @@ bool Controls::travel(short x_dir, short y_dir)
 			if (actor->is_blocker())
 			{
 				if (actor->is_door()) open_door(actor);
-				else message::msg((actor->has_proper_noun() ? "" : "The ") + actor->name + " blocks your path!", MC::WARN);
+				else if (actor->defender) owner->attacker->attack(world::hero(), actor);
+				else message::msg(actor->get_name(true) + " blocks your path!", MC::WARN);
 				return false;
 			}
 		}

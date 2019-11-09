@@ -6,6 +6,7 @@
 #include "world.h"
 
 #include "SQLiteCpp/SQLiteCpp.h"
+#include "strx.h"
 
 
 namespace graveyard
@@ -81,9 +82,9 @@ void purge()
 	{
 		for (auto id : vec)
 		{
-			SQLite::Statement statement(*world::save_db(), "DELETE FROM ? WHERE id = ?");
-			statement.bind(1, table);
-			statement.bind(2, static_cast<signed long long>(id));
+			SQLite::Statement statement(*world::save_db(), "DELETE FROM " + table + " WHERE id = ?");
+			statement.bind(1, static_cast<signed long long>(id));
+			statement.exec();
 		}
 		vec.clear();
 	};

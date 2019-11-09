@@ -25,6 +25,14 @@ void Actor::clear_flag(unsigned int flag)
 	if ((flags & flag) == flag) flags ^= flag;
 }
 
+// Gets the name of this Actor, with 'the' at the start if it doesn't have a proper noun name.
+string Actor::get_name(bool first_letter_caps) const
+{
+	if (has_proper_noun()) return name;
+	else if (first_letter_caps) return "The " + name;
+	else return "the " + name;
+}
+
 // Does this Actor have lower-priority rendering (i.e. other Actors go on top)?
 bool Actor::has_low_priority_rendering() const
 {

@@ -26,6 +26,7 @@ public:
 					Actor(unsigned long long new_id);
 	virtual			~Actor();
 	void			clear_flag(unsigned int flag);	// Clears a flag on this Actor.
+	string			get_name(bool first_letter_caps) const;	// Gets the name of this Actor, with 'the' at the start if it doesn't have a proper noun name.
 	bool			has_low_priority_rendering() const;	// Does this Actor have lower-priority rendering (i.e. other Actors go on top)?
 	bool			has_proper_noun() const;	// Does this Actor have a proper noun for a name?
 	bool			is_animated() const;	// Does this Actor have an animated sprite?
