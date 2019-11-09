@@ -9,6 +9,8 @@ enum class Colour : unsigned char;	// defined in iocore.h
 namespace title
 {
 
+extern const string static_title[8];
+
 void	animate_fire(bool render = true);	// Animates the flames. This can also be used to 'pre-ignite' the fire prior to rendering.
 void	choose_difficulty();	// How much do you hate yourself?
 void	choose_gender();		// Choose your character's gender.

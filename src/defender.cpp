@@ -3,6 +3,7 @@
 
 #include "actor.h"
 #include "ai.h"
+#include "death.h"
 #include "defender.h"
 #include "dungeon.h"
 #include "graveyard.h"
@@ -18,7 +19,11 @@ void Defender::die(Actor *owner)
 	STACK_TRACE();
 	hp = 0;
 	if (owner->ai) owner->ai->state = AIState::DEAD;
-	if (is_hero()) { }	// todo: Handle player death here!
+	if (is_hero())
+	{
+		death::die("");	// todo: Put a death reason here.
+		return;
+	}
 	else
 	{
 		Tile* owner_tile = world::dungeon()->tile(owner->x, owner->y);
