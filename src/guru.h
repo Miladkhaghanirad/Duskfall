@@ -19,6 +19,7 @@ void	game_output(bool enabled);	// Enables or disables output of Guru logging in
 void	halt(string error);			// Stops the game and displays an error messge.
 void	intercept_signal(int sig);	// Catches a segfault or other fatal signal.
 void	log(std::string msg, int type = GURU_INFO);	// Logs a message in the system log file.
+void	nonfatal(string error, int type);	// Reports a non-fatal error, which will be logged and displayed in-game but will not halt execution unless it cascades.
 void	open_syslog();				// Opens the output log for messages.
 void	redraw();					// Redraws the error screen when needed.
 

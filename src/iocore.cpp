@@ -641,7 +641,7 @@ void flip()
 
 	if (SDL_UpdateWindowSurface(main_window) < 0)	// This can fail once in a blue moon. We'll retry a few times, then give up.
 	{
-		guru::log("Having trouble updating the main window surface. Trying to fix this...", GURU_WARN);
+		guru::log("Having trouble updating the main window surface. Trying to fix this...", GURU_WARN);	// Keep this as guru::log() rather than nonfatal(), as we don't want to spam the player.
 		bool got_there_in_the_end = false;
 		int tries = 0;
 		for (int i = 0; i < SDL_RETRIES; i++)
@@ -659,7 +659,7 @@ void flip()
 			guru::console_ready(false);
 			guru::halt(SDL_GetError());
 		}
-		else guru::log("...Reacquired access to the window surface after " + strx::itos(tries) + (tries == 1 ? " try." : " tries."), GURU_WARN);
+		else guru::log("...Reacquired access to the window surface after " + strx::itos(tries) + (tries == 1 ? " try." : " tries."), GURU_WARN);	// See comment above.
 	}
 }
 
@@ -741,7 +741,11 @@ unsigned short get_tile_rows()
 void glitch(int glitch_x, int glitch_y, int glitch_w, int glitch_h, int glitch_off_x, int glitch_off_y, bool black, SDL_Surface *surf)
 {
 	STACK_TRACE();
-	if ((surf == glitch_hz_surface && (glitch_w > glitched_main_surface->w || glitch_h > 8)) || (surf == glitch_sq_surface && (glitch_w > 70 || glitch_h > 70))) guru::halt("Invalid parameters given to glitch()");
+	if ((surf == glitch_hz_surface && (glitch_w > glitched_main_surface->w || glitch_h > 8)) || (surf == glitch_sq_surface && (glitch_w > 70 || glitch_h > 70)))
+	{
+		guru::nonfatal("Invalid parameters given to glitch()", GURU_WARN);
+		return;
+	}
 	SDL_Rect clear = { 0, 0, surf->w, surf->h };
 	SDL_FillRect(surf, &clear, SDL_MapRGB(surf->format, 1, 1, 1));
 	SDL_Rect source = { glitch_x, glitch_y, glitch_w, glitch_h };
@@ -1020,7 +1024,11 @@ void load_tileset(string dir)
 	string tileset_alpha_unparsed = json["TILESET_ALPHA"].asString();
 	tileset_supports_animation = json["TILESET_SUPPORTS_ANIMATION"].asBool();
 	tileset_supports_alpha = json["TILESET_SUPPORTS_ALPHA"].asBool();
-	if (tileset_alpha_unparsed.size() != 6) guru::halt("Invalid tileset alpha string.");
+	if (tileset_alpha_unparsed.size() != 6)
+	{
+		guru::nonfatal("Invalid tileset alpha string.", GURU_ERROR);
+		tileset_alpha_unparsed = "000000";
+	}
 	unsigned char alpha_r = strx::htoi(tileset_alpha_unparsed.substr(0, 2));
 	unsigned char alpha_g = strx::htoi(tileset_alpha_unparsed.substr(2, 2));
 	unsigned char alpha_b = strx::htoi(tileset_alpha_unparsed.substr(4, 2));
@@ -1306,7 +1314,7 @@ void print_tile(string tile, int x, int y, unsigned char brightness, bool animat
 	auto found = tileset_map.find(tile);
 	if (found == tileset_map.end())
 	{
-		guru::log("Missing tile: " + tile, GURU_ERROR);
+		guru::nonfatal("Missing tile: " + tile, GURU_ERROR);
 		if (tile != "ERROR") print_tile("ERROR", x, y, brightness);
 		else rect(x, y, tileset_pixel_size, tileset_pixel_size, Colour::ERROR_COLOUR);
 		return;
@@ -1315,7 +1323,7 @@ void print_tile(string tile, int x, int y, unsigned char brightness, bool animat
 	unsigned int tile_pos = found->second.second;
 	if (sheet >= tileset_file_count || tile_pos * tileset_pixel_size > static_cast<unsigned int>(tileset[sheet]->w * tileset[sheet]->h))
 	{
-		guru::log("Invalid tilesheet definition: " + tile, GURU_ERROR);
+		guru::nonfatal("Invalid tilesheet definition: " + tile, GURU_ERROR);
 		rect(x, y, tileset_pixel_size, tileset_pixel_size, Colour::ERROR_COLOUR);
 		return;
 	}

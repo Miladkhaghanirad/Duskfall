@@ -256,7 +256,11 @@ unsigned char	visual_glitches = VISUAL_GLITCHES_DEFAULT;	// Visual glitches enab
 void default_keybind(Keys key)
 {
 	STACK_TRACE();
-	if (static_cast<int>(key) >= PREFS_KEYBINDS) guru::halt("Invalid keybind specified!");
+	if (static_cast<int>(key) >= PREFS_KEYBINDS)
+	{
+		guru::nonfatal("Invalid keybind specified!", GURU_ERROR);
+		return;
+	}
 	keybinds[key] = key_defaults[key];
 }
 
@@ -303,11 +307,11 @@ void init()
 				else if (id == "ntsc_filter") ntsc_filter = value;
 				else if (id == "animation") animation = value;
 				else if (id == "tileset") tileset = prefs_query.getColumn("value_str").getString();
-				else guru::log("Unknown preference found in prefs.dat: " + id, GURU_WARN);
+				else guru::nonfatal("Unknown preference found in prefs.dat: " + id, GURU_WARN);
 			}
 			if (!filex::directory_exists("data/tilesets/" + tileset))
 			{
-				guru::log("Could not load tileset " + tileset + "! Falling back to the default, " + TILESET_DEFAULT + ".", GURU_ERROR);
+				guru::nonfatal("Could not load tileset " + tileset + "! Falling back to the default, " + TILESET_DEFAULT + ".", GURU_ERROR);
 				tileset = TILESET_DEFAULT;
 			}
 
@@ -326,7 +330,7 @@ void init()
 						break;
 					}
 				}
-				if (!found) guru::log("Could not find keybind definitions in prefs.dat.", GURU_WARN);
+				if (!found) guru::nonfatal("Could not find keybind definitions in prefs.dat.", GURU_WARN);
 			}
 		}
 		else save(&prefs_db);
@@ -352,7 +356,11 @@ void init()
 unsigned int keybind(Keys key)
 {
 	STACK_TRACE();
-	if (static_cast<int>(key) >= PREFS_KEYBINDS) guru::halt("Invalid keybind specified!");
+	if (static_cast<int>(key) >= PREFS_KEYBINDS)
+	{
+		guru::nonfatal("Invalid keybind specified!", GURU_ERROR);
+		return 0;
+	}
 	return keybinds[static_cast<unsigned int>(key)];
 }
 
@@ -500,7 +508,7 @@ void parse_string_with_key_tags(string &str)
 		}
 		str = before + new_tag + after;
 	}
-	if (cycles >= 100) guru::log("Timed out while attempting to parse key string: " + str);
+	if (cycles >= 100) guru::nonfatal("Timed out while attempting to parse key string: " + str, GURU_WARN);
 }
 
 // Where the user can change prefs and shit.
@@ -821,7 +829,11 @@ void save(SQLite::Database *prefs_db)
 void set_keybind(Keys key, unsigned int new_key, bool reset_default)
 {
 	STACK_TRACE();
-	if (static_cast<int>(key) >= PREFS_KEYBINDS) guru::halt("Invalid keybind specified!");
+	if (static_cast<int>(key) >= PREFS_KEYBINDS)
+	{
+		guru::nonfatal("Invalid keybind specified!", GURU_ERROR);
+		return;
+	}
 	keybinds[static_cast<unsigned int>(key)] = new_key;
 	if (reset_default) key_defaults[static_cast<unsigned int>(key)] = new_key;
 }

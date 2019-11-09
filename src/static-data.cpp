@@ -114,11 +114,11 @@ void init_actors_json(string filename, ActorType type, std::unordered_map<string
 		auto actor = std::make_shared<Actor>(0);
 
 		const string actor_name = jval.get("name", "").asString();
-		if (!actor_name.size()) guru::log("No actor name specified for " + actor_id, GURU_WARN);
+		if (!actor_name.size()) guru::nonfatal("No actor name specified for " + actor_id, GURU_ERROR);
 		else actor->name = actor_name;
 
 		const string actor_tile = jval.get("tile", "").asString();
-		if (!actor_tile.size()) guru::log("No tile specified for " + actor_id, GURU_WARN);
+		if (!actor_tile.size()) guru::nonfatal("No tile specified for " + actor_id, GURU_ERROR);
 		else actor->sprite = actor_tile;
 
 		const string actor_flags_unparsed = jval.get("flags", "").asString();
@@ -135,7 +135,7 @@ void init_actors_json(string filename, ActorType type, std::unordered_map<string
 					if (flag == "!MONSTER") not_monster = true;
 					else if (flag == "!BLOCKER") not_blocker = true;
 					else if (flag == "!ITEM") not_item = true;
-					else guru::log("Unknown actor flag for " + actor_id + ": " + flag, GURU_WARN);
+					else guru::nonfatal("Unknown actor flag for " + actor_id + ": " + flag, GURU_ERROR);
 				}
 				else actor->flags |= found->second;
 			}
@@ -194,17 +194,17 @@ void init_tiles_json()
 			for (auto flag : tile_flags_vec)
 			{
 				auto found = tile_flag_map.find(strx::str_toupper(flag));
-				if (found == tile_flag_map.end()) guru::log("Unknown tile flag in tiles.json for " + tile_id + ": " + flag, GURU_ERROR);
+				if (found == tile_flag_map.end()) guru::nonfatal("Unknown tile flag in tiles.json for " + tile_id + ": " + flag, GURU_ERROR);
 				else new_tile->flags |= found->second;
 			}
 		}
 
 		const string tile_name = jval.get("name", "").asString();
-		if (!tile_name.size()) guru::log("No name specified in tiles.json for " + tile_id, GURU_ERROR);
+		if (!tile_name.size()) guru::nonfatal("No name specified in tiles.json for " + tile_id, GURU_ERROR);
 		else new_tile->name = tile_name;
 
 		const string tile_sprite = jval.get("tile", "").asString();
-		if (!tile_sprite.size()) guru::log("No tile sprite specified in tiles.json for " + tile_id, GURU_ERROR);
+		if (!tile_sprite.size()) guru::nonfatal("No tile sprite specified in tiles.json for " + tile_id, GURU_ERROR);
 		else new_tile->set_sprite(tile_sprite);
 
 		static_tile_data.insert(std::pair<string, shared_ptr<Tile>>(tile_id, new_tile));

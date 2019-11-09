@@ -629,7 +629,11 @@ void Dungeon::save()
 void Dungeon::set_tile(unsigned short x, unsigned short y, Tile &new_tile)
 {
 	STACK_TRACE();
-	if (x >= width || y >= height) guru::halt("Attempted to set out-of-bounds tile.");
+	if (x >= width || y >= height)
+	{
+		guru::nonfatal("Attempted to set out-of-bounds tile.", GURU_CRITICAL);
+		return;
+	}
 
 	Tile* old_tile = tile(x, y);
 	vector<shared_ptr<Actor>> old_actors;
@@ -648,7 +652,7 @@ void Dungeon::set_tile(unsigned short x, unsigned short y, Tile &new_tile)
 Tile* Dungeon::tile(unsigned short x, unsigned short y) const
 {
 	STACK_TRACE();
-	if (x >= width || y >= height) guru::halt("Attempted to set out-of-bounds tile.");
+	if (x >= width || y >= height) guru::halt("Attempted to retrieve out-of-bounds tile.");
 	return &tiles[x + y * width];
 }
 
@@ -880,7 +884,11 @@ bool Tile::neighbour_identical(int x, int y) const
 void Tile::remove_actor(unsigned int id)
 {
 	STACK_TRACE();
-	if (contained_actors.size() <= id) guru::halt("Out-of-bounds Actor ID in removal request.");
+	if (contained_actors.size() <= id)
+	{
+		guru::nonfatal("Out-of-bounds Actor ID in removal request.", GURU_CRITICAL);
+		return;
+	}
 	contained_actors.erase(contained_actors.begin() + id);
 }
 

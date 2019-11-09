@@ -27,6 +27,7 @@ std::chrono::time_point<std::chrono::system_clock> cascade_timer;	// Timer to ch
 bool			dead_already = false;	// Have we already died? Is this crash within the Guru subsystem?
 bool			flash_state = true;		// Is the box flashing?
 bool			fully_active = false;	// Is the Guru system fully activated yet?
+string			last_log_message;		// Records the last log message, to avoid spamming the log with repeats.
 string			message;				// The error message.
 bool			output_to_game = false;	// When this is set to true, Guru errors will output to the main game window.
 int				redraw_cycle = 0;		// Used by the rendering system.
@@ -127,15 +128,16 @@ void log(string msg, int type)
 {
 	STACK_TRACE();
 	if (!syslog.is_open()) return;
+	if (msg == last_log_message) return;
+	last_log_message = msg;
 	string txt_tag = "???", tag_colour = "{5F}";
 	MC message_colour = MC::NONE;
-	unsigned int cascade_weight = 0;
 	switch(type)
 	{
 		case GURU_INFO: txt_tag = ""; tag_colour = ""; message_colour = MC::INFO; break;
-		case GURU_WARN: txt_tag = "[WARN] "; tag_colour = "{5E}"; message_colour = MC::WARN; cascade_weight = CASCADE_WEIGHT_WARNING; break;
-		case GURU_ERROR: txt_tag = "[ERROR] "; tag_colour = "{5C}"; message_colour = MC::BAD; cascade_weight = CASCADE_WEIGHT_ERROR;  break;
-		case GURU_CRITICAL: txt_tag = "[CRITICAL] "; tag_colour = "{5D}"; message_colour = MC::AWFUL; cascade_weight = CASCADE_WEIGHT_CRITICAL; break;
+		case GURU_WARN: txt_tag = "[WARN] "; tag_colour = "{5E}"; message_colour = MC::WARN; break;
+		case GURU_ERROR: txt_tag = "[ERROR] "; tag_colour = "{5C}"; message_colour = MC::BAD; break;
+		case GURU_CRITICAL: txt_tag = "[CRITICAL] "; tag_colour = "{5D}"; message_colour = MC::AWFUL; break;
 		case GURU_STACK: txt_tag = ""; tag_colour = "{5F}"; break;
 	}
 
@@ -147,13 +149,32 @@ void log(string msg, int type)
 	msg = "[" + time_str + "] " + txt_tag + msg;
 	syslog << msg << std::endl;
 
+	if (output_to_game && type != GURU_STACK) message::msg("[*] " + msg, message_colour);
+}
+
+// Reports a non-fatal error, which will be logged and displayed in-game but will not halt execution unless it cascades.
+void nonfatal(string error, int type)
+{
+	STACK_TRACE();
 	if (cascade_failure) return;
+	unsigned int cascade_weight = 0;
+	switch(type)
+	{
+		case GURU_WARN: cascade_weight = CASCADE_WEIGHT_WARNING; break;
+		case GURU_ERROR: cascade_weight = CASCADE_WEIGHT_ERROR; break;
+		case GURU_CRITICAL: cascade_weight = CASCADE_WEIGHT_CRITICAL; break;
+		default: nonfatal("Nonfatal error reported with incorrect severity specified.", GURU_WARN); break;
+	}
+
+	guru::log(error, type);
+
 	if (cascade_weight)
 	{
 		std::chrono::duration<float> elapsed_seconds = std::chrono::system_clock::now() - cascade_timer;
 		if (elapsed_seconds.count() <= CASCADE_TIMEOUT)
 		{
-			if ((cascade_count += cascade_weight) > CASCADE_THRESHOLD)
+			cascade_count += cascade_weight;
+			if (cascade_count > CASCADE_THRESHOLD)
 			{
 				cascade_failure = true;
 				guru::halt("Cascade failure detected!");
@@ -165,8 +186,6 @@ void log(string msg, int type)
 			cascade_count = 0;
 		}
 	}
-
-	if (output_to_game && type != GURU_STACK) message::msg("[*] " + msg, message_colour);
 }
 
 // Opens the output log for messages.
