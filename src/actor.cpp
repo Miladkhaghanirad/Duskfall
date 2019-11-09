@@ -31,6 +31,13 @@ bool Actor::has_low_priority_rendering() const
 	return is_item();
 }
 
+// Does this Actor have a proper noun for a name?
+bool Actor::has_proper_noun() const
+{
+	STACK_TRACE();
+	return (flags & ACTOR_FLAG_PROPER_NOUN) == ACTOR_FLAG_PROPER_NOUN;
+}
+
 // Does this Actor have an animated sprite?
 bool Actor::is_animated() const
 {

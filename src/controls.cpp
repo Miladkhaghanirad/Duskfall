@@ -248,7 +248,7 @@ bool Controls::travel(short x_dir, short y_dir)
 			if (actor->is_blocker())
 			{
 				if (actor->is_door()) open_door(actor);
-				else message::msg("The " + actor->name + " blocks your path!", MC::WARN);
+				else message::msg((actor->has_proper_noun() ? "" : "The ") + actor->name + " blocks your path!", MC::WARN);
 				return false;
 			}
 		}

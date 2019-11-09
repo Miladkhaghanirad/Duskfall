@@ -16,6 +16,12 @@
 	"tile" : "NPC_ORC"
 },
 
+"PLATINO" : {
+	"flags" : "ANIMATED PROPER_NOUN",
+	"name" : "Platino",
+	"tile" : "NPC_PLATINO"
+},
+
 "TROLL" : {
 	"attacker" : {
 		"power" : 4

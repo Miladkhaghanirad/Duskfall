@@ -68,6 +68,7 @@ void Dungeon::carve_room(unsigned short x, unsigned short y, unsigned short w, u
 		monsters_here--;
 		string new_mob = "ORC";
 		if (mathx::rnd(10) >= 8) new_mob = "TROLL";
+		else if (mathx::rnd(10000) == 1) new_mob = "PLATINO";
 		auto success = find_empty_tile(x, y, w, h);
 		if (success.first >= width || success.second >= height) break;
 		tile(success.first, success.second)->add_actor(data::get_mob(new_mob));

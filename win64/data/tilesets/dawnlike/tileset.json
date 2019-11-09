@@ -90,6 +90,7 @@
 "ITEM_POTATO" : "5:0",
 
 "NPC_ORC" : "3:0",
+"NPC_PLATINO" : "3:4",
 "NPC_TROLL" : "3:2",
 
 "PLAYER" : "4:0",

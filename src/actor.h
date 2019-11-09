@@ -17,6 +17,7 @@ enum class Colour : unsigned char;	// defined in iocore.h
 #define ACTOR_FLAG_INVISIBLE	(1 << 4)	// Is this Actor invisible?
 #define ACTOR_FLAG_DOOR			(1 << 5)	// Is this Actor a door?
 #define ACTOR_FLAG_ANIMATED		(1 << 6)	// Does this Actor have an animated sprite?
+#define ACTOR_FLAG_PROPER_NOUN	(1 << 7)	// Does this Actor have a proper noun for a name (e.g. 'David', rather than 'the orc').
 
 
 class Actor
@@ -26,6 +27,7 @@ public:
 	virtual			~Actor();
 	void			clear_flag(unsigned int flag);	// Clears a flag on this Actor.
 	bool			has_low_priority_rendering() const;	// Does this Actor have lower-priority rendering (i.e. other Actors go on top)?
+	bool			has_proper_noun() const;	// Does this Actor have a proper noun for a name?
 	bool			is_animated() const;	// Does this Actor have an animated sprite?
 	bool			is_blocker() const;		// Does this Actor block movement into its tile?
 	bool			is_door() const;		// Is this Actor some sort of door?

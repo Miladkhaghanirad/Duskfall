@@ -102,7 +102,7 @@ void init_actors_json(string filename, ActorType type, std::unordered_map<string
 {
 	STACK_TRACE();
 	const std::unordered_map<string, unsigned int> actor_flag_map = { { "BLOCKER", ACTOR_FLAG_BLOCKER }, { "BLOCKS_LOS", ACTOR_FLAG_BLOCKS_LOS }, { "MONSTER", ACTOR_FLAG_MONSTER }, { "ITEM", ACTOR_FLAG_ITEM },
-			{ "INVISIBLE", ACTOR_FLAG_INVISIBLE }, { "DOOR", ACTOR_FLAG_DOOR }, { "ANIMATED", ACTOR_FLAG_ANIMATED } };
+			{ "INVISIBLE", ACTOR_FLAG_INVISIBLE }, { "DOOR", ACTOR_FLAG_DOOR }, { "ANIMATED", ACTOR_FLAG_ANIMATED }, { "PROPER_NOUN", ACTOR_FLAG_PROPER_NOUN } };
 
 	Json::Value json = filex::load_json("json/" + filename);
 	const Json::Value::Members jmem = json.getMemberNames();
