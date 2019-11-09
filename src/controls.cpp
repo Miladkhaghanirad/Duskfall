@@ -176,6 +176,7 @@ bool Controls::process_key(unsigned int key)
 	if (key == prefs::keybind(Keys::TAKE)) { take(); return true; }
 	if (key == prefs::keybind(Keys::INVENTORY)) { inventory(); return true; }
 	if (key == prefs::keybind(Keys::DROP)) { drop(); return true; }
+	if (key == prefs::keybind(Keys::WAIT)) { world::pass_time(); return true; }
 	return false;
 }
 
