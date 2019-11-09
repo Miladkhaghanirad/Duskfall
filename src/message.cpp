@@ -184,30 +184,33 @@ void render()
 {
 	STACK_TRACE();
 	iocore::rect(0, iocore::get_rows() - (MESSAGE_LOG_SIZE + 1), iocore::get_cols() - 1, MESSAGE_LOG_SIZE + 1, Colour::BLACK);
-	for (int x = 0; x <= iocore::get_cols() - 2; x += 2)
+	if (prefs::tileset != "ascii")
 	{
-		for (int y = iocore::get_rows() - (MESSAGE_LOG_SIZE + 1); y <= iocore::get_rows() - 2; y += 2)
+		for (int x = 0; x <= iocore::get_cols() - 2; x += 2)
 		{
-			Sprite sprite = Sprite::UI_BOX_5;
-			if (y == iocore::get_rows() - (MESSAGE_LOG_SIZE + 1))
+			for (int y = iocore::get_rows() - (MESSAGE_LOG_SIZE + 1); y <= iocore::get_rows() - 2; y += 2)
 			{
-				if (x == 0) sprite = Sprite::UI_BOX_7;
-				else if (x == iocore::get_cols() - 2) sprite = Sprite::UI_BOX_9;
-				else sprite = Sprite::UI_BOX_8;
+				Sprite sprite = Sprite::UI_BOX_5;
+				if (y == iocore::get_rows() - (MESSAGE_LOG_SIZE + 1))
+				{
+					if (x == 0) sprite = Sprite::UI_BOX_7;
+					else if (x == iocore::get_cols() - 2) sprite = Sprite::UI_BOX_9;
+					else sprite = Sprite::UI_BOX_8;
+				}
+				else if (y == iocore::get_rows() - 2)
+				{
+					if (x == 0) sprite = Sprite::UI_BOX_1;
+					else if (x == iocore::get_cols() - 2) sprite = Sprite::UI_BOX_3;
+					else sprite = Sprite::UI_BOX_2;
+				}
+				else if (x == 0) sprite = Sprite::UI_BOX_4;
+				else if (x == iocore::get_cols() - 2) sprite = Sprite::UI_BOX_6;
+				iocore::sprite_print(sprite, x, y);
 			}
-			else if (y == iocore::get_rows() - 2)
-			{
-				if (x == 0) sprite = Sprite::UI_BOX_1;
-				else if (x == iocore::get_cols() - 2) sprite = Sprite::UI_BOX_3;
-				else sprite = Sprite::UI_BOX_2;
-			}
-			else if (x == 0) sprite = Sprite::UI_BOX_4;
-			else if (x == iocore::get_cols() - 2) sprite = Sprite::UI_BOX_6;
-			iocore::sprite_print(sprite, x, y);
 		}
+		iocore::sprite_print(Sprite::UI_BOX_7, 0, iocore::get_rows() - (MESSAGE_LOG_SIZE + 1));
+		iocore::sprite_print(Sprite::UI_BOX_9, iocore::get_cols() - 2, iocore::get_rows() - (MESSAGE_LOG_SIZE + 1));
 	}
-	iocore::sprite_print(Sprite::UI_BOX_7, 0, iocore::get_rows() - (MESSAGE_LOG_SIZE + 1));
-	iocore::sprite_print(Sprite::UI_BOX_9, iocore::get_cols() - 2, iocore::get_rows() - (MESSAGE_LOG_SIZE + 1));
 	if (output_prc.size())
 	{
 		unsigned int end = output_prc.size();
