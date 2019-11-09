@@ -7,6 +7,7 @@
 #include "prefs.h"
 #include "static-data.h"
 #include "strx.h"
+#include "world.h"
 
 #include "jsoncpp/json/json.h"
 #include "sdl2/SDL.h"
@@ -727,6 +728,7 @@ void prefs_window_graphics()
 					prefs::tileset_id = val;
 					prefs::tileset = tileset_list.at(val).first;
 					iocore::load_tileset(prefs::tileset);
+					world::queue_camera_recenter();
 					break;
 			}
 			if (prefs_screen.selected_id() == ID_SCREEN_RES)

@@ -27,6 +27,7 @@ namespace world
 bool				db_ready = false;		// Is the database available for reading/writing?
 unsigned short		level = 0;				// The current dungeon level depth.
 bool				recalc_lighting = true;	// Recalculate the dynamic lighting at the start of the next turn.
+bool				recenter_camera = false;	// Does the dungeon camera need to be recentered?
 bool				redraw_full = true;		// Redraw the dungeon entirely at the start of the next turn.
 SQLite::Database	*save_db_ptr = nullptr;	// SQLite handle for the save game file.
 unsigned short		save_slot = 0;			// The save file slot.
@@ -113,6 +114,11 @@ void main_loop()
 			the_dungeon->recalc_lighting();
 			recalc_lighting = false;
 		}
+		if (recenter_camera)
+		{
+			hero()->recenter_camera();
+			recenter_camera = false;
+		}
 		if (redraw_full)
 		{
 			full_redraw();
@@ -163,6 +169,12 @@ void new_game()
 	the_hero->recenter_camera();
 	message::msg("It is very dark. You are likely to be eaten by a grue.");
 	save(true);
+}
+
+// Queues up a recenter of the dungeon's camera position.
+void queue_camera_recenter()
+{
+	recenter_camera = true;
 }
 
 // Queues up a full redraw of the game world.
