@@ -14,7 +14,15 @@ void Defender::load()
 	STACK_TRACE();
 	try
 	{
-
+		SQLite::Statement query(*world::save_db(), "SELECT * FROM defenders WHERE id = ?");
+		query.bind(1, static_cast<signed long long>(id));
+		if (query.executeStep())
+		{
+			armour = query.getColumn("armour").getUInt();
+			hp = query.getColumn("hp").getUInt();
+			hp_max = query.getColumn("hp_max").getUInt();
+		}
+		else guru::halt("Could not load Defender data.");
 	}
 	catch (std::exception &e)
 	{

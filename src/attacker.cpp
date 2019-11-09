@@ -14,6 +14,13 @@ void Attacker::load()
 	STACK_TRACE();
 	try
 	{
+		SQLite::Statement query(*world::save_db(), "SELECT * FROM attackers WHERE id = ?");
+		query.bind(1, static_cast<signed long long>(id));
+		if (query.executeStep())
+		{
+			power = query.getColumn("power").getUInt();
+		}
+		else guru::halt("Could not load Attacker data.");
 	}
 	catch (std::exception &e)
 	{
