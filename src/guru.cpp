@@ -7,14 +7,23 @@
 #include "message.h"
 #include "strx.h"
 
+#include <chrono>
 #include <ctime>
 #include <fstream>
 
-#define FILENAME_LOG	"userdata/log.txt"
+#define CASCADE_THRESHOLD		20	// The amount cascade_count can reach within CASCADE_TIMEOUT seconds before it triggers an abort screen.
+#define CASCADE_TIMEOUT			30	// The number of seconds without an error to reset the cascade timer.
+#define CASCADE_WEIGHT_CRITICAL	4	// The amount a critical type log entry will add to the cascade timer.
+#define CASCADE_WEIGHT_ERROR	2	// The amount an error type log entry will add to the cascade timer.
+#define CASCADE_WEIGHT_WARNING	1	// The amount a warning type log entry will add to the cascade timer.
+#define FILENAME_LOG		"userdata/log.txt"
 
 namespace guru
-{
 
+{
+unsigned int	cascade_count = 0;		// Keeps track of rapidly-occurring, non-fatal error messages.
+bool			cascade_failure = false;	// Is a cascade failure in progress?
+std::chrono::time_point<std::chrono::system_clock> cascade_timer;	// Timer to check the speed of non-halting Guru warnings, to prevent cascade locks.
 bool			dead_already = false;	// Have we already died? Is this crash within the Guru subsystem?
 bool			flash_state = true;		// Is the box flashing?
 bool			fully_active = false;	// Is the Guru system fully activated yet?
@@ -71,7 +80,6 @@ void halt(string error)
 		log("Detected cleanup in process, attempting to die peacefully.", GURU_WARN);
 		exit(2);
 	}
-	dead_already = true;	// You only die once.
 	output_to_game = false;
 
 	message = error;
@@ -121,12 +129,13 @@ void log(string msg, int type)
 	if (!syslog.is_open()) return;
 	string txt_tag = "???", tag_colour = "{5F}";
 	MC message_colour = MC::NONE;
+	unsigned int cascade_weight = 0;
 	switch(type)
 	{
 		case GURU_INFO: txt_tag = ""; tag_colour = ""; message_colour = MC::INFO; break;
-		case GURU_WARN: txt_tag = "[WARN] "; tag_colour = "{5E}"; message_colour = MC::WARN; break;
-		case GURU_ERROR: txt_tag = "[ERROR] "; tag_colour = "{5C}"; message_colour = MC::BAD; break;
-		case GURU_CRITICAL: txt_tag = "[CRITICAL] "; tag_colour = "{5D}"; message_colour = MC::AWFUL; break;
+		case GURU_WARN: txt_tag = "[WARN] "; tag_colour = "{5E}"; message_colour = MC::WARN; cascade_weight = CASCADE_WEIGHT_WARNING; break;
+		case GURU_ERROR: txt_tag = "[ERROR] "; tag_colour = "{5C}"; message_colour = MC::BAD; cascade_weight = CASCADE_WEIGHT_ERROR;  break;
+		case GURU_CRITICAL: txt_tag = "[CRITICAL] "; tag_colour = "{5D}"; message_colour = MC::AWFUL; cascade_weight = CASCADE_WEIGHT_CRITICAL; break;
 		case GURU_STACK: txt_tag = ""; tag_colour = "{5F}"; break;
 	}
 
@@ -137,6 +146,25 @@ void log(string msg, int type)
 	string time_str = &buffer[0];
 	msg = "[" + time_str + "] " + txt_tag + msg;
 	syslog << msg << std::endl;
+
+	if (cascade_failure) return;
+	if (cascade_weight)
+	{
+		std::chrono::duration<float> elapsed_seconds = std::chrono::system_clock::now() - cascade_timer;
+		if (elapsed_seconds.count() <= CASCADE_TIMEOUT)
+		{
+			if ((cascade_count += cascade_weight) > CASCADE_THRESHOLD)
+			{
+				cascade_failure = true;
+				guru::halt("Cascade failure detected!");
+			}
+		}
+		else
+		{
+			cascade_timer = std::chrono::system_clock::now();
+			cascade_count = 0;
+		}
+	}
 
 	if (output_to_game && type != GURU_STACK) message::msg("[*] " + msg, message_colour);
 }
@@ -153,6 +181,7 @@ void open_syslog()
 	if (signal(SIGSEGV, intercept_signal) == SIG_ERR) halt("Failed to hook segfault signal.");
 	if (signal(SIGILL, intercept_signal) == SIG_ERR) halt("Failed to hook illegal instruction signal.");
 	if (signal(SIGFPE, intercept_signal) == SIG_ERR) halt("Failed to hook floating-point exception signal.");
+	cascade_timer = std::chrono::system_clock::now();
 }
 
 // Redraws the error screen when needed.
