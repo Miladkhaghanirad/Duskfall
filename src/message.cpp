@@ -11,7 +11,8 @@
 
 #include "SQLiteCpp/SQLiteCpp.h"
 
-#define OUTBUF_MAX	128	// Maximum size of the output buffer.
+#define MESSAGE_LOG_SIZE	5	// The height of the message log window.
+#define OUTBUF_MAX			128	// Maximum size of the output buffer.
 
 
 namespace message
@@ -63,14 +64,13 @@ void msg(string message, MC colours)
 {
 	STACK_TRACE();
 	bool redraw = true;
-	iocore::rect(iocore::get_cols() - 6, iocore::get_rows() - 1, 6, 1, Colour::BLACK);
 	unsigned int key = 0;
 	while (++messages_since_last_reset > MESSAGE_LOG_SIZE)
 	{
 		if (key == RESIZE_KEY || redraw)
 		{
 			world::full_redraw();
-			iocore::print("-more-", iocore::get_cols_narrow(), iocore::get_rows() - 1, Colour::CGA_WHITE, PRINT_FLAG_NARROW);
+			iocore::print("(more)", iocore::get_cols_narrow() - 8, iocore::get_rows() - 1, Colour::CGA_WHITE, PRINT_FLAG_NARROW | PRINT_FLAG_PLUS_EIGHT_Y);
 			iocore::flip();
 			redraw = false;
 		}
@@ -107,11 +107,13 @@ void process_input(unsigned int key)
 	{
 		buffer_pos = 0;
 		render();
+		iocore::flip();
 	}
 	else if (key == prefs::keybind(Keys::SCROLL_BOTTOM))
 	{
 		reset_buffer_pos();
 		render();
+		iocore::flip();
 	}
 	else if (key == prefs::keybind(Keys::SCROLL_PAGEUP) || key == MOUSEWHEEL_UP_KEY || key == prefs::keybind(Keys::SCROLL_UP))
 	{
@@ -119,6 +121,7 @@ void process_input(unsigned int key)
 		if (key == prefs::keybind(Keys::SCROLL_PAGEUP)) magnitude = MESSAGE_LOG_SIZE - 1;
 		if (buffer_pos > magnitude) buffer_pos -= magnitude; else buffer_pos = 0;
 		render();
+		iocore::flip();
 	}
 	else if (key == prefs::keybind(Keys::SCROLL_PAGEDOWN) || key == MOUSEWHEEL_DOWN_KEY || key == prefs::keybind(Keys::SCROLL_DOWN))
 	{
@@ -129,6 +132,7 @@ void process_input(unsigned int key)
 		unsigned int height = MESSAGE_LOG_SIZE;
 		if (output_prc.size() - buffer_pos < height || output_prc.size() < height) reset_buffer_pos();
 		render();
+		iocore::flip();
 	}
 }
 
@@ -149,7 +153,7 @@ void process_output_buffer()
 	// Process the output buffer.
 	for (unsigned int i = 0; i < output_raw.size(); i++)
 	{
-		vector<string> line_vec = strx::ansi_vector_split(output_raw.at(i), iocore::get_cols_narrow() - 2);
+		vector<string> line_vec = strx::ansi_vector_split(output_raw.at(i), iocore::get_cols_narrow() - 4);
 		for (auto line : line_vec)
 		{
 			if (output_prc.size() && output_prc.at(output_prc.size() - 1) == line) output_prc_count.at(output_prc.size() - 1)++;
@@ -179,7 +183,31 @@ void purge_buffer()
 void render()
 {
 	STACK_TRACE();
-	iocore::rect(0, iocore::get_rows() - MESSAGE_LOG_SIZE, iocore::get_cols() - 1, MESSAGE_LOG_SIZE, Colour::BLACK);
+	iocore::rect(0, iocore::get_rows() - (MESSAGE_LOG_SIZE + 1), iocore::get_cols() - 1, MESSAGE_LOG_SIZE + 1, Colour::BLACK);
+	for (int x = 0; x <= iocore::get_cols() - 2; x += 2)
+	{
+		for (int y = iocore::get_rows() - (MESSAGE_LOG_SIZE + 1); y <= iocore::get_rows() - 2; y += 2)
+		{
+			Sprite sprite = Sprite::UI_BOX_5;
+			if (y == iocore::get_rows() - (MESSAGE_LOG_SIZE + 1))
+			{
+				if (x == 0) sprite = Sprite::UI_BOX_7;
+				else if (x == iocore::get_cols() - 2) sprite = Sprite::UI_BOX_9;
+				else sprite = Sprite::UI_BOX_8;
+			}
+			else if (y == iocore::get_rows() - 2)
+			{
+				if (x == 0) sprite = Sprite::UI_BOX_1;
+				else if (x == iocore::get_cols() - 2) sprite = Sprite::UI_BOX_3;
+				else sprite = Sprite::UI_BOX_2;
+			}
+			else if (x == 0) sprite = Sprite::UI_BOX_4;
+			else if (x == iocore::get_cols() - 2) sprite = Sprite::UI_BOX_6;
+			iocore::sprite_print(sprite, x, y);
+		}
+	}
+	iocore::sprite_print(Sprite::UI_BOX_7, 0, iocore::get_rows() - (MESSAGE_LOG_SIZE + 1));
+	iocore::sprite_print(Sprite::UI_BOX_9, iocore::get_cols() - 2, iocore::get_rows() - (MESSAGE_LOG_SIZE + 1));
 	if (output_prc.size())
 	{
 		unsigned int end = output_prc.size();
@@ -192,7 +220,8 @@ void render()
 				dim_amount = MESSAGE_LOG_SIZE - (i - buffer_pos) - 1;
 				if (output_prc.size() < MESSAGE_LOG_SIZE) dim_amount -= MESSAGE_LOG_SIZE - output_prc.size();
 			}
-			iocore::ansi_print(output_prc.at(i) + (output_prc_count.at(i) > 1 ? " {5F}(" + strx::itos(output_prc_count.at(i)) + ")" : ""), 0, i - buffer_pos + iocore::get_rows() - MESSAGE_LOG_SIZE, PRINT_FLAG_NARROW, dim_amount);
+			iocore::ansi_print(output_prc.at(i) + (output_prc_count.at(i) > 1 ? " {5F}(" + strx::itos(output_prc_count.at(i)) + ")" : ""), 0, i - buffer_pos + iocore::get_rows() - (MESSAGE_LOG_SIZE + 1),
+					PRINT_FLAG_NARROW | PRINT_FLAG_ALPHA | PRINT_FLAG_PLUS_EIGHT_X | PRINT_FLAG_PLUS_EIGHT_Y, dim_amount);
 		}
 	}
 }

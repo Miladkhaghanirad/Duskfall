@@ -4,8 +4,6 @@
 #pragma once
 #include "duskfall.h"
 
-#define MESSAGE_LOG_SIZE	6	// The height of the message log window.
-
 enum class MC : unsigned char { NONE, INFO, GOOD, WARN, BAD, AWFUL };
 
 

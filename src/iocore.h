@@ -35,7 +35,10 @@ enum class Glyph : unsigned short { FACE_BLACK = 1, FACE_WHITE, HEART, DIAMOND, 
 	BLOCKS_13, BLOCKS_4, UPSIDE_DOWN_HD, BLOCKS_8 = 315, BLOCKS_1, BLOCKS_2, CORNER_CLIP_DL, CORNER_CLIP_DR, CURVE_DL, CURVE_UR, CURVE_UL, CURVE_DR, FLOPPY_DISK_METAL_HOLE, RETURN, TICK, MIDDOT, MIDCOMMA, SKULL, ELLIPSIS };
 
 // Sprites used in sprites.png
-enum class Sprite : unsigned short { DIFF_EASY = 0, DIFF_NORMAL = 2, DIFF_HARD = 4, LADY = 6, GENT = 8, ENBY = 10, CURSOR = 12 };
+enum class Sprite : unsigned short { DIFF_EASY = 0, DIFF_NORMAL = 2, DIFF_HARD = 4, LADY = 6, GENT = 8, ENBY = 10, CURSOR = 12, HEART_RED_1 = 14, HEART_RED_2, HEART_RED_3, HEART_RED_4, HEART_RED_5, HEART_BLUE_1, HEART_BLUE_2,
+	HEART_BLUE_3, HEART_BLUE_4, HEART_BLUE_5, HEART_GREEN_1 = 38, HEART_GREEN_2, HEART_GREEN_3, HEART_GREEN_4, HEART_GREEN_5, HEART_BLACK_1, HEART_BLACK_2, HEART_BLACK_3, HEART_BLACK_4, HEART_BLACK_5, STATUS_BAR_FRAME_LEFT,
+	STATUS_BAR_FRAME_MID, STATUS_BAR_FRAME_RIGHT, UI_BOX_4, UI_BOX_5, UI_BOX_6, BAR_GREEN_1, BAR_GREEN_2, BAR_GREEN_3, BAR_GREEN_4, UI_BOX_7 = 72, UI_BOX_8, UI_BOX_9, UI_BOX_1, UI_BOX_2, UI_BOX_3, BAR_BLUE_1, BAR_BLUE_2, BAR_BLUE_3,
+	BAR_BLUE_4 };
 
 // box() flags
 #define BOX_FLAG_DOUBLE			(1 << 0)
@@ -110,7 +113,7 @@ bool	is_right(unsigned int key);		// Returns true if the key is a chosen 'right'
 bool	is_select(unsigned int key);	// Returns true if the key is a chosen 'select' key.
 bool	is_up(unsigned int key);		// Returns true if the key is a chosen 'up' key.
 string	key_to_name(unsigned int key);	// Returns the name of a key.
-void	load_and_optimize_png(string filename, SDL_Surface **dest);	// Loads a PNG into memory and optimizes it for the main render surface.
+void	load_and_optimize_png(string filename, SDL_Surface **dest, s_rgb alpha_colour = {255,255,255});	// Loads a PNG into memory and optimizes it for the main render surface.
 void	load_tileset(string dir);		// Loads a specified tileset into memory, discarding the previous tileset.
 unsigned short	midcol();				// Retrieves the middle column on the screen.
 unsigned short	midcol_narrow();		// As above, for the narrow font.
@@ -133,7 +136,7 @@ void	rect_fine(int x, int y, int w, int h, s_rgb colour);	// As above, but with 
 void	render_glitches();		// Renders pre-calculated glitches.
 void	render_nebula(unsigned short seed, int off_x, int off_y);	// Renders a nebula on the screen.
 void	sleep_for(unsigned int amount);	// Do absolutely nothing for a little while.
-void	sprite_print(Sprite id, int x, int y, Colour colour = Colour::CGA_WHITE, unsigned char print_flags = 0);	// Prints a sprite at the given location.
+void	sprite_print(Sprite id, int x, int y, unsigned char print_flags = 0);	// Prints a sprite at the given location.
 unsigned int	tile_pixel_size();	// Returns the pixel size of the loaded tileset's individual tiles.
 void	toggle_animation_frame();	// Toggles the two-step animations.
 void	unlock_surfaces();		// Unlocks the mutexes, if they're locked. Only for use by the Guru system.

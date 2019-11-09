@@ -881,7 +881,7 @@ void init()
 	guru::log("Attempting to load bitmap fonts.", GURU_INFO);
 	load_and_optimize_png("png/fonts.png", &font);
 	load_and_optimize_png("png/alagard.png", &alagard);
-	load_and_optimize_png("png/sprites.png", &sprites);
+	load_and_optimize_png("png/sprites.png", &sprites, {0, 0, 0});
 	load_and_optimize_png("png/ruthenia.png", &font_narrow);
 	font_sheet_size = (font->w * font->h) / 8;
 	font_sheet_size_narrow = (font_narrow->w / 5) * (font_narrow->h / 8);
@@ -972,7 +972,7 @@ string key_to_name(unsigned int key)
 }
 
 // Loads a PNG into memory and optimizes it for the main render surface.
-void load_and_optimize_png(string filename, SDL_Surface **dest)
+void load_and_optimize_png(string filename, SDL_Surface **dest, s_rgb alpha_colour)
 {
 	STACK_TRACE();
 	SDL_Surface *surf_temp = IMG_Load(("data/" + filename).c_str());
@@ -996,7 +996,7 @@ void load_and_optimize_png(string filename, SDL_Surface **dest)
 		if (!dest) guru::halt(SDL_GetError());
 		SDL_FreeSurface(surf_temp);
 	}
-	if (SDL_SetColorKey(*dest, SDL_TRUE, SDL_MapRGB((*dest)->format, 255, 255, 255)) < 0) guru::halt(SDL_GetError());
+	if (SDL_SetColorKey(*dest, SDL_TRUE, SDL_MapRGB((*dest)->format, alpha_colour.r, alpha_colour.g, alpha_colour.b)) < 0) guru::halt(SDL_GetError());
 }
 
 // Loads a specified tileset into memory, discarding the previous tileset.
@@ -1026,10 +1026,7 @@ void load_tileset(string dir)
 	unsigned char alpha_b = strx::htoi(tileset_alpha_unparsed.substr(4, 2));
 	if (!ntsc_filter) tileset_pixel_size *= 2;
 	for (unsigned int i = 0; i < tileset_file_count; i++)
-	{
-		load_and_optimize_png("tilesets/" + dir + "/" + strx::itos(i) + ".png", &tileset[i]);
-		if (SDL_SetColorKey(tileset[i], SDL_TRUE, SDL_MapRGB(tileset[i]->format, alpha_r, alpha_g, alpha_b)) < 0) guru::halt(SDL_GetError());
-	}
+		load_and_optimize_png("tilesets/" + dir + "/" + strx::itos(i) + ".png", &tileset[i], {alpha_r, alpha_g, alpha_b});
 	for (unsigned int i = 0; i < jmem.size(); i++)
 	{
 		string def_id = jmem.at(i);
@@ -1464,7 +1461,7 @@ void sleep_for(unsigned int amount)
 }
 
 // Prints a sprite at the given location.
-void sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
+void sprite_print(Sprite id, int x, int y, unsigned char flags)
 {
 	STACK_TRACE();
 	const bool plus_four = ((flags & SPRITE_FLAG_PLUS_FOUR) == SPRITE_FLAG_PLUS_FOUR);
@@ -1479,7 +1476,7 @@ void sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
 				Sprite new_id = id;
 				if (i == 1) new_id = static_cast<Sprite>(static_cast<int>(new_id) + 1);
 				if (j == 1) new_id = static_cast<Sprite>(static_cast<int>(new_id) + 24);
-				sprite_print(new_id, x + (i * 2), y + (j * 2), colour, flags ^ SPRITE_FLAG_QUAD);
+				sprite_print(new_id, x + (i * 2), y + (j * 2), flags ^ SPRITE_FLAG_QUAD);
 			}
 		}
 		return;
@@ -1488,18 +1485,9 @@ void sprite_print(Sprite id, int x, int y, Colour colour, unsigned char flags)
 	while (loc_x >= sprites->w) { loc_y += sprite_size; loc_x -= sprites->w; }
 	SDL_Rect sprite_rect = {loc_x, loc_y, sprite_size, sprite_size};
 
-	// Parse the colour into SDL's native format.
-	unsigned char r, g, b;
-	parse_colour(colour, r, g, b);
-	const unsigned int sdl_col = SDL_MapRGB(main_surface->format, r, g, b);
-
-	// Draw a coloured square, then 'stamp' it with the sprite.
+	// Render the sprite at the given coordinate.
 	SDL_Rect scr_rect = { (x * (sprite_size / 2)) + (plus_four ? (sprite_size / 4) : 0), y * (sprite_size / 2), sprite_size, sprite_size };
-	SDL_Rect temp_rect = {0, 0, sprite_size * 2, sprite_size * 2};
-	if (SDL_FillRect(temp_surface, &temp_rect, sdl_col) < 0) guru::halt(SDL_GetError());
-	if (SDL_BlitSurface(sprites, &sprite_rect, temp_surface, &temp_rect) < 0) guru::halt(SDL_GetError());
-	if (SDL_SetColorKey(temp_surface, SDL_TRUE, SDL_MapRGB(temp_surface->format, 0, 0, 0)) < 0) guru::halt(SDL_GetError());
-	if (SDL_BlitSurface(temp_surface, &temp_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
+	if (SDL_BlitSurface(sprites, &sprite_rect, main_surface, &scr_rect) < 0) guru::halt(SDL_GetError());
 }
 
 // Returns the pixel size of the loaded tileset's individual tiles.

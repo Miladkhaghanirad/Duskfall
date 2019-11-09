@@ -102,10 +102,10 @@ void choose_difficulty()
 			iocore::print(choose2, midcol - (choose2.size() / 2), midrow - 5, Colour::AQUA_BRIGHT, PRINT_FLAG_PLUS_FOUR_X | PRINT_FLAG_ALT_FONT);
 			iocore::print(choose3, midcol - (choose3.size() / 2), midrow - 4, Colour::AQUA_BRIGHT, PRINT_FLAG_ALT_FONT);
 
-			iocore::sprite_print(Sprite::DIFF_EASY, midcol - 8, midrow - 2, Colour::CGA_LGREEN, SPRITE_FLAG_QUAD);
-			iocore::sprite_print(Sprite::DIFF_NORMAL, midcol - 2, midrow - 2, Colour::AQUA_BRIGHT, SPRITE_FLAG_QUAD);
-			iocore::sprite_print(Sprite::DIFF_HARD, midcol + 4, midrow - 2, Colour::CGA_LRED, SPRITE_FLAG_QUAD);
-			iocore::sprite_print(Sprite::CURSOR, midcol - 6 + (selected * 6), midrow + 2, Colour::CGA_WHITE, SPRITE_FLAG_QUAD);
+			iocore::sprite_print(Sprite::DIFF_EASY, midcol - 8, midrow - 2, SPRITE_FLAG_QUAD);
+			iocore::sprite_print(Sprite::DIFF_NORMAL, midcol - 2, midrow - 2, SPRITE_FLAG_QUAD);
+			iocore::sprite_print(Sprite::DIFF_HARD, midcol + 4, midrow - 2, SPRITE_FLAG_QUAD);
+			iocore::sprite_print(Sprite::CURSOR, midcol - 6 + (selected * 6), midrow + 2, SPRITE_FLAG_QUAD);
 
 			string desc;
 			switch(selected)
@@ -256,10 +256,10 @@ void choose_style()
 			iocore::print(choose2, midcol - (choose2.size() / 2), midrow - 5, Colour::AQUA_BRIGHT, PRINT_FLAG_PLUS_FOUR_X | PRINT_FLAG_ALT_FONT);
 			iocore::print(choose3, midcol - (choose3.size() / 2), midrow - 4, Colour::AQUA_BRIGHT, PRINT_FLAG_ALT_FONT);
 
-			iocore::sprite_print(Sprite::LADY, midcol - 8, midrow - 2, Colour::MAGENTA_PALE, SPRITE_FLAG_QUAD);
-			iocore::sprite_print(Sprite::ENBY, midcol - 2, midrow - 2, Colour::CGA_LGREEN, SPRITE_FLAG_QUAD);
-			iocore::sprite_print(Sprite::GENT, midcol + 4, midrow - 2, Colour::AQUA_BRIGHT, SPRITE_FLAG_QUAD);
-			iocore::sprite_print(Sprite::CURSOR, midcol - 6 + (chosen_style * 6), midrow + 2, Colour::CGA_WHITE, SPRITE_FLAG_QUAD);
+			iocore::sprite_print(Sprite::LADY, midcol - 8, midrow - 2, SPRITE_FLAG_QUAD);
+			iocore::sprite_print(Sprite::ENBY, midcol - 2, midrow - 2, SPRITE_FLAG_QUAD);
+			iocore::sprite_print(Sprite::GENT, midcol + 4, midrow - 2, SPRITE_FLAG_QUAD);
+			iocore::sprite_print(Sprite::CURSOR, midcol - 6 + (chosen_style * 6), midrow + 2, SPRITE_FLAG_QUAD);
 
 			string desc;
 			switch(chosen_style)
@@ -765,17 +765,16 @@ void select_save_slot()
 			{
 				string death_str, tier_colour = "{21}";
 				Sprite diff_sprite = Sprite::DIFF_NORMAL;
-				Colour diff_col = Colour::AQUA_BRIGHT;
 				switch(slot_difficulty.at(i))
 				{
-					case 0: diff_sprite = Sprite::DIFF_EASY; tier_colour = "{5A}"; diff_col = Colour::CGA_LGREEN; break;
-					case 2: diff_sprite = Sprite::DIFF_HARD; tier_colour = "{5C}"; diff_col = Colour::CGA_LRED; break;
+					case 0: diff_sprite = Sprite::DIFF_EASY; tier_colour = "{5A}"; break;
+					case 2: diff_sprite = Sprite::DIFF_HARD; tier_colour = "{5C}"; break;
 				}
 
 				if (slot_respawns.at(i))
 					death_str = (i == slot_pos ? " {5F}^329^x" : " {57}^329^x") + strx::itos(slot_respawns.at(i));
 				iocore::ansi_print(tier_colour + "Rank " + slot_tiers.at(i) + death_str, midcol - 20, y_pos + 5);
-				if (slot_difficulty.at(i) < 3) iocore::sprite_print(diff_sprite, midcol - 25, y_pos + 5, diff_col, SPRITE_FLAG_QUAD);
+				if (slot_difficulty.at(i) < 3) iocore::sprite_print(diff_sprite, midcol - 25, y_pos + 5, SPRITE_FLAG_QUAD);
 
 				if (slot_dead.at(i)) iocore::print("^042^ DECEASED", midcol - 20, y_pos + 7, Colour::CGA_LRED);
 				else
