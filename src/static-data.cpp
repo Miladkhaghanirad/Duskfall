@@ -38,7 +38,6 @@ shared_ptr<Actor> get_actor(std::unordered_map<string, shared_ptr<Actor>> &map, 
 	if (found == map.end()) guru::halt("Could not find " + type + " ID " + id + "!");
 	shared_ptr<Actor> result = std::make_shared<Actor>(*found->second);
 	result->id = world::unique_id();
-	guru::log(result->name);
 	if (result->attacker)
 	{
 		result->attacker = std::make_shared<Attacker>(*result->attacker);

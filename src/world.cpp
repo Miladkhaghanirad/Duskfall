@@ -7,6 +7,7 @@
 #include "graveyard.h"
 #include "guru.h"
 #include "hero.h"
+#include "hud.h"
 #include "iocore.h"
 #include "message.h"
 #include "prefs.h"
@@ -45,6 +46,7 @@ void full_redraw()
 	iocore::cls();
 	the_dungeon->render();
 	message::render();
+	hud::render();
 	STACK_TRACE();
 }
 

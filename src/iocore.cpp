@@ -1467,6 +1467,8 @@ void sprite_print(Sprite id, int x, int y, unsigned char flags)
 	const bool plus_four = ((flags & SPRITE_FLAG_PLUS_FOUR) == SPRITE_FLAG_PLUS_FOUR);
 	const bool quad = ((flags & SPRITE_FLAG_QUAD) == SPRITE_FLAG_QUAD);
 	const int sprite_size = (ntsc_filter ? 16 : 32);
+	const bool animated = ((flags & SPRITE_FLAG_ANIMATED) == SPRITE_FLAG_ANIMATED) && prefs::animation;
+	if (animated && current_animation_frame) id = static_cast<Sprite>(static_cast<unsigned int>(id) + 1);
 	if (quad)
 	{
 		for (unsigned int i = 0; i < 2; i++)
