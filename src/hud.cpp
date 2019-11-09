@@ -36,7 +36,7 @@ void render()
 			else if (heart_perc > 25) heart_sprite = static_cast<Sprite>(static_cast<unsigned int>(heart_sprite) - 2);
 			iocore::sprite_print(heart_sprite, (i * 2) + 1, 1, SPRITE_FLAG_ANIMATED);
 		}
-		iocore::sprite_print(Sprite::HEART_CONTAINER, (i * 2) + 1, 1);
+		else iocore::sprite_print(Sprite::HEART_CONTAINER, (i * 2) + 1, 1);
 	}
 }
 
