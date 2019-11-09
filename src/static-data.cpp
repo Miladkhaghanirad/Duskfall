@@ -53,6 +53,7 @@ shared_ptr<Actor> get_actor(std::unordered_map<string, shared_ptr<Actor>> &map, 
 		result->inventory = std::make_shared<Inventory>(*result->inventory);
 		result->inventory->id = world::unique_id();
 	}
+	if (result->ai_type.size()) result->add_ai(result->ai_type, world::unique_id());
 	return result;
 }
 
@@ -140,6 +141,9 @@ void init_actors_json(string filename, ActorType type, std::unordered_map<string
 				else actor->flags |= found->second;
 			}
 		}
+
+		const string actor_ai = jval.get("ai", "").asString();
+		if (actor_ai.size()) actor->ai_type = actor_ai;
 
 		auto attacker_pos = std::find(jmem_actor.begin(), jmem_actor.end(), "attacker");
 		if (attacker_pos != jmem_actor.end())

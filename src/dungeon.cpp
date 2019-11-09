@@ -1,6 +1,7 @@
 // dungeon.cpp -- The Dungeon class, which handles all the core functionality of a dungeon level, including generation, rendering, saving and loading.
 // Copyright (c) 2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
+#include "ai.h"
 #include "dungeon.h"
 #include "guru.h"
 #include "hero.h"
@@ -15,6 +16,7 @@
 
 #include "SQLiteCpp/SQLiteCpp.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 
@@ -41,6 +43,18 @@ Dungeon::~Dungeon()
 	STACK_TRACE();
 	delete[] tiles;
 	delete[] lighting;
+}
+
+// Adds an Actor's AI to the active AI list.
+void Dungeon::add_active_ai(shared_ptr<AI> new_ai)
+{
+	STACK_TRACE();
+	if (std::find(active_ai.begin(), active_ai.end(), new_ai) != active_ai.end())
+	{
+		guru::nonfatal("Attempt to add re-add existing active AI!", GURU_WARN);
+		return;
+	}
+	active_ai.push_back(new_ai);
 }
 
 // Carves out a square room.
@@ -377,6 +391,9 @@ void Dungeon::load()
 			tile(x, y)->y = y;
 			tile(x, y)->load(tile_query, id);
 			tile_count++;
+			for (auto actor : *tile(x, y)->actors())
+				if (actor->ai && actor->ai->state != AIState::NONE && actor->ai->state != AIState::SLEEPING && actor->ai->state != AIState::DEAD)
+					add_active_ai(actor->ai);
 		}
 	}
 	catch(std::exception &e)
@@ -385,11 +402,16 @@ void Dungeon::load()
 	}
 }
 
-// Checks to see if a given tile is within the player's line of sight.
+// Checks to see if a given tile is within the player's line of sight; optional x2/y2 coordinates can specify another non-player origin.
+// Yes, x2/y2 is used as the origin for the player, but it shouldn't matter either way - if all is working correctly, a LoS check should be symmetrical.
 // Largely adapted from Bresenham's Line Algorithm on RogueBasin.
-bool Dungeon::los_check(unsigned short x1, unsigned short y1) const
+bool Dungeon::los_check(unsigned short x1, unsigned short y1, unsigned short x2, unsigned short y2) const
 {
-	unsigned short x2 = world::hero()->x, y2 = world::hero()->y;
+	if (x2 == USHRT_MAX || y2 == USHRT_MAX)
+	{
+		x2 = world::hero()->x;
+		y2 = world::hero()->y;
+	}
 
 	int delta_x(x2 - x1);
 	// if x1 == x2, then it does not matter what we set here
@@ -646,6 +668,24 @@ void Dungeon::set_tile(unsigned short x, unsigned short y, Tile &new_tile)
 
 	for (auto actor : old_actors)
 		tiles[x + y * width].actors()->push_back(actor);
+}
+
+// Runs any active AI in this Dungeon.
+void Dungeon::tick_ai()
+{
+	STACK_TRACE();
+	for (unsigned int i = 0; i < active_ai.size(); i++)
+	{
+		shared_ptr<AI> ai = active_ai.at(i);
+		if (ai->state == AIState::NONE || ai->state == AIState::SLEEPING || ai->state == AIState::DEAD)
+		{
+			// If the AI is inactive or destroyed, just quietly remove it from the list and continue.
+			active_ai.erase(active_ai.begin() + i);
+			i--;
+			continue;
+		}
+		ai->tick();
+	}
 }
 
 // Retrieves a specified tile pointer.

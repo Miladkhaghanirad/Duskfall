@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Raine "Gravecat" Simmons. All rights reserved.
 
 #include "actor.h"
+#include "ai.h"
 #include "defender.h"
 #include "dungeon.h"
 #include "graveyard.h"
@@ -12,9 +13,11 @@
 
 
 // It's just a flesh wound!
-void Defender::die(shared_ptr<Actor> owner)
+void Defender::die(Actor *owner)
 {
 	STACK_TRACE();
+	hp = 0;
+	if (owner->ai) owner->ai->state = AIState::DEAD;
 	if (is_hero()) { }	// todo: Handle player death here!
 	else
 	{
@@ -23,7 +26,7 @@ void Defender::die(shared_ptr<Actor> owner)
 		for (unsigned int i = 0; i < owner_tile->actors()->size(); i++)
 		{
 			const shared_ptr<Actor> actor = owner_tile->actors()->at(i);
-			if (actor == owner)
+			if (actor.get() == owner)
 			{
 				tile_vector_id = 0;
 				break;
@@ -87,7 +90,7 @@ void Defender::save()
 }
 
 // Tells this Defender to take damage, and die if necessary.
-void Defender::take_damage(unsigned int damage, shared_ptr<Actor> owner)
+void Defender::take_damage(unsigned int damage, Actor *owner)
 {
 	STACK_TRACE();
 	if (damage >= hp) die(owner);

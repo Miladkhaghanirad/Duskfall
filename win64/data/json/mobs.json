@@ -4,6 +4,7 @@
 {
 
 "ORC" : {
+	"ai" : "BASIC",
 	"attacker" : {
 		"power" : 3
 	},
@@ -23,6 +24,7 @@
 },
 
 "TROLL" : {
+	"ai" : "BASIC",
 	"attacker" : {
 		"power" : 4
 	},

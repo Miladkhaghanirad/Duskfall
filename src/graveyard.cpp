@@ -13,7 +13,7 @@ namespace graveyard
 {
 
 // Vectors of objects due to be removed from the saved-game database during the next save. They've already been removed from memory.
-vector<unsigned long long>	dead_actors, dead_attackers, dead_defenders, dead_dungeons;
+vector<unsigned long long>	dead_actors, dead_ais, dead_attackers, dead_defenders, dead_dungeons;
 
 
 // The destroy_* functions mark objects for removal from the database.
@@ -23,13 +23,14 @@ void destroy_actor(unsigned long long id)
 	// This is tricky, as Actor can have other bits attached. We'll check the database to see what needs to be purged.
 	try
 	{
-		SQLite::Statement actors_query(*world::save_db(), "SELECT inventory, attacker, defender FROM actors WHERE id = ?");
+		SQLite::Statement actors_query(*world::save_db(), "SELECT inventory, attacker, defender, ai FROM actors WHERE id = ?");
 		actors_query.bind(1, static_cast<signed long long>(id));
 		while (actors_query.executeStep())
 		{
 			if (!actors_query.isColumnNull("inventory")) destroy_inventory(static_cast<unsigned long long>(actors_query.getColumn("inventory").getInt64()));
 			if (!actors_query.isColumnNull("attacker")) destroy_attacker(static_cast<unsigned long long>(actors_query.getColumn("attacker").getInt64()));
 			if (!actors_query.isColumnNull("defender")) destroy_defender(static_cast<unsigned long long>(actors_query.getColumn("defender").getInt64()));
+			if (!actors_query.isColumnNull("ai")) destroy_ai(static_cast<unsigned long long>(actors_query.getColumn("ai").getInt64()));
 			dead_actors.push_back(id);	// Yes, this goes here; if the Actor isn't found in the DB (i.e. if they were created some time *after* the last save), there's nothing to purge from the DB.
 		}
 	}
@@ -37,6 +38,12 @@ void destroy_actor(unsigned long long id)
 	{
 		guru::halt(e.what());
 	}
+}
+
+void destroy_ai(unsigned long long id)
+{
+	STACK_TRACE();
+	dead_ais.push_back(id);
 }
 
 void destroy_attacker(unsigned long long id)
@@ -113,6 +120,7 @@ void purge()
 		purge_db("actors", dead_actors);
 		purge_db("attackers", dead_attackers);
 		purge_db("defenders", dead_defenders);
+		purge_db("ai", dead_ais);
 	}
 	catch (std::exception &e)
 	{

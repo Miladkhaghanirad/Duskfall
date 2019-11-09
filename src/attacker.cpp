@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Raine "Gravecat" Simmons. All rights reserved.
 
 #include "actor.h"
+#include "ai.h"
 #include "attacker.h"
 #include "defender.h"
 #include "dungeon.h"
@@ -20,7 +21,7 @@
 
 
 // Attacks another Actor!
-void Attacker::attack(shared_ptr<Actor> owner, shared_ptr<Actor> target)
+void Attacker::attack(Actor *owner, Actor *target)
 {
 	STACK_TRACE();
 	if (!target->defender)
@@ -31,15 +32,27 @@ void Attacker::attack(shared_ptr<Actor> owner, shared_ptr<Actor> target)
 	const bool attacker_is_hero = this->is_hero(), defender_is_hero = target->defender->is_hero();
 	const bool hero_is_involved = (attacker_is_hero || defender_is_hero);
 
+	string attack_str;
+	MC colour = MC::INFO;
+	string death_str;
+
 	// Check if we have NPC-on-NPC aggression happening.
 	if (!hero_is_involved)
 	{
 		const bool attacker_in_sight = world::dungeon()->los_check(owner->x, owner->y);
 		const bool defender_in_sight = world::dungeon()->los_check(target->x, target->y);
-		if (attacker_in_sight) message::msg(owner->get_name(true) + " attacks " + (defender_in_sight ? target->get_name(false) : "something") + "!", MC::INFO);
+		if (attacker_in_sight)
+		{
+			attack_str = owner->get_name(true) + " attacks " + (defender_in_sight ? target->get_name(false) : "something") + "!";
+			death_str = " You hear the sound of something dying!";
+		}
 		else
 		{
-			if (defender_in_sight) message::msg("Something attacks " + target->get_name(false) + "!", MC::INFO);
+			if (defender_in_sight)
+			{
+				attack_str = "Something attacks " + target->get_name(false) + "!";
+				death_str = " It is slain!";
+			}
 			else
 			{
 				// Neither attacker nor defender in sight. We'll see if we can hear this combat.
@@ -49,7 +62,7 @@ void Attacker::attack(shared_ptr<Actor> owner, shared_ptr<Actor> target)
 					string distance_str = "";
 					if (combat_range <= COMBAT_SOUNDS_NEARBY_RANGE) distance_str = " nearby";
 					else if (combat_range >= COMBAT_SOUNDS_DISTANT_RANGE) distance_str = " distant";
-					message::msg("You hear the sounds of" + distance_str + " combat!", MC::INFO);
+					attack_str = "You hear the sounds of" + distance_str + " combat!";
 				}
 			}
 		}
@@ -57,8 +70,6 @@ void Attacker::attack(shared_ptr<Actor> owner, shared_ptr<Actor> target)
 	else
 	{
 		// The player is attacking or being attacked!
-		string attack_str;
-		MC colour = MC::INFO;
 		bool can_see_combatant;
 		if (attacker_is_hero) can_see_combatant = world::dungeon()->los_check(target->x, target->y);
 		else can_see_combatant = world::dungeon()->los_check(owner->x, owner->y);
@@ -70,24 +81,27 @@ void Attacker::attack(shared_ptr<Actor> owner, shared_ptr<Actor> target)
 		else
 		{
 			colour = MC::BAD;
-			attack_str = (can_see_combatant ? target->get_name(true) : "Something") + " attacks you";
+			attack_str = (can_see_combatant ? owner->get_name(true) : "Something") + " attacks you";
 		}
-
-		int damage = this->power - target->defender->armour;
-		if (damage < 1)
-		{
-			if (attacker_is_hero) colour = MC::WARN;
-			else colour = MC::INFO;
-			attack_str += "... but it has no efffect!";
-		}
-		else
-		{
-			attack_str += " for " + strx::itos(damage) + " damage";
-			if (damage >= target->defender->hp) attack_str += ", fatally wounding " + string(defender_is_hero ? "you!" : "it!");
-		}
-		message::msg(attack_str, colour);
-		target->defender->take_damage(damage, target);
 	}
+
+	int damage = this->power - target->defender->armour;
+	if (damage < 1)
+	{
+		if (attacker_is_hero) colour = MC::WARN;
+		else colour = MC::INFO;
+		if (hero_is_involved) attack_str += "... but it has no efffect!";
+	}
+	else if (hero_is_involved)
+	{
+		attack_str += " for " + strx::itos(damage) + " damage";
+		if (damage >= target->defender->hp) attack_str += ", fatally wounding " + string(defender_is_hero ? "you!" : "it!");
+		else attack_str += "!";
+	}
+	else attack_str += death_str;
+	message::msg(attack_str, colour);
+	target->defender->take_damage(damage, target);
+	if (target->defender->hp && target->ai) target->ai->react_to_attack(owner);
 }
 
 // Loads this Attacker from disk.

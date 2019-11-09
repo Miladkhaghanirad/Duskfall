@@ -13,7 +13,7 @@ class Attacker
 {
 public:
 			Attacker(unsigned long long new_id) : flags(0), id(new_id), power(0) { }
-	void	attack(shared_ptr<Actor> owner, shared_ptr<Actor> target);	// Attacks another Actor!
+	void	attack(Actor *owner, Actor *target);	// Attacks another Actor!
 	bool	is_hero() const { return (flags & ATTACKER_FLAG_IS_HERO) == ATTACKER_FLAG_IS_HERO; }	// Checks if this Attacker is the Hero.
 	void	load();	// Loads this Attacker from disk.
 	void	save();	// Saves this Attacker to disk.

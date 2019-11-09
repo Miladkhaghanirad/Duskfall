@@ -25,6 +25,7 @@ class Actor
 public:
 					Actor(unsigned long long new_id);
 	virtual			~Actor();
+	void			add_ai(string type, unsigned long long new_id);	// Adds AI to this Actor.
 	void			clear_flag(unsigned int flag);	// Clears a flag on this Actor.
 	string			get_name(bool first_letter_caps) const;	// Gets the name of this Actor, with 'the' at the start if it doesn't have a proper noun name.
 	bool			has_low_priority_rendering() const;	// Does this Actor have lower-priority rendering (i.e. other Actors go on top)?
@@ -42,6 +43,7 @@ public:
 	virtual void	tile_react() { }	// Reacts to other Actors on the tile this Actor is standing on.
 
 	shared_ptr<AI>	ai;			// If this Actor has AI, this is where its 'brain' is.
+	string			ai_type;	// The type of AI attached to this Actor.
 	shared_ptr<Attacker>	attacker;	// If this Actor is an Attacker, it attaches here.
 	shared_ptr<Defender>	defender;	// If this Actor is a Defender, it attaches here.
 	unsigned char	flags;		// The Actor's individual flags.

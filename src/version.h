@@ -10,8 +10,8 @@
 // version numbers personally to all code that is added to the master branch.
 
 #define DUSKFALL_VERSION_EPOCH		0
-#define DUSKFALL_VERSION_MAJOR		17
-#define DUSKFALL_VERSION_MINOR		13
+#define DUSKFALL_VERSION_MAJOR		18
+#define DUSKFALL_VERSION_MINOR		0
 #define DUSKFALL_VERSION_PATCH		0
 #define DUSKFALL_EDITION			"A New Beginning"
 

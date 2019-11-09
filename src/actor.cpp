@@ -2,7 +2,7 @@
 // Copyright (c) 2019 Raine "Gravecat" Simmons. Licensed under the GNU General Public License v3.
 
 #include "actor.h"
-#include "ai.h"
+#include "ai-basic.h"
 #include "attacker.h"
 #include "defender.h"
 #include "graveyard.h"
@@ -18,6 +18,20 @@
 Actor::Actor(unsigned long long new_id) : ai(nullptr), flags(0), id(new_id), inventory(nullptr), x(0), y(0) { }
 
 Actor::~Actor() { }
+
+// Adds AI to this Actor.
+void Actor::add_ai(string type, unsigned long long new_id)
+{
+	STACK_TRACE();
+	if (ai && ai->id != new_id) graveyard::destroy_ai(ai->id);
+	if (type == "BASIC") ai = std::make_shared<BasicAI>(this, new_id);
+	else
+	{
+		guru::nonfatal("Invalid AI type specified: " + type, GURU_ERROR);
+		return;
+	}
+	ai_type = type;
+}
 
 // Clears a flag on this Actor.
 void Actor::clear_flag(unsigned int flag)
@@ -121,6 +135,19 @@ void Actor::load(unsigned long long owner_id)
 				defender = std::make_shared<Defender>(defender_id);
 				defender->load();
 			}
+			if (!query.isColumnNull("ai"))
+			{
+				unsigned long long ai_id = query.getColumn("ai").getInt64();
+				SQLite::Statement ai_query(*world::save_db(), "SELECT type FROM ai WHERE id = ?");
+				ai_query.bind(1, static_cast<signed long long>(ai_id));
+				if (ai_query.executeStep())
+				{
+					string type = ai_query.getColumn("type").getString();
+					add_ai(type, ai_id);
+					ai->load();
+				}
+				else guru::halt("Could not load AI data from save file!");
+			}
 		}
 		else guru::halt("Could not load Actor " + strx::uitos(owner_id));
 	}
@@ -139,7 +166,7 @@ void Actor::save(unsigned long long owner_id)
 		SQLite::Statement delete_statement(*world::save_db(), "DELETE FROM actors WHERE id = ?");
 		delete_statement.bind(1, static_cast<signed long long>(id));
 		delete_statement.exec();
-		SQLite::Statement query(*world::save_db(), "INSERT INTO actors (id, owner, name, sprite, flags, x, y, inventory, attacker, defender) VALUES (?,?,?,?,?,?,?,?,?,?)");
+		SQLite::Statement query(*world::save_db(), "INSERT INTO actors (id, owner, name, sprite, flags, x, y, inventory, attacker, defender, ai) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
 		query.bind(1, static_cast<long long>(id));
 		query.bind(2, static_cast<long long>(owner_id));
 		query.bind(3, name);
@@ -150,6 +177,7 @@ void Actor::save(unsigned long long owner_id)
 		if (inventory) query.bind(8, static_cast<signed long long>(inventory->id)); else query.bind(8);
 		if (attacker) query.bind(9, static_cast<signed long long>(attacker->id)); else query.bind(9);
 		if (defender) query.bind(10, static_cast<signed long long>(defender->id)); else query.bind(10);
+		if (ai && id != 1) query.bind(11, static_cast<signed long long>(ai->id)); else query.bind(11);
 		query.exec();
 	}
 	catch(std::exception &e)
@@ -160,6 +188,7 @@ void Actor::save(unsigned long long owner_id)
 	if (inventory) inventory->save();
 	if (attacker) attacker->save();
 	if (defender) defender->save();
+	if (ai && id != 1) ai->save();
 }
 
 // Sets a flag on this Actor.

@@ -10,6 +10,7 @@ namespace graveyard
 
 // The destroy_* functions mark objects for removal from the database.
 void	destroy_actor(unsigned long long id);
+void	destroy_ai(unsigned long long id);
 void	destroy_attacker(unsigned long long id);
 void	destroy_defender(unsigned long long id);
 void	destroy_inventory(unsigned long long id);

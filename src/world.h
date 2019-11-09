@@ -20,6 +20,7 @@ void				load();			// Loads the game from disk.
 void				main_loop();	// The main game loop!
 void				new_game();		// Sets up a new game.
 void				new_world(unsigned short slot, bool new_save);	// Creates a new World in the specified save slot.
+void				pass_time();	// The player has taken a turn.
 void				queue_recalc_lighting();	// Queues up a recalculation of the game's dynamic lighting.
 void				queue_redraw();				// Queues up a full redraw of the game world.
 void				save(bool first_time = false);	// Saves the game to disk.

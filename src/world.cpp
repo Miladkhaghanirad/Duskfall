@@ -32,6 +32,7 @@ SQLite::Database	*save_db_ptr = nullptr;	// SQLite handle for the save game file
 unsigned short		save_slot = 0;			// The save file slot.
 shared_ptr<Dungeon>	the_dungeon = nullptr;	// The current dungeon level.
 shared_ptr<Hero>	the_hero = nullptr;		// The main Hero object.
+bool				time_passed = false;	// Has the player done something that causes time to pass?
 
 
 // Returns a pointer to the Dungeon object.
@@ -61,7 +62,7 @@ void load()
 {
 	STACK_TRACE();
 	db_ready = true;
-	the_dungeon = std::make_shared<Dungeon>(1004);
+	the_dungeon = std::make_shared<Dungeon>(1005);
 	the_dungeon->load();
 	the_hero->load();
 	the_hero->recenter_camera();
@@ -99,6 +100,7 @@ void main_loop()
 	guru::game_output(true);
 	while(true)
 	{
+		time_passed = false;
 		std::chrono::duration<float> elapsed_seconds = std::chrono::system_clock::now() - animation_timer;
 		if (elapsed_seconds.count() > 1)
 		{
@@ -145,6 +147,7 @@ void main_loop()
 		}
 		else action_taken = hero()->controls()->process_key(key);
 		if (action_taken) message::reset_count();
+		if (time_passed) dungeon()->tick_ai();
 	}
 }
 
@@ -168,6 +171,12 @@ void queue_redraw()
 	redraw_full = true;
 }
 
+// The player has taken a turn.
+void pass_time()
+{
+	time_passed = true;
+}
+
 // Saves the game to disk.
 void save(bool first_time)
 {
@@ -186,9 +195,10 @@ void save(bool first_time)
 					"CREATE TABLE tiles ( dungeon_id INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, name TEXT NOT NULL, sprite TEXT NOT NULL, flags INTEGER, PRIMARY KEY (dungeon_id, x, y) ); "
 					"CREATE TABLE hero ( id INTEGER PRIMARY KEY AUTOINCREMENT, difficulty INTEGER NOT NULL, style INTEGER NOT NULL, played INTEGER NOT NULL ); "
 					"CREATE TABLE actors ( id INTEGER PRIMARY KEY UNIQUE NOT NULL, owner INTEGER NOT NULL, name TEXT, sprite TEXT NOT NULL, flags INTEGER NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, inventory INTEGER, "
-					"attacker INTEGER, defender INTEGER ); "
+					"attacker INTEGER, defender INTEGER, ai INTEGER ); "
 					"CREATE TABLE attackers ( id INTEGER PRIMARY KEY UNIQUE NOT NULL, power INTEGER NOT NULL, flags INTEGER ); "
 					"CREATE TABLE defenders ( id INTEGER PRIMARY KEY UNIQUE NOT NULL, armour INTEGER NOT NULL, hp INTEGER NOT NULL, hp_max INTEGER NOT NULL, flags INTEGER ); "
+					"CREATE TABLE ai ( id INTEGER PRIMARY KEY UNIQUE NOT NULL, type TEXT NOT NULL, state INTEGER NOT NULL, tracking_count INTEGER NOT NULL ); "
 					"CREATE TABLE id_seq (next_id INTEGER PRIMARY KEY AUTOINCREMENT); INSERT INTO id_seq DEFAULT VALUES; UPDATE sqlite_sequence SET seq = " + strx::itos(unique_id()) + " WHERE name='id_seq';");
 			db_ready = true;
 		}

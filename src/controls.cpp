@@ -51,6 +51,7 @@ void Controls::close()
 		door->name = door->name.substr(0, door->name.size() - 9);
 		world::dungeon()->recalc_lighting();
 		world::queue_redraw();
+		world::pass_time();
 	}
 	else message::msg("That isn't something you can close.", MC::WARN);
 }
@@ -82,6 +83,7 @@ void Controls::drop_item(unsigned int id)
 	item_ptr->y = owner->y;
 	world::dungeon()->tile(owner->x, owner->y)->add_actor(item_ptr);
 	message::msg("You drop the " + item_ptr->name + ".");
+	world::pass_time();
 }
 
 // Interacts with carried items.
@@ -133,7 +135,11 @@ void Controls::open()
 	shared_ptr<Dungeon> dungeon = world::dungeon();
 	Tile* tile = dungeon->tile(owner->x + x_dir, owner->y + y_dir);
 	const unsigned int door_id = tile->has_door();
-	if (door_id != UINT_MAX) open_door(tile->actors()->at(door_id));
+	if (door_id != UINT_MAX)
+	{
+		open_door(tile->actors()->at(door_id));
+		world::pass_time();
+	}
 	else message::msg("That isn't something you can open.", MC::WARN);
 }
 
@@ -226,6 +232,7 @@ void Controls::take_item(unsigned int item)
 	tile->actors()->erase(tile->actors()->begin() + item);
 	owner->inventory->contents.push_back(item_ptr);
 	message::msg("You pick up the " + item_ptr->name + ".");
+	world::pass_time();
 }
 
 // Attempts to travel in a given direction.
@@ -238,6 +245,7 @@ bool Controls::travel(short x_dir, short y_dir)
 		const int screen_y = world::hero()->y + world::hero()->camera_off_y;
 		if (screen_x <= 5 || screen_x >= iocore::get_tile_cols() - 3) world::hero()->recenter_camera_horiz();
 		if (screen_y <= 5 || screen_y >= iocore::get_tile_rows() - 3) world::hero()->recenter_camera_vert();
+		world::pass_time();
 		return true;
 	}
 	else
@@ -249,7 +257,11 @@ bool Controls::travel(short x_dir, short y_dir)
 			if (actor->is_blocker())
 			{
 				if (actor->is_door()) open_door(actor);
-				else if (actor->defender) owner->attacker->attack(world::hero(), actor);
+				else if (actor->defender)
+				{
+					owner->attacker->attack(world::hero().get(), actor.get());
+					world::pass_time();
+				}
 				else message::msg(actor->get_name(true) + " blocks your path!", MC::WARN);
 				return false;
 			}

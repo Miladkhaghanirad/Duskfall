@@ -6,6 +6,7 @@
 #include <set>
 
 class Actor;	// defined in actor.h
+class AI;		// defined in ai.h
 namespace SQLite { class Statement; }	// defined in SQLiteCpp/SQLiteCpp.h
 
 #define TILE_FLAG_IMPASSIBLE	(1 << 0)
@@ -56,22 +57,25 @@ class Dungeon
 public:
 			Dungeon(unsigned short new_id, unsigned short new_width = 0, unsigned short new_height = 0);
 			~Dungeon();
+	void	add_active_ai(shared_ptr<AI> new_ai);	// Adds an Actor's AI to the active AI list.
 	void	generate();	// Generates a new dungeon level.
 	void	generate_type_a();	// Generates a type A dungeon level.
 	unsigned short	get_height() const { return height; }	// Read-only access to the dungeon height.
 	unsigned int	get_id() const { return id; }		// Read-only access to the dungeon ID.
 	unsigned short	get_width() const { return width; }	// Read-only access to the dungeon width.
 	void	load();		// Loadds this dungeon from disk.
-	bool	los_check(unsigned short x1, unsigned short y1) const;	// Checks to see if a given tile is within the player's line of sight.
+	bool	los_check(unsigned short x1, unsigned short y1, unsigned short x2 = USHRT_MAX, unsigned short y2 = USHRT_MAX) const;	// Line-of-sight check. See dungeon.cpp for full details!
 	void	map_view(bool see_all = false);	// View the dungeon map in its entirety.
 	void	random_start_position(unsigned short &x, unsigned short &y) const;	// Picks a viable random starting location.
 	void	recalc_lighting();	// Clears the lighting array and recalculates all light sources.
 	void	render(bool see_all = false);	// Renders the dungeon on the screen.
 	void	save();		// Saves this dungeon to disk.
 	void	set_tile(unsigned short x, unsigned short y, Tile &new_tile);	// Sets a specified tile, with error checking.
+	void	tick_ai();	// Runs any active AI in this Dungeon.
 	Tile*	tile(unsigned short x, unsigned short y) const;	// Retrieves a specified tile pointer.
 
 private:
+	std::vector<shared_ptr<AI>>	active_ai;	// Active AI on Actors that needs to be triggered each turn.
 	std::set<std::pair<unsigned short, unsigned short>> dynamic_light_temp, dynamic_light_temp_walls;	// Temporary data used by the dynamic lighting system.
 	unsigned short		height;			// The height of the dungeon (Y).
 	unsigned long long	id;				// The unique ID of this Dungeon.

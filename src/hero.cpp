@@ -23,7 +23,7 @@ Hero::Hero(unsigned long long new_id) : Actor(new_id), camera_off_x(0), camera_o
 	STACK_TRACE();
 	sprite = "PLAYER";
 	flags |= ACTOR_FLAG_ANIMATED;
-	ai = std::make_shared<Controls>(this);
+	ai = std::make_shared<Controls>(this, world::unique_id());
 	inventory = std::make_shared<Inventory>(world::unique_id());
 	attacker = std::make_shared<Attacker>(world::unique_id());
 	attacker->power = 5;
